@@ -294,16 +294,16 @@ export default function Dashboard() {
                   </div>
                   <div className="text-right">
                     <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Market Price</p>
-                    <p className="text-4xl font-black text-blue-600 italic tracking-tighter">₹{selectedVehicle.price_per_day}<span className="text-lg font-normal not-italic text-slate-400 ml-1">/d</span></p>
+                    <p className="text-4xl font-black text-blue-600 italic tracking-tighter">₹{Math.floor(selectedVehicle.price_per_day)}<span className="text-lg font-normal not-italic text-slate-400 ml-1">/d</span></p>
                   </div>
                 </div>
 
                 {/* Specs Hub */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <DetailBox icon={<User size={18} />} label="Seating" value={`${selectedVehicle.seating_capacity} Persons`} />
-                  <DetailBox icon={<Fuel size={18} />} label="Fuel Type" value={selectedVehicle.fuel_type} />
-                  <DetailBox icon={<Gauge size={18} />} label="Mileage" value={`${Math.floor(selectedVehicle.mileage)} KM/L`} />
-                  <DetailBox icon={<Plus size={18} />} label="Hourly Rate" value={`₹{selectedVehicle.price_per_hour}/HR`} />
+                  <DetailBox icon={<User size={18} />} label="Seating" value={`${selectedVehicle.seating_capacity || 0} Persons`} />
+                  <DetailBox icon={<Fuel size={18} />} label="Fuel Type" value={selectedVehicle.fuel_type || 'N/A'} />
+                  <DetailBox icon={<Gauge size={18} />} label="Mileage" value={`${Math.floor(selectedVehicle.mileage || 0)} KM/L`} />
+                  <DetailBox icon={<Plus size={18} />} label="Hourly Rate" value={`₹${Math.floor(selectedVehicle.price_per_hour || 0)}/HR`} />
                 </div>
 
                 {/* Logistics */}
@@ -346,7 +346,7 @@ export default function Dashboard() {
                   <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Usage Limits</h4>
                   <div className="flex flex-wrap gap-3">
                     <span className="bg-slate-100 px-5 py-2.5 rounded-2xl text-xs font-bold text-slate-600">Max {selectedVehicle.max_km_per_day} KM / day</span>
-                    <span className="bg-slate-100 px-5 py-2.5 rounded-2xl text-xs font-bold text-slate-600">₹{selectedVehicle.price_per_km}/KM extra charge</span>
+                    <span className="bg-slate-100 px-5 py-2.5 rounded-2xl text-xs font-bold text-slate-600">₹{Math.floor(selectedVehicle.price_per_km)}/KM extra charge</span>
                   </div>
                 </div>
 
@@ -476,7 +476,7 @@ function VehicleCard({ vehicle, navigate, onDetails }) {
         </div>
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-950/80 to-transparent p-6 pt-12">
            <div className="flex justify-between items-end text-white">
-             <p className="text-3xl font-black italic">₹{vehicle.price_per_day}<span className="text-sm font-normal not-italic text-slate-300 ml-1">/day</span></p>
+             <p className="text-3xl font-black italic">₹{Math.floor(vehicle.price_per_day)}<span className="text-sm font-normal not-italic text-slate-300 ml-1">/day</span></p>
            </div>
         </div>
       </div>
@@ -492,7 +492,7 @@ function VehicleCard({ vehicle, navigate, onDetails }) {
           <div className="mb-6 p-4 bg-red-50 rounded-2xl border border-red-100 flex gap-3 text-red-600 text-sm font-medium"><AlertCircle size={18} className="shrink-0" /><p>{vehicle.rejection_reason || "Rejected."}</p></div>
         )}
         <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
-          <div className="text-slate-400 text-[0.65rem] font-black uppercase tracking-widest">₹{vehicle.price_per_hour}/HR</div>
+          <div className="text-slate-400 text-[0.65rem] font-black uppercase tracking-widest">₹{Math.floor(vehicle.price_per_hour)}/HR</div>
           <button onClick={onDetails} className="flex items-center gap-2 text-blue-600 font-bold text-xs uppercase tracking-widest hover:text-blue-700"><Settings size={14} /> Full Details</button>
         </div>
       </div>

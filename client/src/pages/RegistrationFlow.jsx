@@ -3,10 +3,79 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   CheckCircle, ChevronRight, ChevronLeft, User, ShieldCheck, 
-  Car, CreditCard, Star, LayoutGrid, Zap, Sparkles, Upload
+  Car, CreditCard, Star, LayoutGrid, Zap, Sparkles, Upload, MapPin, X
 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix Leaflet icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const API_BASE = 'http://localhost:5000/api';
+
+function LocationPickerModal({ onSelect, onClose }) {
+  const [position, setPosition] = useState([11.9416, 79.8083]); // Default Pondy
+  const [address, setAddress] = useState('Fetching location...');
+
+  function MapEvents() {
+    useMapEvents({
+      click: async (e) => {
+        const { lat, lng } = e.latlng;
+        setPosition([lat, lng]);
+        setAddress('Resolving address...');
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+          const data = await res.json();
+          setAddress(data.display_name);
+        } catch (err) { setAddress('Unknown location'); }
+      },
+    });
+    return position ? <Marker position={position} /> : null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose} />
+      <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Drop a Pin</h2>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Click on the map to select pickup spot</p>
+          </div>
+          <button onClick={onClose} className="p-3 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+        
+        <div className="flex-1 relative">
+          <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }}>
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <MapEvents />
+          </MapContainer>
+        </div>
+
+        <div className="p-8 bg-white border-t border-slate-100 space-y-4">
+          <div className="flex items-start gap-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+            <MapPin className="text-blue-600 mt-1 shrink-0" size={20} />
+            <p className="text-sm font-bold text-slate-700 leading-relaxed italic">{address}</p>
+          </div>
+          <button 
+            onClick={() => onSelect(address)}
+            className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all"
+          >
+            Confirm Spot
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function RegistrationFlow() {
   const [step, setStep] = useState(2);
@@ -25,6 +94,7 @@ export default function RegistrationFlow() {
   const [media, setMedia] = useState([]);
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   const navigate = useNavigate();
   const query = new URLSearchParams(window.location.search);
@@ -283,13 +353,23 @@ export default function RegistrationFlow() {
                   <InputField label="Price Per KM (₹)" type="number" placeholder="15" value={vehicle.price_per_km} onChange={v => setVehicle({...vehicle, price_per_km: v})} />
                   <InputField label="Max KM / Day" type="number" placeholder="250" value={vehicle.max_km_per_day} onChange={v => setVehicle({...vehicle, max_km_per_day: v})} />
                   <div className="col-span-2 grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
-                    <InputField label="Pickup Location" placeholder="Area / Sector" value={vehicle.pickup_location} onChange={v => setVehicle({...vehicle, pickup_location: v})} icon={<LayoutGrid size={18}/>} />
+                    <InputField 
+                      label="Pickup Location" 
+                      placeholder="Click to pick on map" 
+                      value={vehicle.pickup_location} 
+                      onChange={v => setVehicle({...vehicle, pickup_location: v})} 
+                      icon={<MapPin size={18}/>} 
+                      onClick={() => setShowMap(true)}
+                    />
                     <InputField label="Nearby Landmark" placeholder="Near Railway Station" value={vehicle.landmark} onChange={v => setVehicle({...vehicle, landmark: v})} icon={<Sparkles size={18}/>} />
                   </div>
                 </div>
                 
                 <div className="space-y-4 pt-4 border-t border-slate-100">
-                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Mandatory Documents</h4>
+                  <div className="flex justify-between items-end">
+                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Mandatory Documents</h4>
+                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full">Good photos = more bookings</span>
+                  </div>
                   <FileUploadZone label="RC Book (Scanned / Photo)" onChange={f => setVehicle({...vehicle, rc_book: f})} file={vehicle.rc_book} />
                   <FileUploadZone 
                     label={`Vehicle Gallery (${vehicle.type === 'Car' || vehicle.type === 'Bike' ? 'Max 4 Photos' : 'Max 4 Photos + 1 Video'})`} 
@@ -379,6 +459,16 @@ export default function RegistrationFlow() {
         </div>
       </div>
 
+      {showMap && (
+        <LocationPickerModal 
+          onClose={() => setShowMap(false)} 
+          onSelect={(addr) => {
+            setVehicle({...vehicle, pickup_location: addr});
+            setShowMap(false);
+          }} 
+        />
+      )}
+
     </div>
   );
 }
@@ -401,9 +491,9 @@ function SelectField({ label, value, onChange, options }) {
   );
 }
 
-function InputField({ label, type = 'text', placeholder, value, onChange, icon, uppercase }) {
+function InputField({ label, type = 'text', placeholder, value, onChange, icon, uppercase, onClick }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" onClick={onClick}>
       <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 block">{label}</label>
       <div className="relative group">
         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">
@@ -413,9 +503,10 @@ function InputField({ label, type = 'text', placeholder, value, onChange, icon, 
           type={type} 
           required 
           placeholder={placeholder} 
-          className={`w-full bg-white border border-slate-100 focus:border-blue-500 rounded-2xl p-4 pl-12 text-slate-900 font-bold outline-none transition-all shadow-sm hover:border-slate-200 ${uppercase ? 'uppercase tracking-widest' : ''}`} 
+          className={`w-full bg-white border border-slate-100 focus:border-blue-500 rounded-2xl p-4 pl-12 text-slate-900 font-bold outline-none transition-all shadow-sm hover:border-slate-200 ${uppercase ? 'uppercase tracking-widest' : ''} ${onClick ? 'cursor-pointer' : ''}`} 
           value={value} 
           onChange={e => onChange(e.target.value)} 
+          readOnly={!!onClick}
         />
       </div>
     </div>
