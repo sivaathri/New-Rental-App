@@ -42,6 +42,8 @@ import {
   Globe,
   AlertCircle,
   CheckCircle,
+  Hash,
+  Flag,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -110,6 +112,256 @@ function LocationPickerModal({ onSelect, onClose }) {
   );
 }
 
+function InputGroup({ label, placeholder, value, onChange, disabled, type = 'text', icon: Icon, required }) {
+  return (
+    <div className="space-y-2 w-full">
+       <label className="text-[13px] font-bold text-[#252f40] flex items-center">
+         {label}
+         {required && <span className="text-red-500 ml-1">*</span>}
+       </label>
+       <div className="relative group">
+         {Icon && (
+           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#82d616] transition-colors">
+             <Icon size={18} />
+           </div>
+         )}
+         <input 
+          type={type}
+          disabled={disabled}
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+          className={`w-full bg-white border border-gray-100 h-[50px] rounded-xl font-medium text-[#252f40] outline-none transition-all ${Icon ? 'pl-11' : 'px-5'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'focus:border-[#82d616] focus:ring-4 focus:ring-[#82d616]/5'}`}
+         />
+       </div>
+    </div>
+  );
+}
+
+function SelectGroup({ label, options, value, onChange, icon: Icon, required }) {
+  return (
+    <div className="space-y-2 w-full">
+       <label className="text-[13px] font-bold text-[#252f40] flex items-center">
+         {label}
+         {required && <span className="text-red-500 ml-1">*</span>}
+       </label>
+       <div className="relative group">
+         {Icon && (
+           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#82d616] transition-colors">
+             <Icon size={18} />
+           </div>
+         )}
+         <select 
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`w-full bg-white border border-gray-100 h-[50px] rounded-xl font-medium text-[#252f40] outline-none transition-all appearance-none ${Icon ? 'pl-11' : 'px-5'} focus:border-[#82d616] focus:ring-4 focus:ring-[#82d616]/5`}
+         >
+           {options.map(o => <option key={o} value={o}>{o}</option>)}
+         </select>
+         <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <ChevronDown size={18} />
+         </div>
+       </div>
+    </div>
+  );
+}
+
+const PLAN_LIMITS = {
+  "1 Month": { "Bike": Infinity, "Car": 2, "Van": 1, "Bus": 1, "Mini-Van": 1, "Mini-Bus": 1, "Tempo_traveller": 1, "traveller": 1 },
+  "3 Month": { "Bike": Infinity, "Car": 3, "Van": 2, "Bus": 2, "Mini-Van": 2, "Mini-Bus": 2, "Tempo_traveller": 2, "traveller": 2 },
+  "6 Month": { "Bike": Infinity, "Car": 5, "Van": 3, "Bus": 3, "Mini-Van": 3, "Mini-Bus": 3, "Tempo_traveller": 3, "traveller": 3 },
+  "12 Month": { "Bike": Infinity, "Car": Infinity, "Van": Infinity, "Bus": Infinity, "Mini-Van": Infinity, "Mini-Bus": Infinity, "Tempo_traveller": Infinity, "traveller": Infinity }
+};
+
+function AddVehicleModal({ onClose, onVehicleAdded, vehicles, subscriptions }) {
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [vehicle, setVehicle] = useState({
+    type: 'Car', name: '', model_year: '', registration_number: '', rc_book: null,
+    seating_capacity: '', fuel_type: 'Petrol', mileage: '', 
+    price_per_day: '', price_per_hour: '', price_per_km: '', max_km_per_day: '', 
+    pickup_location: '', landmark: ''
+  });
+  const [media, setMedia] = useState([]);
+  const [showMap, setShowMap] = useState(false);
+
+  const activePlan = subscriptions.find(s => s.status === 'Active');
+  const currentCount = vehicles.filter(v => v.type === vehicle.type && v.status !== 'Rejected').length;
+  const limit = activePlan ? (PLAN_LIMITS[activePlan.plan_name]?.[vehicle.type] || 0) : 0;
+  const isOverLimit = activePlan ? currentCount >= limit : true;
+
+  const API_BASE = "http://localhost:5000/api";
+  const vehicleTypes = ["Car", "Bike", "Bus", "Van", "Mini-Van", "Mini-Bus", "Tempo_traveller", "traveller"];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (media.length < 4) return alert("Minimum 4 images required");
+    
+    setLoading(true);
+    const formData = new FormData();
+    Object.keys(vehicle).forEach(k => {
+      if (k !== 'rc_book') formData.append(k, vehicle[k]);
+    });
+    if (vehicle.rc_book) formData.append('rc_book', vehicle.rc_book);
+    media.forEach(file => formData.append('media', file));
+
+    try {
+      await axios.post(`${API_BASE}/vehicles/add`, formData, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      });
+      alert("Asset synchronized into ecosystem. Awaiting validation.");
+      onVehicleAdded();
+      onClose();
+    } catch (err) {
+      alert(err.response?.data?.error || "Error adding vehicle. Check limits.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[1100] flex items-center justify-center p-6">
+      <div className="absolute inset-0 bg-[#252f40]/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-[90vh] animate-in zoom-in-95 duration-300 border border-gray-100">
+        <div className="p-8 border-b border-gray-50 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white shadow-lg">
+               <Car size={24} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-[#252f40]">Add New Asset</h2>
+              <p className="text-[13px] font-medium text-gray-400 mt-0.5">Step {step} of 3 • {step === 1 ? 'Technical Config' : step === 2 ? 'Deployment Point' : 'Media Gallery'}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100"><X size={20} /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto no-scrollbar p-10">
+          {step === 1 && (
+            <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
+               {isOverLimit && (
+                 <div className="bg-red-50 border border-red-100 p-6 rounded-[2rem] flex items-center justify-between text-red-600">
+                    <div className="flex items-center gap-4">
+                       <AlertCircle size={24}/>
+                       <div>
+                          <p className="font-bold">Slot Limit Reached</p>
+                          <p className="text-[12px] opacity-80">Your current {activePlan?.plan_name || 'Free'} plan allows {limit === Infinity ? 'Unlimited' : limit} {vehicle.type === 'Tempo_traveller' ? 'Tempo Traveller' : vehicle.type}s. Upgrade to add more.</p>
+                       </div>
+                    </div>
+                    <button onClick={() => { onClose(); setActiveTab('Subscription'); }} className="px-5 py-2 bg-red-600 text-white rounded-xl text-[11px] font-bold">UPGRADE</button>
+                 </div>
+               )}
+               <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                     <SelectGroup label="Vehicle Type" options={vehicleTypes} value={vehicle.type} onChange={(v) => setVehicle({...vehicle, type: v})} icon={Car} />
+                     <InputGroup label="Vehicle Name" placeholder="Example: Swift, Innova" value={vehicle.name} onChange={(v) => setVehicle({...vehicle, name: v.toUpperCase()})} icon={Tag} required />
+                     <div className="grid grid-cols-2 gap-4">
+                        <InputGroup label="Model Year" placeholder="2022" type="number" value={vehicle.model_year} onChange={(v) => setVehicle({...vehicle, model_year: v})} icon={Clock} required />
+                        <InputGroup label="Reg. Number" placeholder="PY01XX1234" value={vehicle.registration_number} onChange={(v) => setVehicle({...vehicle, registration_number: v.toUpperCase()})} icon={Hash} required />
+                     </div>
+                  </div>
+                  <div className="p-8 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center gap-4">
+                      <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-md overflow-hidden text-[#82d616]">
+                         {vehicle.rc_book ? <img src={URL.createObjectURL(vehicle.rc_book)} className="w-full h-full object-cover" /> : <FileText size={32} />}
+                      </div>
+                      <p className="font-bold text-[#252f40]">RC Book Copy</p>
+                      <label className="bg-black text-white px-6 py-3 rounded-xl font-bold text-[12px] cursor-pointer hover:bg-[#1a1a1a] transition-all shadow-md">
+                         {vehicle.rc_book ? "Change RC" : "Upload RC Image"}
+                         <input type="file" accept="image/*" className="hidden" onChange={(e) => setVehicle({...vehicle, rc_book: e.target.files[0]})} />
+                      </label>
+                  </div>
+               </section>
+
+               <section className="pt-8 border-t border-gray-50">
+                  <h3 className="text-lg font-bold text-[#252f40] mb-6 flex items-center gap-2"><Zap size={18} className="text-[#82d616]"/> Technical & Pricing</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     <InputGroup label="Seating" type="number" value={vehicle.seating_capacity} onChange={(v) => setVehicle({...vehicle, seating_capacity: v})} icon={Users} />
+                     <SelectGroup label="Fuel Type" options={["Petrol", "Diesel", "Electric", "CNG"]} value={vehicle.fuel_type} onChange={(v) => setVehicle({...vehicle, fuel_type: v})} icon={Zap} />
+                     <InputGroup label="Mileage" type="number" value={vehicle.mileage} onChange={(v) => setVehicle({...vehicle, mileage: v})} icon={Sparkles} />
+                  </div>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+                     <InputGroup label="Per Day" type="number" value={vehicle.price_per_day} onChange={(v) => setVehicle({...vehicle, price_per_day: v})} icon={IndianRupee} />
+                     <InputGroup label="Per Hour" type="number" value={vehicle.price_per_hour} onChange={(v) => setVehicle({...vehicle, price_per_hour: v})} icon={Clock} />
+                     <InputGroup label="Per KM" type="number" value={vehicle.price_per_km} onChange={(v) => setVehicle({...vehicle, price_per_km: v})} icon={Navigation} />
+                     <InputGroup label="KM Limit" type="number" value={vehicle.max_km_per_day} onChange={(v) => setVehicle({...vehicle, max_km_per_day: v})} icon={LayoutDashboard} />
+                  </div>
+               </section>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="bg-gray-50 p-10 rounded-[2.5rem] border border-gray-100 flex flex-col md:flex-row items-center gap-10">
+                   <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center text-[#82d616] shadow-xl shrink-0"><MapPin size={40}/></div>
+                   <div className="flex-1 text-center md:text-left">
+                      <h4 className="text-xl font-bold text-[#252f40] mb-2">Set Pickup Location</h4>
+                      <p className="text-[#67748e] font-medium mb-6">{vehicle.pickup_location || "Renter will see this on the map for collection."}</p>
+                      <button onClick={() => setShowMap(true)} className="px-8 py-3 bg-black text-white rounded-xl font-bold text-[13px] hover:bg-[#1a1a1a] transition-all shadow-md">Pick Location on Map</button>
+                   </div>
+                </div>
+                <InputGroup label="Nearby Landmark" placeholder="Example: Near MG Road Post Office" value={vehicle.landmark} onChange={(v) => setVehicle({...vehicle, landmark: v})} icon={Flag} required />
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
+               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                  {[...Array(5)].map((_, i) => {
+                    const file = media[i];
+                    return (
+                      <div key={i} className="aspect-square bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center relative overflow-hidden group">
+                        {file ? (
+                          <>
+                            <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
+                            <button onClick={() => setMedia(media.filter((_, idx) => idx !== i))} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><X size={24} className="text-white"/></button>
+                            {i === 0 && <span className="absolute top-3 left-3 bg-[#82d616] text-black px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider">Primary</span>}
+                          </>
+                        ) : (
+                          <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
+                              <Plus size={24} className="text-gray-300" />
+                              <p className="text-[9px] font-black text-gray-400 mt-2 uppercase">Slot {i+1}</p>
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                if (e.target.files[0]) setMedia([...media, e.target.files[0]]);
+                              }} />
+                          </label>
+                        )}
+                      </div>
+                    )
+                  })}
+               </div>
+               <p className={`text-sm font-bold ${media.length >= 4 ? 'text-[#82d616]' : 'text-red-500'}`}>
+                  {media.length} / 4 minimum images required to launch
+               </p>
+            </div>
+          )}
+        </div>
+
+        <div className="p-8 bg-white border-t border-gray-50 flex gap-4">
+           {step > 1 && <button onClick={() => setStep(step - 1)} className="w-[100px] bg-gray-50 text-[#252f40] rounded-2xl font-bold flex items-center justify-center hover:bg-gray-100 transition-all"><ChevronLeft size={24}/></button>}
+           {step < 3 ? (
+             <button 
+              onClick={() => {
+                if (isOverLimit) return alert(`Limit Reached: Your current plan only allows ${limit} ${vehicle.type}s. Please upgrade.`);
+                if(step === 1 && (!vehicle.name || !vehicle.registration_number || !vehicle.rc_book)) return alert("Complete basic configuration first");
+                if(step === 2 && !vehicle.pickup_location) return alert("Select deployment point on map");
+                setStep(step + 1);
+              }} 
+              className="flex-1 bg-black text-white h-[60px] rounded-2xl font-bold hover:bg-[#1a1a1a] transition-all shadow-xl shadow-black/10 flex items-center justify-center gap-2"
+             >
+               Next Phase <ChevronRight size={20} />
+             </button>
+           ) : (
+             <button onClick={handleSubmit} disabled={loading || media.length < 4 || isOverLimit} className="flex-1 bg-[#82d616] text-white h-[60px] rounded-2xl font-bold hover:scale-[1.02] transition-all shadow-xl shadow-[#82d616]/20 flex items-center justify-center">
+                {loading ? "Synchronizing Asset..." : "Complete Registration"}
+             </button>
+           )}
+        </div>
+      </div>
+      {showMap && <LocationPickerModal onSelect={(a) => { setVehicle({...vehicle, pickup_location: a}); setShowMap(false); }} onClose={() => setShowMap(false)} />}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [vehicles, setVehicles] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
@@ -137,6 +389,7 @@ export default function Dashboard() {
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [selectedSubscriptionVehicle, setSelectedSubscriptionVehicle] = useState(null);
   const [userSubscriptions, setUserSubscriptions] = useState([]);
+  const [showAddVehicleModal, setShowAddVehicleModal] = useState(false);
 
   const handleSubscribe = async () => {
     if (!selectedPlan || !selectedVehicle) return;
@@ -355,7 +608,7 @@ export default function Dashboard() {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-[24px] font-bold text-[#252f40] leading-tight flex items-center gap-2">
-              Welcome back, Owner 👋
+              Welcome back, {userProfile?.user?.full_name ? userProfile.user.full_name.split(' ')[0] : "Owner"} 👋
             </h1>
             <p className="text-[#67748e] text-[14px] mt-0.5">
               Here's your fleet performance overview.
@@ -363,13 +616,13 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate("/register")}
+              onClick={() => setShowAddVehicleModal(true)}
               className="px-4 py-1.5 bg-black text-white text-[13px] font-bold rounded-lg hover:bg-[#1a1a1a] transition-all shadow-md"
             >
               Add New Vehicle
             </button>
             <div className="w-10 h-10 bg-[#000] rounded-full flex items-center justify-center text-white font-bold text-sm">
-              O
+              {userProfile?.user?.full_name ? userProfile.user.full_name.charAt(0).toUpperCase() : "O"}
             </div>
           </div>
         </header>
@@ -1337,6 +1590,8 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {showAddVehicleModal && <AddVehicleModal onClose={() => setShowAddVehicleModal(false)} onVehicleAdded={fetchDashboard} vehicles={vehicles} subscriptions={userSubscriptions} setActiveTab={setActiveTab} />}
 
       {showMap && <LocationPickerModal onSelect={(a) => handleUpdateLocation(updatingVehicle, a)} onClose={() => setShowMap(false)} />}
 
