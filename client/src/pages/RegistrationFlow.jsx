@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   CheckCircle, ChevronRight, ChevronLeft, User, ShieldCheck, 
-  Car, CreditCard, Star, LayoutGrid, Zap, Sparkles, Upload, MapPin, X, Film, Search, Globe
+  Car, CreditCard, Star, LayoutGrid, Zap, Sparkles, Upload, MapPin, X, Film, Search, Globe, Plus, FileText, Clock,
+  Home, Tag, Hash, IndianRupee
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -41,15 +42,15 @@ function LocationPickerModal({ onSelect, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" onClick={onClose} />
-      <div className="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-[85vh] animate-in zoom-in-95 duration-500 border border-white/20">
-        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+      <div className="absolute inset-0 bg-[#252f40]/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-[85vh] animate-in zoom-in-95 duration-300 border border-gray-100">
+        <div className="p-8 border-b border-gray-100 flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Pin Asset Location</h2>
-            <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Select the primary pickup point for renters</p>
+            <h2 className="text-2xl font-bold text-[#252f40]">Pin Asset Location</h2>
+            <p className="text-[13px] font-medium text-gray-400 mt-1">Select the primary pickup point for renters</p>
           </div>
-          <button onClick={onClose} className="w-12 h-12 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 transition-all">
-            <X size={24} />
+          <button onClick={onClose} className="w-10 h-10 hover:bg-gray-100 rounded-full flex items-center justify-center text-gray-400 transition-all">
+            <X size={20} />
           </button>
         </div>
         
@@ -60,18 +61,18 @@ function LocationPickerModal({ onSelect, onClose }) {
           </MapContainer>
         </div>
 
-        <div className="p-10 bg-white border-t border-slate-100 space-y-6">
-          <div className="flex items-start gap-5 p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-sm shrink-0 border border-slate-100">
-              <MapPin size={24} />
+        <div className="p-8 bg-white border-t border-gray-100 space-y-6">
+          <div className="flex items-start gap-4 p-5 bg-gray-50 rounded-2xl border border-gray-100">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-500 shadow-sm shrink-0 border border-gray-100">
+              <MapPin size={20} />
             </div>
-            <p className="text-sm font-black text-slate-700 leading-relaxed italic">{address}</p>
+            <p className="text-sm font-semibold text-[#252f40] leading-relaxed pt-2">{address}</p>
           </div>
           <button 
             onClick={() => onSelect(address)}
-            className="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-blue-600 transition-all"
+            className="w-full bg-[#252f40] text-white py-5 rounded-2xl font-bold hover:bg-black transition-all shadow-xl"
           >
-            Authorize Location
+            Confirm Location
           </button>
         </div>
       </div>
@@ -86,7 +87,6 @@ export default function RegistrationFlow() {
   
   const [profile, setProfile] = useState({ full_name: '', address: '', city: 'Pondicherry' });
   const [docs, setDocs] = useState({ aadhar: null, license: null });
-  const [hasVerification, setHasVerification] = useState(false);
   const [vehicle, setVehicle] = useState({
     type: 'Car', name: '', model_year: '', registration_number: '', rc_book: null,
     seating_capacity: '', fuel_type: '', mileage: '', price_per_day: '', price_per_hour: '',
@@ -98,79 +98,42 @@ export default function RegistrationFlow() {
   const [showMap, setShowMap] = useState(false);
 
   const navigate = useNavigate();
-  const query = new URLSearchParams(window.location.search);
-  const isAddMode = query.get('mode') === 'add';
-  const urlVehicleId = query.get('vehicleId');
 
   useEffect(() => {
     if (!token) return navigate('/');
-    
-    let progressUrl = `${API_BASE}/profile/progress`;
-    if (urlVehicleId) progressUrl += `?vehicleId=${urlVehicleId}`;
-
-    axios.get(progressUrl, { headers: { Authorization: `Bearer ${token}` } })
+    axios.get(`${API_BASE}/profile/progress`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => {
-        if (isAddMode) {
-          setStep(4);
-          setVehicleId(null);
-          const data = res.data.data;
-          if (data.user?.full_name) {
-            setProfile({ full_name: data.user.full_name, address: data.user.address || '', city: data.user.city || 'Pondicherry' });
-          }
-          if (data.verification) setHasVerification(true);
-          return;
-        }
-
         if (res.data.step === 7) return navigate('/dashboard');
-        
         setStep(res.data.step);
         if (res.data.vehicleId) setVehicleId(res.data.vehicleId);
-
         const data = res.data.data;
-        if (data.user?.full_name) {
-          setProfile({ full_name: data.user.full_name, address: data.user.address || '', city: data.user.city || 'Pondicherry' });
-        }
-        if (data.verification) setHasVerification(true); 
-        if (data.vehicle) setVehicle(v => ({ ...v, ...data.vehicle, rc_book: null })); 
+        if (data.user?.full_name) setProfile({ full_name: data.user.full_name, address: data.user.address || '', city: data.user.city || 'Pondicherry' });
       })
       .catch(err => console.error(err));
-  }, [token, navigate, isAddMode, urlVehicleId]);
-
-  const nextStep = () => setStep(prev => prev + 1);
-  const prevStep = () => setStep(prev => Math.max(2, prev - 1));
+  }, [token, navigate]);
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      await axios.post(`${API_BASE}/profile/setup`, profile, { headers: { Authorization: `Bearer ${token}` } });
-      nextStep();
-    } catch (err) { alert('Error updating profile'); }
-    finally { setLoading(false); }
-  };
-
-  const handleDocsSubmit = async (e) => {
-    e.preventDefault();
+    if (!profile.full_name || !profile.address) return alert('Please fill in all details');
+    if (!docs.aadhar || !docs.license) return alert('Please upload both Aadhar and Driving License');
+    
     setLoading(true);
     const formData = new FormData();
-    if (docs.aadhar) formData.append('aadhar', docs.aadhar);
-    if (docs.license) formData.append('license', docs.license);
-    try {
-      await axios.post(`${API_BASE}/profile/verify`, formData, { headers: { Authorization: `Bearer ${token}` } });
-      setHasVerification(true);
-      nextStep();
-    } catch (err) { alert('Error uploading documents'); }
-    finally { setLoading(false); }
-  };
+    formData.append('full_name', profile.full_name);
+    formData.append('address', profile.address);
+    formData.append('city', profile.city);
+    formData.append('aadhar', docs.aadhar);
+    formData.append('license', docs.license);
 
-  const handleMediaChange = (newFiles) => {
-    const filesArray = Array.from(newFiles);
-    let photos = filesArray.filter(f => f.type.startsWith('image/'));
-    let videos = filesArray.filter(f => f.type.startsWith('video/'));
-    photos = photos.slice(0, 4);
-    if (vehicle.type === 'Car' || vehicle.type === 'Bike') videos = [];
-    else videos = videos.slice(0, 1);
-    setMedia([...photos, ...videos]);
+    try {
+      await axios.post(`${API_BASE}/profile/setup`, formData, { 
+        headers: { 
+          Authorization: `Bearer ${token}`
+        } 
+      });
+      setStep(4);
+    } catch (err) { alert('Error updating profile and documents'); }
+    finally { setLoading(false); }
   };
 
   const handleVehicleSubmit = async (e) => {
@@ -190,7 +153,7 @@ export default function RegistrationFlow() {
     finally { setLoading(false); }
   };
 
-  const handleSubscribe = async () => {
+  const handlePlanSubmit = async () => {
     if (!plan) return;
     setLoading(true);
     try {
@@ -200,302 +163,273 @@ export default function RegistrationFlow() {
     finally { setLoading(false); }
   };
 
-  const stepInfo = {
-    2: { title: 'Profile Setup', subtitle: 'Authentication of owner credentials', desc: 'Secure your listing privilege by detailing your base operations.' },
-    3: { title: 'Identity Verification', subtitle: 'Trust & Safety Assurance', desc: 'Official documentation ensures a secure marketplace for all participants.' },
-    4: { title: 'Asset Details', subtitle: 'Fleet Specification Intake', desc: 'Provide precise technical and commercial data for your high-value asset.' },
-    5: { title: 'Visual Media', subtitle: 'Asset Immersion', desc: 'High-resolution visuals significantly increase conversion rates.' },
-    6: { title: 'Growth Membership', subtitle: 'Network Integration Plans', desc: 'Select a membership tier to maximize your asset yield.' },
-    7: { title: 'Authorization', subtitle: 'Queue Verification', desc: 'Your asset is being reviewed by our professional network auditors.' }
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-['Plus_Jakarta_Sans'] overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="fixed top-0 left-0 w-full h-[50vh] bg-slate-900 -z-10" />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/20 blur-[100px] rounded-full" />
-      
-      <div className="w-full max-w-7xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col lg:flex-row min-h-[850px] border border-white/20 relative">
+    <div className="min-h-screen bg-white flex items-center justify-center p-6 lg:p-12 font-['Inter', sans-serif]">
+      {/* Dynamic Background Decor */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-blue-50/40 blur-[120px] rounded-full" />
+        <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-green-50/40 blur-[120px] rounded-full" />
+      </div>
+
+      <div className="w-full min-h-screen  relative z-10 flex flex-col">
         
-        {/* Step Progression Sidebar */}
-        <aside className="lg:w-96 bg-slate-950 p-12 lg:p-16 flex flex-col relative overflow-hidden shrink-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent pointer-events-none" />
-          <div className="relative z-10 flex flex-col h-full space-y-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-950 shadow-xl">
-                <Globe size={20} />
-              </div>
-              <p className="text-xs font-black text-white uppercase tracking-[0.4em]">REGISTRY 2.0</p>
-            </div>
-
-            <div className="space-y-12 flex-1">
-              {[2, 3, 4, 6].map(s => (
-                <div key={s} className="flex items-start gap-6 group">
-                  <div className={`mt-1 w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all duration-700 ${
-                    step === s ? 'bg-blue-600 border-blue-600 shadow-2xl scale-125' :
-                    step > s ? 'bg-emerald-500 border-emerald-500 scale-100' : 'border-slate-800 text-slate-800'
-                  }`}>
-                    {step > s ? <CheckCircle size={14} className="text-white" /> : <div className={`w-1.5 h-1.5 rounded-full ${step === s ? 'bg-white' : 'bg-slate-800'}`} />}
-                  </div>
-                  <div className="space-y-1">
-                    <p className={`text-[0.6rem] font-black uppercase tracking-widest transition-colors ${step >= s ? 'text-blue-500' : 'text-slate-700'}`}>PHASE 0{s-1}</p>
-                    <h4 className={`text-sm font-black uppercase tracking-wider transition-colors ${step === s ? 'text-white' : 'text-slate-500'}`}>{stepInfo[s]?.title}</h4>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-8 bg-white/5 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 space-y-6">
-              <div className="flex gap-1 text-amber-400">
-                {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
-              </div>
-              <p className="text-xs font-bold text-slate-400 leading-relaxed italic">
-                "Listed my fleet and saw 300% ROI in the first quarter itself. The platform is truly state-of-the-art."
-              </p>
-              <div className="flex items-center gap-4 border-t border-white/5 pt-6 mt-6">
-                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black">SK</div>
-                 <div>
-                    <p className="text-[0.65rem] font-black text-white uppercase">Senthil Kumar</p>
-                    <p className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-widest">Master fleet owner</p>
-                 </div>
-              </div>
-            </div>
+        {/* Registration Logic - True Full Width */}
+        <div className="flex-1 bg-white pt-10 pb-20 px-8 lg:px-20 flex flex-col relative w-full">
+          
+          {/* Horizontal Stepper matching the UI Design image */}
+          <div className="mb-8 px-4 w-full">
+             <div className="flex items-center justify-between relative w-full">
+                <HorizontalStep num={1} label="Registry" active={step >= 2} current={step === 2} completed={step > 2} />
+                <StepLine active={step > 2} />
+                <HorizontalStep num={2} label="Asset" active={step >= 4} current={step === 4} completed={step > 4} />
+                <StepLine active={step > 4} />
+                <HorizontalStep num={3} label="Yield" active={step >= 6} current={step === 6} completed={step > 6} />
+                <StepLine active={step > 6} />
+                <HorizontalStep num={4} label="Confirm" active={step >= 7} current={step === 7} completed={step >= 7} />
+             </div>
           </div>
-        </aside>
 
-        {/* Dynamic Multi-Step Form */}
-        <section className="flex-1 p-8 lg:p-20 overflow-y-auto custom-scrollbar relative flex flex-col">
-          <div className="max-w-2xl mx-auto w-full flex-1 flex flex-col justify-center">
+          <div className="flex-1 w-full flex flex-col">
             
-            <header className="mb-16 space-y-4 text-center lg:text-left">
-               <div className="inline-block px-4 py-1.5 bg-blue-50 rounded-full border border-blue-100">
-                  <p className="text-[0.65rem] font-black text-blue-600 uppercase tracking-widest">{stepInfo[step]?.subtitle}</p>
-               </div>
-               <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase italic">{stepInfo[step]?.title}</h2>
-               <p className="text-slate-400 text-lg font-medium max-w-lg">{stepInfo[step]?.desc}</p>
-            </header>
-
             {step === 2 && (
-              <form onSubmit={handleProfileSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <LuxeInput label="Full Name" placeholder="Authentication Identity" value={profile.full_name} onChange={v => setProfile({...profile, full_name: v})} icon={<User size={20}/>} />
-                  <LuxeInput label="Active City" value={profile.city} disabled icon={<Globe size={20}/>} tip="Assigned Hub" />
-                  <div className="col-span-2">
-                    <LuxeInput label="Corporate / Residential Address" placeholder="Full logistics address..." value={profile.address} onChange={v => setProfile({...profile, address: v})} icon={<MapPin size={20}/>} />
-                  </div>
-                </div>
-                <LuxeButton text="Update & Progress" loading={loading} />
-              </form>
-            )}
+              <div className="space-y-10 animate-in fade-in slide-in-from-right-10 duration-500">
+                <header className="space-y-4">
+                  <h2 className="text-[48px] font-bold text-[#252f40] leading-none">Owner Registry</h2>
+                  <p className="text-gray-500 font-medium text-xl">Verify your legal stature within the ecosystem.</p>
+                </header>
 
-            {step === 3 && (
-              <form onSubmit={handleDocsSubmit} className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <LuxeFile label="Primary Identity (Aadhar)" file={docs.aadhar} onChange={f => setDocs({...docs, aadhar: f})} icon={<ShieldCheck size={24}/>} />
-                  <LuxeFile label="Operator License" file={docs.license} onChange={f => setDocs({...docs, license: f})} icon={<CreditCard size={24}/>} />
-                </div>
-                <div className="flex gap-4">
-                  <button type="button" onClick={prevStep} className="px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.65rem] text-slate-400 hover:bg-slate-50 transition-all border border-slate-100">Back</button>
-                  <LuxeButton text="Initiate Verification" loading={loading} />
-                </div>
-              </form>
-            )}
-
-            {(step === 4 || step === 5) && (
-              <form onSubmit={handleVehicleSubmit} className="space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-2">Vehicle Category</label>
-                    <select className="w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] px-6 py-5 text-slate-900 font-black outline-none focus:border-blue-600 transition-all shadow-sm" value={vehicle.type} onChange={e => setVehicle({...vehicle, type: e.target.value})}>
-                      {['Car', 'Bike', 'Bus', 'Van', 'Mini Van', 'Mini Bus', 'Tempo Traveller'].map(t => <option key={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <LuxeInput label="Asset Model" placeholder="eg. Innova Crysta" value={vehicle.name} onChange={v => setVehicle({...vehicle, name: v})} />
-                  <LuxeInput label="Model Vintage" type="number" placeholder="2024" value={vehicle.model_year} onChange={v => setVehicle({...vehicle, model_year: v})} />
-                  <LuxeInput label="Registration Plate" placeholder="PY 01 XX 0000" value={vehicle.registration_number} onChange={v => setVehicle({...vehicle, registration_number: v.toUpperCase()})} uppercase />
-                  <LuxeInput label="Asset Capacity" type="number" placeholder="7" value={vehicle.seating_capacity} onChange={v => setVehicle({...vehicle, seating_capacity: v})} />
-                  <div className="space-y-2">
-                    <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-2">Propulsion Type</label>
-                    <select className="w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] px-6 py-5 text-slate-900 font-black outline-none focus:border-blue-600 transition-all shadow-sm" value={vehicle.fuel_type} onChange={e => setVehicle({...vehicle, fuel_type: e.target.value})}>
-                      {['Petrol', 'Diesel', 'Gas', 'Electric'].map(f => <option key={f}>{f}</option>)}
-                    </select>
-                  </div>
-                  <LuxeInput label="Commercial Rate / Day" type="number" placeholder="2500" value={vehicle.price_per_day} onChange={v => setVehicle({...vehicle, price_per_day: v})} icon={<Star size={18}/>} />
-                  <LuxeInput label="Lease Rate / Hour" type="number" placeholder="300" value={vehicle.price_per_hour} onChange={v => setVehicle({...vehicle, price_per_hour: v})} />
-                </div>
-
-                <div className="space-y-8 pt-12 border-t border-slate-100">
-                   <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">Logistics & Media</h3>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <LuxeInput label="Verified Pickup Spot" placeholder="Authorize via map..." value={vehicle.pickup_location} onChange={() => {}} onClick={() => setShowMap(true)} icon={<MapPin size={20}/>} />
-                      <LuxeInput label="Specific Landmark" placeholder="Opposite to..." value={vehicle.landmark} onChange={v => setVehicle({...vehicle, landmark: v})} icon={<Sparkles size={18}/>} />
+                <div className="space-y-8">
+                   <InputGroup label="Full Name" placeholder="Example: Rahul Sharma" value={profile.full_name} onChange={(v) => setProfile({...profile, full_name: v})} icon={User} required />
+                   <div className="grid grid-cols-2 gap-8">
+                      <InputGroup label="City" value="Pondicherry" disabled icon={MapPin} required />
+                      <InputGroup label="Address" placeholder="Example: 123 Street Name" value={profile.address} onChange={(v) => setProfile({...profile, address: v})} icon={Home} required />
                    </div>
-                   <div className="space-y-6">
-                      <LuxeFile label="Official RC Document" file={vehicle.rc_book} onChange={f => setVehicle({...vehicle, rc_book: f})} icon={<LayoutGrid size={24}/>} />
-                      <div className="p-8 bg-slate-950 rounded-[2.5rem] border border-white/10 space-y-6">
-                        <div className="flex items-center justify-between">
-                           <p className="text-xs font-black text-white uppercase tracking-widest">Asset Gallery</p>
-                           <span className="text-[0.6rem] font-bold text-blue-400 uppercase tracking-[0.2em] bg-blue-400/10 px-3 py-1 rounded-full">Pro Tip: Top view sells 2x faster</span>
-                        </div>
-                        <LuxeMultiMedia 
-                          media={media} 
-                          onChange={handleMediaChange} 
-                          type={vehicle.type}
-                        />
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="p-6 bg-blue-50/50 rounded-[2rem] border border-blue-100 flex flex-col gap-4">
+                         <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-[#82d616]"><FileText size={20}/></div>
+                            <div>
+                               <p className="font-bold text-[#252f40] text-sm">Aadhar Card</p>
+                               <p className="text-gray-500 text-[11px]">{docs.aadhar ? docs.aadhar.name : 'Government ID'}</p>
+                            </div>
+                         </div>
+                         <label className="w-full bg-white border border-blue-100 text-[#252f40] py-3 rounded-xl font-bold text-[11px] cursor-pointer hover:bg-blue-50 transition-all text-center">
+                            Select Aadhar
+                            <input type="file" className="hidden" onChange={(e) => setDocs({...docs, aadhar: e.target.files[0]})} />
+                         </label>
+                      </div>
+
+                      <div className="p-6 bg-blue-50/50 rounded-[2rem] border border-blue-100 flex flex-col gap-4">
+                         <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-[#82d616]"><CreditCard size={20}/></div>
+                            <div>
+                               <p className="font-bold text-[#252f40] text-sm">Driving License</p>
+                               <p className="text-gray-500 text-[11px]">{docs.license ? docs.license.name : 'Operator Permit'}</p>
+                            </div>
+                         </div>
+                         <label className="w-full bg-white border border-blue-100 text-[#252f40] py-3 rounded-xl font-bold text-[11px] cursor-pointer hover:bg-blue-50 transition-all text-center">
+                            Select License
+                            <input type="file" className="hidden" onChange={(e) => setDocs({...docs, license: e.target.files[0]})} />
+                         </label>
                       </div>
                    </div>
                 </div>
 
-                <div className="flex gap-4 pt-12 sticky bottom-0 bg-white/80 backdrop-blur-xl pb-10">
-                  <button type="button" onClick={prevStep} className="px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.65rem] text-slate-400 hover:bg-slate-50 transition-all border border-slate-100">Back</button>
-                  <LuxeButton text="Register Asset" loading={loading} />
-                </div>
-              </form>
-            )}
-
-            {step === 6 && (
-              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {[
-                    { duration: 1, price: 700, label: 'Starter Hub', desc: 'Basic listing visibility' },
-                    { duration: 3, price: 1200, label: 'Growth Pass', desc: 'Priority in search results', popular: true },
-                    { duration: 6, price: 2000, label: 'Elite Network', desc: 'Dedicated fleet manager' },
-                    { duration: 12, price: 3000, label: 'Empire Tier', desc: 'Maximum earnings & reach' }
-                  ].map((p, i) => (
-                    <div 
-                      key={i} 
-                      onClick={() => setPlan(p)} 
-                      className={`p-8 rounded-[2.5rem] border-[3px] transition-all cursor-pointer group relative overflow-hidden ${
-                        plan?.duration === p.duration ? 'border-blue-600 bg-blue-50 shadow-2xl scale-[1.02]' : 'border-slate-50 hover:border-slate-200 bg-white'
-                      }`}
-                    >
-                      {p.popular && <div className="absolute top-0 right-0 bg-blue-600 text-white px-6 py-2 rounded-bl-[2rem] text-[0.6rem] font-black uppercase tracking-widest">Global Pick</div>}
-                      <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mb-2">{p.label}</p>
-                      <h4 className="text-4xl font-black text-slate-900 italic tracking-tighter mb-4">{p.duration} <span className="text-lg font-normal not-italic text-slate-400">Mo.</span></h4>
-                      <p className="text-4xl font-black text-blue-600 italic tracking-tighter">₹{p.price}</p>
-                      <p className="text-xs font-bold text-slate-400 mt-4 leading-relaxed">{p.desc}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-4 pt-12">
-                  <button type="button" onClick={prevStep} className="px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.65rem] text-slate-400 hover:bg-slate-50 transition-all border border-slate-100">Adjust Data</button>
-                  <LuxeButton text="Complete Membership" loading={loading} onClick={handleSubscribe} />
-                </div>
-              </div>
-            )}
-
-            {step === 7 && (
-              <div className="text-center py-20 animate-in zoom-in-95 duration-1000">
-                <div className="w-32 h-32 bg-emerald-50 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl shadow-emerald-50 mb-12 relative overflow-hidden group">
-                   <CheckCircle size={64} className="text-emerald-500 relative z-10 group-hover:scale-110 transition-transform" />
-                   <div className="absolute inset-0 bg-emerald-400/20 blur-2xl animate-pulse" />
-                </div>
-                <h2 className="text-6xl font-black text-slate-900 tracking-tighter uppercase italic leading-none mb-6">Pipeline Live</h2>
-                <p className="text-slate-500 font-medium text-xl max-w-md mx-auto leading-relaxed italic mb-16">
-                  Our professional network auditors are reviewing your credentials. Activation within 12 business hours.
-                </p>
-                <button 
-                  onClick={() => navigate('/dashboard')}
-                  className="px-16 py-6 bg-slate-950 text-white rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs shadow-2xl hover:bg-blue-600 transition-all flex items-center justify-center gap-4 mx-auto group"
-                >
-                  Enter Owner Hub
-                  <Zap size={18} className="fill-blue-500 text-blue-500 group-hover:rotate-12 transition-transform" />
+                <button onClick={handleProfileSubmit} disabled={loading} className="w-full bg-[#252f40] text-white py-5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl">
+                  {loading ? 'Processing...' : 'Proceed to Asset Config'}
+                  <ChevronRight size={20} />
                 </button>
               </div>
             )}
 
+            {step === 4 && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-10 duration-500">
+                <header className="space-y-4">
+                  <h2 className="text-[48px] font-bold text-[#252f40] leading-none">Asset Configuration</h2>
+                  <p className="text-gray-500 font-medium text-xl">Define the core telemetry for your rental asset.</p>
+                </header>
+
+                <div className="space-y-6">
+                   <div className="grid grid-cols-2 gap-8">
+                     <InputGroup label="Asset Name" placeholder="Example: Audi A6" value={vehicle.name} onChange={(v) => setVehicle({...vehicle, name: v})} icon={Car} required />
+                     <InputGroup label="Type" value={vehicle.type} disabled icon={Tag} required />
+                   </div>
+                   <div className="grid grid-cols-2 gap-8">
+                     <InputGroup label="Reg Number" placeholder="Example: PY 01 XX 1234" value={vehicle.registration_number} onChange={(v) => setVehicle({...vehicle, registration_number: v.toUpperCase()})} icon={Hash} required />
+                     <InputGroup label="Daily Yield" placeholder="Example: 5000" type="number" value={vehicle.price_per_day} onChange={(v) => setVehicle({...vehicle, price_per_day: v})} icon={IndianRupee} required />
+                   </div>
+                   
+                   <div className="p-8 bg-gray-50 rounded-[2rem] border border-gray-100 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                         <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-500 shadow-sm"><MapPin size={24}/></div>
+                         <div className="max-w-[200px]">
+                            <p className="font-bold text-[#252f40] text-sm">Deployment Point</p>
+                            <p className="text-gray-400 text-xs font-medium truncate">{vehicle.pickup_location || "Renter pickup point"}</p>
+                         </div>
+                      </div>
+                      <button onClick={() => setShowMap(true)} className="bg-white border border-gray-200 px-6 py-2 rounded-xl text-[11px] font-bold text-[#252f40] hover:border-blue-300 transition-all">Set Point</button>
+                   </div>
+
+                   <div className="p-8 border-2 border-dashed border-gray-200 rounded-[2.5rem] text-center space-y-4">
+                      <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 mx-auto"><Plus size={32}/></div>
+                      <div>
+                        <p className="font-bold text-[#252f40]">Inject Asset Media</p>
+                        <p className="text-gray-400 text-xs">High-res photos increase yield by 40%</p>
+                      </div>
+                      <input type="file" multiple className="hidden" id="asset-media" onChange={(e) => setMedia([...media, ...Array.from(e.target.files)])} />
+                      <label htmlFor="asset-media" className="inline-block bg-[#252f40] text-white px-8 py-3 rounded-xl font-bold text-[12px] cursor-pointer">Select Files</label>
+                      {media.length > 0 && <p className="text-[11px] font-bold text-[#82d616]">{media.length} files attached</p>}
+                   </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button onClick={() => setStep(2)} className="w-[80px] h-[64px] rounded-2xl border border-gray-100 flex items-center justify-center text-[#252f40] hover:bg-gray-50 transition-all"><ChevronLeft size={24}/></button>
+                  <button onClick={handleVehicleSubmit} disabled={loading} className="flex-1 bg-[#252f40] text-white py-5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl">Complete Configuration</button>
+                </div>
+              </div>
+            )}
+
+            {step === 6 && (
+              <div className="space-y-10 animate-in fade-in slide-in-from-right-10 duration-500">
+                 <header className="space-y-4">
+                    <h2 className="text-[48px] font-bold text-[#252f40] leading-none">Pricing Strategy</h2>
+                    <p className="text-gray-500 font-medium text-xl">Select a membership tier to launch your asset node.</p>
+                 </header>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-4">
+                    <YieldCard active={plan?.duration === 1} onSelect={() => setPlan({duration: 1, price: 700})} title="Starter" price="₹700" sub="1 Month Listing" />
+                    <YieldCard active={plan?.duration === 3} onSelect={() => setPlan({duration: 3, price: 1200})} title="Growth" price="₹1200" sub="3 Months Priority" popular />
+                 </div>
+
+                 <button onClick={handlePlanSubmit} disabled={loading || !plan} className="w-full bg-[#82d616] text-white py-6 rounded-2xl font-bold text-lg hover:opacity-90 transition-all shadow-xl shadow-[#82d616]/20">Synchronize & Launch Node</button>
+              </div>
+            )}
+
+            {step === 7 && (
+              <div className="py-20 animate-in zoom-in-95 duration-700">
+                <div className="w-32 h-32 bg-[#e6ffed] rounded-[3rem] flex items-center justify-center text-[#82d616] mb-12 shadow-xl shadow-[#82d616]/10">
+                   <Clock size={64} />
+                </div>
+                <h2 className="text-[56px] font-bold text-[#252f40] leading-[1.1] mb-6">Security Audit In Progress</h2>
+                <p className="text-gray-500 text-xl font-medium leading-relaxed mb-16">
+                  Your asset node is being validated by our professional network auditors. Cycle completes in <span className="text-[#252f40] font-bold underline">12 hours</span>.
+                </p>
+                <button 
+                  onClick={() => navigate('/dashboard')}
+                  className="px-20 py-6 bg-[#252f40] text-white rounded-[2rem] font-bold text-[18px] transition-all hover:bg-black shadow-2xl"
+                >
+                  Enter Command Center
+                </button>
+              </div>
+            )}
           </div>
-        </section>
+        </div>
       </div>
 
-      {showMap && <LocationPickerModal onClose={() => setShowMap(false)} onSelect={(v) => { setVehicle({...vehicle, pickup_location: v}); setShowMap(false); }} />}
-
+      {showMap && <LocationPickerModal onSelect={(a) => { setVehicle({...vehicle, pickup_location: a}); setShowMap(false); }} onClose={() => setShowMap(false)} />}
+      
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+        body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );
 }
 
-function LuxeInput({ label, type = 'text', placeholder, value, onChange, icon, disabled, tip, uppercase, onClick }) {
+function HorizontalStep({ num, label, active, current, completed }) {
   return (
-    <div className="space-y-4" onClick={onClick}>
-      <div className="flex justify-between items-center ml-2">
-        <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest leading-none">{label}</label>
-        {tip && <span className="text-[0.6rem] font-black text-blue-500 uppercase tracking-widest leading-none italic">{tip}</span>}
+    <div className="flex flex-col items-center relative z-10">
+      {/* Current pointer chevron */}
+      <div className={`transition-opacity duration-300 ${current ? 'opacity-100' : 'opacity-0'}`}>
+        <ChevronRight className="rotate-90 text-gray-400 mb-1" size={14} />
       </div>
-      <div className="relative group">
-        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors">{icon}</div>
-        <input 
-          type={type} 
+      
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold transition-all duration-500 border-2 ${
+        completed ? 'bg-[#82d616] border-[#82d616] text-white' : 
+        active ? 'bg-[#82d616] border-[#82d616] text-white' : 
+        'bg-white border-gray-200 text-gray-300'
+      }`}>
+        {completed ? <CheckCircle size={16} strokeWidth={3} /> : num}
+      </div>
+      
+      <p className={`text-[12px] font-bold mt-2 transition-colors ${active ? 'text-[#252f40]' : 'text-gray-300'}`}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function StepLine({ active }) {
+  return (
+    <div className="flex-1 h-[2px] bg-gray-100 mx-2 -mt-[26px] relative overflow-hidden">
+       <div className={`absolute inset-0 bg-[#82d616] transition-transform duration-700 ease-in-out origin-left ${active ? 'scale-x-100' : 'scale-x-0'}`} />
+    </div>
+  );
+}
+
+function InputGroup({ label, placeholder, value, onChange, disabled, type = 'text', icon: Icon, required }) {
+  return (
+    <div className="space-y-4 w-full">
+       <label className="text-[14px] font-bold text-[#252f40] flex items-center">
+         {label}
+         {required && <span className="text-red-500 ml-1">*</span>}
+       </label>
+       <div className="relative group">
+         {Icon && (
+           <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
+             <Icon size={20} />
+           </div>
+         )}
+         <input 
+          type={type}
           disabled={disabled}
           placeholder={placeholder}
           value={value}
-          onChange={e => onChange(e.target.value)}
-          className={`w-full bg-slate-50 border border-slate-100 group-focus-within:border-blue-600 group-focus-within:bg-white rounded-[1.5rem] px-6 py-5 ${icon ? 'pl-16' : ''} text-slate-900 font-black italic outline-none transition-all shadow-sm ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-text group-hover:border-slate-200'} ${uppercase ? 'uppercase tracking-widest' : ''}`} 
-        />
-      </div>
+          onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+          className={`w-full bg-white border border-gray-200 h-[56px] rounded-xl font-medium text-[#252f40] outline-none transition-all ${Icon ? 'pl-14' : 'px-6'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'focus:border-blue-400 focus:ring-4 focus:ring-blue-50'}`}
+         />
+       </div>
     </div>
   );
 }
 
-function LuxeFile({ label, file, onChange, icon }) {
+function SelectGroup({ label, options, value, onChange, icon: Icon, required }) {
   return (
-    <div className="space-y-4">
-      <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-2 leading-none">{label}</label>
-      <div className="relative group">
-        <input type="file" onChange={e => onChange(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-        <div className={`p-8 rounded-[2rem] border-2 border-dashed transition-all flex flex-col items-center justify-center text-center gap-4 ${file ? 'border-emerald-200 bg-emerald-50' : 'border-slate-100 bg-slate-50 group-hover:border-blue-200 group-hover:bg-blue-50/10'}`}>
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all ${file ? 'bg-emerald-500 text-white rotate-6' : 'bg-white text-slate-300 group-hover:text-blue-600'}`}>{icon}</div>
-          <p className={`text-xs font-black uppercase tracking-widest italic ${file ? 'text-emerald-700' : 'text-slate-400'}`}>{file ? 'Document Anchored' : 'Select Scan'}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function LuxeMultiMedia({ media, onChange, type }) {
-  const isVideoAllowed = !(type === 'Car' || type === 'Bike');
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {media.map((file, i) => (
-        <div key={i} className="aspect-square rounded-2xl bg-white/5 border border-white/5 overflow-hidden shadow-2xl group/m relative">
-           {file.type.startsWith('video/') ? (
-             <video src={URL.createObjectURL(file)} className="w-full h-full object-cover" autoPlay muted loop />
-           ) : (
-             <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="" />
-           )}
-           <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/m:opacity-100 transition-opacity">
-              <span className="text-[0.6rem] font-black text-white uppercase tracking-widest">{file.type.split('/')[1]}</span>
+    <div className="space-y-4 w-full">
+       <label className="text-[14px] font-bold text-[#252f40] flex items-center">
+         {label}
+         {required && <span className="text-red-500 ml-1">*</span>}
+       </label>
+       <div className="relative group">
+         {Icon && (
+           <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
+             <Icon size={20} />
            </div>
-        </div>
-      ))}
-      <div className="relative group/add aspect-square rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex flex-col items-center justify-center gap-2 hover:border-blue-500 hover:bg-white/10 transition-all cursor-pointer">
-         <input type="file" multiple onChange={e => onChange(e.target.files)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-         <PlusCircle size={24} className="text-white/20 group-hover/add:text-blue-500 transition-colors" />
-         <span className="text-[0.6rem] font-black text-white/20 uppercase tracking-widest group-hover/add:text-blue-500">Inject Assets</span>
-      </div>
+         )}
+         <select 
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`w-full bg-white border border-gray-200 h-[56px] rounded-xl font-medium text-[#252f40] outline-none transition-all appearance-none ${Icon ? 'pl-14' : 'px-6'} focus:border-blue-400 focus:ring-4 focus:ring-blue-50`}
+         >
+           {options.map(o => <option key={o} value={o}>{o}</option>)}
+         </select>
+         <div className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <ChevronRight className="rotate-90" size={18} />
+         </div>
+       </div>
     </div>
   );
 }
 
-function PlusCircle({ size, className }) {
-   return <Plus size={size} className={className} />
-}
-
-function LuxeButton({ text, loading, onClick }) {
+function YieldCard({ active, onSelect, title, price, sub, popular }) {
   return (
-    <button 
-      type={onClick ? "button" : "submit"} 
-      disabled={loading}
-      onClick={onClick}
-      className="flex-1 bg-slate-950 text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[0.7rem] hover:bg-blue-600 transition-all shadow-2xl flex items-center justify-center gap-3 group overflow-hidden relative"
-    >
-      <div className="absolute inset-0 bg-white translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-500 opacity-5" />
-      <span className="relative z-10">{loading ? 'Processing...' : text}</span>
-      <ChevronRight size={18} className="relative z-10 group-hover:translate-x-1 transition-transform" />
-    </button>
+    <div onClick={onSelect} className={`p-8 rounded-[2.5rem] border-2 cursor-pointer transition-all relative overflow-hidden ${
+      active ? 'bg-[#252f40] border-[#82d616] text-white shadow-2xl scale-[1.02]' : 'bg-white border-gray-100 text-[#252f40] hover:border-gray-200'
+    }`}>
+       {popular && <div className="absolute top-0 right-0 bg-[#82d616] text-[#252f40] px-6 py-2 rounded-bl-3xl text-[10px] font-bold uppercase tracking-widest">Network Peak</div>}
+       <p className="text-[11px] font-bold uppercase tracking-[0.3em] opacity-60 mb-4">{title}</p>
+       <p className="text-4xl font-bold leading-none mb-4">{price}</p>
+       <p className={`text-xs font-medium ${active ? 'text-gray-400' : 'text-gray-500'}`}>{sub}</p>
+    </div>
   );
 }

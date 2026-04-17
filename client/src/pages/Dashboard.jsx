@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { 
-  X, Plus, Upload, Film, Image as ImageIcon, 
-  Car, Clock, ShieldCheck, AlertCircle, 
-  TrendingUp, CheckCircle2, MoreVertical, Settings, LogOut,
-  MapPin, Fuel, User, Gauge, Calendar, ExternalLink, Zap, Star
-} from "lucide-react";
+  BarChart as BarChartIcon, Users, Car, CheckSquare, MessageSquare, 
+  Star, Tag, Landmark, Settings, LogOut, LayoutDashboard, 
+  Smartphone, Search, Bell, UserCheck, TrendingUp, Clock, 
+  FileText, CreditCard, ChevronDown, MoreHorizontal, Check, X, Zap, 
+  ShieldCheck, ExternalLink, Fuel, Gauge, User, Plus
+} from 'lucide-react';
 
 export default function Dashboard() {
   const [vehicles, setVehicles] = useState([]);
@@ -40,384 +41,218 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-['Plus_Jakarta_Sans']">
-      {/* Premium Navbar */}
-      <nav className="bg-white/80 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-[100]">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate('/dashboard')}>
-            <div className="w-12 h-12 bg-slate-900 rounded-[1.25rem] flex items-center justify-center text-white shadow-2xl group-hover:rotate-6 transition-transform">
-              <Zap size={24} className="fill-blue-500 text-blue-500" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none">PONDY RENTALS</h1>
-              <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Owner Dashboard</p>
-            </div>
+    <div className="min-h-screen bg-[#f8f9fa] flex font-['Inter', sans-serif]">
+      {/* Sidebar - Matching Refined Admin Design */}
+      <aside className="w-[260px] bg-white border-r border-gray-100 flex flex-col py-6 shrink-0 h-screen sticky top-0">
+        <div className="px-8 mb-8 flex items-center">
+          <span className="text-[22px] font-bold text-[#252f40]">Quick1</span>
+          <span className="text-[22px] font-bold text-[#82d616] ml-0.5">OWNER</span>
+        </div>
+
+        <nav className="flex-1 space-y-1 overflow-y-auto no-scrollbar pb-10">
+          <SidebarNavItem icon={<LayoutDashboard/>} label="Dashboard" active />
+          <SidebarNavItem icon={<Car/>} label="My Assets" />
+          <SidebarNavItem icon={<TrendingUp/>} label="Earnings" />
+          <SidebarNavItem icon={<FileText/>} label="Reports" />
+          <SidebarNavItem icon={<Star/>} label="Reviews" />
+          <SidebarNavItem icon={<Settings/>} label="Settings" />
+        </nav>
+
+        <div className="px-4 mt-auto pt-6 border-t border-gray-50">
+          <button 
+            onClick={() => setShowLogoutConfirm(true)}
+            className="w-full flex items-center gap-3 px-6 py-3 text-[#ea0606] font-bold hover:bg-red-50 rounded-xl transition-all"
+          >
+            <LogOut size={18} />
+            <span className="text-[13px] font-bold">Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 min-w-0 p-8 pt-6">
+        <header className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-[24px] font-bold text-[#252f40] leading-tight flex items-center gap-2">
+              Welcome back, Owner 👋
+            </h1>
+            <p className="text-[#67748e] text-[14px] mt-0.5">Here's your fleet performance overview.</p>
           </div>
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate('/register')} className="px-4 py-1.5 bg-black text-white text-[13px] font-bold rounded-lg hover:bg-[#1a1a1a] transition-all shadow-md">Add New Asset</button>
+            <div className="w-10 h-10 bg-[#000] rounded-full flex items-center justify-center text-white font-bold text-sm">O</div>
+          </div>
+        </header>
+
+        <div className="space-y-8">
+          <h2 className="text-[18px] font-bold text-[#252f40]">Portfolio Performance</h2>
           
-          <div className="flex items-center gap-6">
-            <button 
-              onClick={() => navigate('/register')}
-              className="px-6 py-3 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-[0.65rem] hover:bg-blue-600 transition-all shadow-xl shadow-slate-100"
-            >
-              Add Vehicle
-            </button>
-            <div className="h-8 w-[1px] bg-slate-100 hidden sm:block" />
-            <button onClick={() => setShowLogoutConfirm(true)} className="p-3 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-2xl transition-all">
-              <LogOut size={20} />
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard title="Total Assets" value={stats.total} icon={<Car/>} color="#e6f0ff" iconColor="#2167f2" growth="+0%" />
+            <StatCard title="Active Flux" value={stats.approved} icon={<Zap/>} color="#e6ffed" iconColor="#82d616" growth="+0%" />
+            <StatCard title="Pending Audit" value={stats.pending} icon={<Clock/>} color="#fff5e6" iconColor="#fbcf33" growth="+0%" />
+            <StatCard title="Yield Factor" value="124" icon={<TrendingUp/>} color="#f2e6ff" iconColor="#985eff" growth="+0%" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {vehicles.map((v) => (
+              <VehicleCard 
+                key={v.id} 
+                vehicle={v} 
+                onDetails={() => setSelectedVehicle(v)} 
+              />
+            ))}
           </div>
         </div>
-      </nav>
-
-      <main className="max-w-[1400px] mx-auto px-6 lg:px-12 py-12 space-y-16">
-        {/* Animated Greeting Section */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-          <div className="space-y-2">
-            <h2 className="text-5xl lg:text-6xl font-black text-slate-900 tracking-tight animate-in fade-in slide-in-from-left-8 duration-700">
-              Welcome back, <span className="text-blue-600">Owner</span>
-            </h2>
-            <p className="text-slate-400 text-lg font-medium italic opacity-80">Track your fleet performance and asset valuation in real-time.</p>
-          </div>
-          <div className="flex gap-4 p-2 bg-white rounded-3xl shadow-sm border border-slate-100">
-            <div className="px-6 py-4 text-center">
-              <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total Assets</p>
-              <p className="text-2xl font-black text-slate-900">{stats.total}</p>
-            </div>
-            <div className="w-[1px] bg-slate-100" />
-            <div className="px-6 py-4 text-center">
-              <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Earned So Far</p>
-              <p className="text-2xl font-black text-blue-600">₹45k</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Vibrant Stat Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
-          <StatCard title="Active Listings" value={stats.approved} icon={<CheckCircle2 size={24} />} color="indigo" />
-          <StatCard title="Verification Sent" value={stats.pending} icon={<Clock size={24} />} color="amber" />
-          <StatCard title="Consumer Clicks" value={stats.callbackClicks} icon={<TrendingUp size={24} />} color="emerald" />
-          <StatCard title="Platform Rating" value="4.9" icon={<Star size={24} />} color="blue" />
-        </div>
-
-        {/* Fleet Management Section */}
-        <section className="space-y-10 group/fleet">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-2 h-10 bg-blue-600 rounded-full" />
-              <h3 className="text-3xl font-black text-slate-900 tracking-tight uppercase">My Fleet Management</h3>
-            </div>
-          </div>
-
-          {vehicles.length === 0 ? (
-            <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] py-32 flex flex-col items-center justify-center text-center">
-              <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-8 animate-float">
-                <Car size={48} />
-              </div>
-              <h4 className="text-2xl font-black text-slate-900">Your Garage is Empty</h4>
-              <p className="text-slate-400 font-medium mt-2 mb-10 max-w-sm">Start your rental journey by listing your first vehicle and begin earning today.</p>
-              <button 
-                onClick={() => navigate('/register')}
-                className="bg-slate-900 text-white px-10 py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-blue-600 transition-all shadow-2xl"
-              >
-                List First Vehicle
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
-              {vehicles.map((v) => (
-                <VehicleCard key={v.id} vehicle={v} onDetails={() => setSelectedVehicle(v)} />
-              ))}
-              <button 
-                onClick={() => navigate('/register')}
-                className="h-full min-h-[400px] border-2 border-dashed border-slate-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 text-slate-300 hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50/30 transition-all group"
-              >
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                  <Plus size={32} />
-                </div>
-                <span className="font-black uppercase tracking-widest text-xs">Register New Asset</span>
-              </button>
-            </div>
-          )}
-        </section>
       </main>
 
-      {/* LUXURY DETAILS MODAL */}
+      {/* Detail Manager Modal */}
       {selectedVehicle && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" onClick={() => setSelectedVehicle(null)} />
-          <div className="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-500 border border-white/20">
-            {/* Gallery Section */}
-            <div className="relative h-[450px] bg-slate-950">
-              <button 
-                onClick={() => setSelectedVehicle(null)} 
-                className="absolute top-8 right-8 z-30 w-14 h-14 bg-white/10 backdrop-blur-3xl rounded-full flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all shadow-2xl border border-white/20"
-              >
-                <X size={28} />
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-[#000]/40 backdrop-blur-sm" onClick={() => setSelectedVehicle(null)} />
+          <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+            <div className="relative h-[300px] group bg-black">
+              <button onClick={() => setSelectedVehicle(null)} className="absolute top-6 right-6 z-30 w-10 h-10 bg-white shadow-xl rounded-full flex items-center justify-center text-black hover:bg-gray-100 transition-all">
+                <X size={20} />
               </button>
               {selectedVehicle.vehicle_images?.length > 0 ? (
-                <div className="flex h-full overflow-x-auto snap-x snap-mandatory hide-scrollbar">
-                  {selectedVehicle.vehicle_images.map((img, idx) => (
-                    <div key={idx} className="min-w-full h-full snap-start border-l border-white/5 relative">
-                      {img.media_type === "image" ? (
-                        <img src={`http://localhost:5000${img.media_url}`} className="w-full h-full object-cover" alt="" />
-                      ) : (
-                        <video src={`http://localhost:5000${img.media_url}`} className="w-full h-full object-cover" muted loop autoPlay />
-                      )}
-                      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-slate-950 to-transparent" />
-                    </div>
-                  ))}
-                </div>
+                <img src={`http://localhost:5000${selectedVehicle.vehicle_images[0].media_url}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" alt="" />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-slate-700 bg-slate-900">
-                  <ImageIcon size={64} className="opacity-20 mb-4" />
-                  <span className="text-xs font-black uppercase tracking-[0.3em] opacity-40">No Asset Media Found</span>
-                </div>
-              )}
-              {selectedVehicle.vehicle_images?.length > 1 && (
-                <div className="absolute bottom-10 left-10 flex gap-2">
-                  <div className="px-5 py-2.5 bg-white/10 backdrop-blur-3xl rounded-full text-white text-[0.65rem] font-black uppercase tracking-[0.2em] border border-white/10">
-                    Gallery Assets: {selectedVehicle.vehicle_images.length}
-                  </div>
-                </div>
+                <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50"><Car size={64}/></div>
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-12 lg:p-16 space-y-16">
-              <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <h2 className="text-6xl font-black text-slate-900 tracking-tighter uppercase">{selectedVehicle.name}</h2>
-                    <div className="flex items-center gap-4">
-                      <div className="px-5 py-2 rounded-2xl bg-blue-50 border border-blue-100 flex items-center gap-2">
-                        <Zap size={14} className="text-blue-600 fill-blue-600" />
-                        <span className="text-[0.65rem] font-black uppercase tracking-widest text-blue-600">{selectedVehicle.type} • {selectedVehicle.model_year}</span>
-                      </div>
-                      <div className={`px-5 py-2 rounded-2xl border flex items-center gap-2 ${
-                        selectedVehicle.status === "Approved" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                        selectedVehicle.status === "Rejected" ? "bg-red-50 text-red-600 border-red-100" : "bg-amber-50 text-amber-600 border-amber-100"
-                      }`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${
-                          selectedVehicle.status === "Approved" ? "bg-emerald-600" :
-                          selectedVehicle.status === "Rejected" ? "bg-red-600" : "bg-amber-600"
-                        }`} />
-                        <span className="text-[0.65rem] font-black uppercase tracking-widest">{selectedVehicle.status}</span>
-                      </div>
+            <div className="p-10 space-y-10 overflow-y-auto no-scrollbar">
+               <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-[32px] font-bold text-[#252f40] leading-none mb-4">{selectedVehicle.name}</h2>
+                    <div className="flex gap-2">
+                      <span className="px-4 py-1.5 bg-[#f8f9fa] text-[#67748e] rounded-lg text-[12px] font-bold border border-gray-100">{selectedVehicle.type}</span>
+                      <span className={`px-4 py-1.5 rounded-lg text-[12px] font-bold border ${selectedVehicle.status === 'Approved' ? 'bg-[#e6ffed] text-[#82d616] border-[#82d616]/20' : 'bg-[#fff5e6] text-[#fbcf33] border-[#fbcf33]/20'}`}>{selectedVehicle.status}</span>
                     </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.3em] mb-2 leading-none">Standard Rate</p>
-                  <p className="text-6xl font-black text-blue-600 italic tracking-tighter leading-none">₹{Math.floor(selectedVehicle.price_per_day)}<span className="text-xl font-normal not-italic text-slate-400 ml-2">/day</span></p>
-                </div>
-              </div>
-
-              {/* Advanced Specifications Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-                <DetailCard icon={<User size={20} />} label="Capacity" value={`${selectedVehicle.seating_capacity || 0} SEATS`} />
-                <DetailCard icon={<Fuel size={20} />} label="Fuel System" value={selectedVehicle.fuel_type || 'N/A'} />
-                <DetailCard icon={<Gauge size={20} />} label="Fuel Economy" value={`${Math.floor(selectedVehicle.mileage || 0)} KM/L`} />
-                <DetailCard icon={<Clock size={20} />} label="Hourly Lease" value={`₹${Math.floor(selectedVehicle.price_per_hour || 0)}/HR`} />
-              </div>
-
-              {/* Logistics & Security */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-6">
-                  <h4 className="text-[0.6rem] font-black uppercase tracking-[0.3em] text-slate-400">Identity & Official RC</h4>
-                  <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-slate-900 shadow-sm border border-slate-100">
-                      <ShieldCheck size={28} />
-                    </div>
-                    <div>
-                      <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{selectedVehicle.registration_number}</p>
-                      <a 
-                        href={`http://localhost:5000${selectedVehicle.rc_book_url}`} 
-                        target="_blank" rel="noreferrer"
-                        className="flex items-center gap-1.5 mt-1 text-blue-600 text-[0.65rem] font-black uppercase tracking-widest hover:underline transition-all"
-                      >
-                        Secure Document Link <ExternalLink size={12} />
-                      </a>
-                    </div>
+                  <div className="text-right">
+                    <p className="text-[12px] font-medium text-[#67748e] mb-1">Daily Yield</p>
+                    <p className="text-[32px] font-bold text-[#82d616] leading-none">₹{Math.floor(selectedVehicle.price_per_day)}</p>
                   </div>
-                </div>
+               </div>
 
-                <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-6 text-right lg:text-left">
-                  <h4 className="text-[0.6rem] font-black uppercase tracking-[0.3em] text-slate-400">Verified Pickup Spot</h4>
-                  <div className="flex flex-row-reverse lg:flex-row items-center gap-5">
-                    <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-emerald-600 shadow-sm border border-slate-100 shrink-0">
-                      <MapPin size={28} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-black text-slate-900 leading-snug italic">{selectedVehicle.pickup_location || "Coordinate Not Set"}</p>
-                      <p className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mt-1">Landmark: {selectedVehicle.landmark || "N/A"}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+               <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                  <SpecCard icon={<User/>} label="Capacity" value={selectedVehicle.seating_capacity} />
+                  <SpecCard icon={<Fuel/>} label="Fuel" value={selectedVehicle.fuel_type} />
+                  <SpecCard icon={<Gauge/>} label="Mileage" value={`${selectedVehicle.mileage}km`} />
+                  <SpecCard icon={<ShieldCheck/>} label="Registration" value={selectedVehicle.registration_number} />
+               </div>
 
-              {/* Analytics & Quotas */}
-              <div className="space-y-6">
-                <h4 className="text-[0.6rem] font-black uppercase tracking-[0.3em] text-slate-400 ml-1">Fleet Rules & Quotas</h4>
-                <div className="flex flex-wrap gap-4">
-                  <div className="px-8 py-5 bg-slate-100 rounded-[2rem] text-sm font-black text-slate-900 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-600"><Settings size={14} /></div>
-                    Max {selectedVehicle.max_km_per_day} KM / day Allowance
-                  </div>
-                  <div className="px-8 py-5 bg-slate-100 rounded-[2rem] text-sm font-black text-slate-900 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-emerald-600"><TrendingUp size={14} /></div>
-                    ₹{Math.floor(selectedVehicle.price_per_km)}/KM Excess Surcharge
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-6">
-                {selectedVehicle.status === "Rejected" && (
-                  <button className="flex-[1.5] bg-red-600 text-white font-black uppercase tracking-[0.2em] py-6 rounded-[2rem] shadow-2xl hover:scale-[1.02] transition-all">Resolve & Resubmit</button>
-                )}
-                <button 
-                  onClick={() => setSelectedVehicle(null)}
-                  className="flex-1 bg-slate-900 text-white font-black uppercase tracking-[0.2em] py-6 rounded-[2rem] transition-all group overflow-hidden relative"
-                >
-                  <div className="absolute inset-x-0 bottom-0 h-1 bg-blue-600 group-hover:h-full transition-all duration-300 -z-10" />
-                  Close Manager
-                </button>
-              </div>
+               <button onClick={() => setSelectedVehicle(null)} className="w-full py-4 bg-black text-white font-bold rounded-xl hover:bg-[#1a1a1a] transition-all">Close Asset Manager</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* LOGOUT CONFIRMATION */}
+      {/* Logout Manager */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xl" onClick={() => setShowLogoutConfirm(false)} />
-          <div className="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-200">
-            <div className="w-24 h-24 bg-red-50 rounded-[2rem] flex items-center justify-center text-red-500 mx-auto mb-8 shadow-inner shadow-red-100">
-              <LogOut size={48} />
+        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-6 text-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowLogoutConfirm(false)} />
+          <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-sm p-10 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-[#ea0606] mx-auto mb-6">
+              <LogOut size={32} />
             </div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-4">Leaving Already?</h2>
-            <p className="text-slate-400 font-medium text-lg leading-relaxed mb-10">Confirm if you would like to end your current session.</p>
+            <h2 className="text-[20px] font-bold text-[#252f40] mb-2">Sign Out?</h2>
+            <p className="text-[#67748e] text-[14px] mb-8">Are you sure you want to end your session?</p>
             <div className="grid grid-cols-2 gap-4">
-              <button 
-                onClick={() => setShowLogoutConfirm(false)}
-                className="px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.65rem] text-slate-400 hover:bg-slate-50 transition-all border border-slate-100"
-              >
-                No, Stay
-              </button>
-              <button 
-                onClick={handleLogout}
-                className="px-6 py-4 bg-red-600 text-white rounded-2xl font-black uppercase tracking-widest text-[0.65rem] shadow-xl shadow-red-100 hover:bg-red-700 transition-all"
-              >
-                Yes, Logout
-              </button>
+              <button onClick={() => setShowLogoutConfirm(false)} className="py-3 px-6 rounded-lg font-bold text-[13px] text-[#67748e] hover:bg-gray-50 transition-all border border-gray-100">Cancel</button>
+              <button onClick={handleLogout} className="py-3 px-6 bg-[#ea0606] text-white rounded-lg font-bold text-[13px] shadow-sm hover:opacity-90 transition-all">Logout</button>
             </div>
           </div>
         </div>
       )}
 
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; }
       `}</style>
     </div>
   );
 }
 
-function DetailCard({ icon, label, value }) {
+function SidebarNavItem({ icon, label, active }) {
   return (
-    <div className="p-8 bg-white border border-slate-100 rounded-[2.5rem] group hover:border-blue-600 transition-all shadow-sm flex flex-col items-center justify-center text-center space-y-3">
-      <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all">{icon}</div>
-      <div className="space-y-1">
-        <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-[0.2em]">{label}</p>
-        <p className="text-lg font-black text-slate-900 italic tracking-tight">{value}</p>
+    <div className={`flex items-center justify-between px-4 py-3 mx-4 cursor-pointer transition-all duration-200 ${
+      active ? 'bg-black text-white rounded-[10px]' : 'text-[#67748e] hover:text-black'
+    }`}>
+      <div className="flex items-center gap-3">
+        <div className={`w-8 h-8 flex items-center justify-center rounded-lg ${active ? 'bg-[#1a1a1a]' : 'bg-white shadow-sm border border-gray-100'}`}>
+          {React.cloneElement(icon, { size: 16, className: active ? 'text-white' : 'text-[#67748e]' })}
+        </div>
+        <span className={`text-[13px] font-medium leading-none ${active ? 'font-semibold' : ''}`}>{label}</span>
       </div>
     </div>
   );
 }
 
-function StatCard({ title, value, icon, color }) {
-  const colors = {
-    indigo: "from-indigo-600 to-indigo-800 text-indigo-600",
-    amber: "from-amber-500 to-amber-600 text-amber-500",
-    emerald: "from-emerald-600 to-emerald-700 text-emerald-600",
-    blue: "from-blue-600 to-blue-800 text-blue-600"
-  };
-
+function StatCard({ title, value, icon, color, iconColor, growth }) {
   return (
-    <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
-      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br transition-all duration-500 opacity-5 blur-2xl group-hover:opacity-20 ${colors[color].split(' ')[0]}`} />
-      <div className="flex flex-col gap-6 relative z-10">
-        <div className={`w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colors[color].split(' ')[2]}`}>{icon}</div>
-        <div className="space-y-1 text-center lg:text-left">
-          <p className="text-4xl font-black text-slate-900 tracking-tighter italic">{value}</p>
-          <p className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-[0.3em]">{title}</p>
-        </div>
+    <div className="bg-white p-5 rounded-[16px] border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-all">
+      <div className="space-y-1">
+        <p className="text-[12px] font-medium text-[#67748e]">{title}</p>
+        <p className="text-[20px] font-bold text-[#252f40] leading-none">{value}</p>
+        <p className="text-[12px] font-bold text-[#82d616] mt-2">
+          {growth} <span className="text-[#67748e] font-normal ml-0.5">vs last month</span>
+        </p>
+      </div>
+      <div className="w-[48px] h-[48px] rounded-[10px] flex items-center justify-center" style={{ backgroundColor: color }}>
+        {React.cloneElement(icon, { size: 20, style: { color: iconColor } })}
       </div>
     </div>
   );
 }
 
 function VehicleCard({ vehicle, onDetails }) {
-  const statusColors = {
-    "Approved": "bg-emerald-500 text-white",
-    "Rejected": "bg-red-500 text-white",
-    "Waiting for Approval": "bg-amber-500 text-white"
-  };
-
   return (
-    <div className="group bg-white rounded-[3rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-700 relative flex flex-col h-[520px]">
-      {/* Dynamic Image Wrapper */}
-      <div className="relative h-2/3 overflow-hidden bg-slate-100">
-        <div className="absolute top-6 left-6 z-20">
-          <div className={`px-5 py-2 rounded-full text-[0.6rem] font-black uppercase tracking-[0.2em] shadow-2xl backdrop-blur-md ${statusColors[vehicle.status] || "bg-white text-slate-900"}`}>
-            {vehicle.status}
-          </div>
+    <div className="bg-white rounded-[16px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group flex flex-col h-[400px]">
+      <div className="relative h-[200px] overflow-hidden">
+        <div className="absolute top-4 left-4 z-20">
+           <span className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all shadow-md border ${
+              vehicle.status === 'Approved' ? 'bg-[#e6ffed] text-[#82d616] border-[#82d616]/20' : 'bg-[#fff5e6] text-[#fbcf33] border-[#fbcf33]/20'
+           }`}>
+              {vehicle.status === 'Approved' ? 'ACTIVE' : 'AUDIT'}
+           </span>
         </div>
-        
-        {vehicle.vehicle_images?.length > 0 ? (
-          <img 
-            src={`http://localhost:5000${vehicle.vehicle_images[0].media_url}`} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
-            alt={vehicle.name} 
-          />
+        {vehicle.vehicle_images?.[0] ? (
+          <img src={`http://localhost:5000${vehicle.vehicle_images[0].media_url}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" alt="" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-slate-200">
-            <Car size={64} className="opacity-20" />
-          </div>
+          <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50"><Car size={48}/></div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
+      </div>
+
+      <div className="p-6 flex flex-col justify-between flex-1">
+        <div className="space-y-1">
+          <h4 className="text-[18px] font-bold text-[#252f40] leading-tight">{vehicle.name}</h4>
+          <p className="text-[12px] text-[#67748e] font-medium">{vehicle.type} • {vehicle.model_year}</p>
+        </div>
         
-        <div className="absolute bottom-8 left-8">
-           <p className="text-4xl font-black text-white italic tracking-tighter leading-none">₹{Math.floor(vehicle.price_per_day)}<span className="text-sm font-normal not-italic opacity-40 ml-1">/d</span></p>
+        <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
+           <div>
+              <p className="text-[10px] font-bold text-[#67748e] uppercase tracking-wider">Daily Rate</p>
+              <p className="text-[18px] font-bold text-[#82d616]">₹{Math.floor(vehicle.price_per_day)}</p>
+           </div>
+           <button onClick={onDetails} className="px-5 py-2 bg-black text-white rounded-lg text-[12px] font-bold hover:bg-[#1a1a1a] transition-all">Manage</button>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Luxury Info Section */}
-      <div className="p-8 flex flex-col gap-6 flex-1">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-none italic">{vehicle.name}</h3>
-            <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.3em] italic">{vehicle.type} • {vehicle.model_year}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-6 border-t border-slate-50 mt-auto">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors">
-              <LayoutGrid size={14} />
-            </div>
-            <span className="text-[0.65rem] font-black text-slate-900 uppercase tracking-widest">{vehicle.registration_number}</span>
-          </div>
-          <button 
-            onClick={onDetails} 
-            className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-[0.6rem] font-black uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-lg"
-          >
-            Insights
-          </button>
-        </div>
-      </div>
+function SpecCard({ icon, label, value }) {
+  return (
+    <div className="bg-[#f8f9fa] p-4 rounded-xl border border-gray-100 flex items-center gap-3">
+       <div className="text-[#82d616]">{icon}</div>
+       <div>
+          <p className="text-[11px] font-medium text-[#67748e] leading-none mb-1">{label}</p>
+          <p className="text-[13px] font-bold text-[#252f40] leading-none">{value || 'N/A'}</p>
+       </div>
     </div>
   );
 }
