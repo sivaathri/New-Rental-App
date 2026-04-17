@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// Client reload trigger
 import Login from './pages/Login';
 import RegistrationFlow from './pages/RegistrationFlow';
 import Dashboard from './pages/Dashboard';

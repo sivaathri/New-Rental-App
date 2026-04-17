@@ -1,28 +1,51 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const db = require('../db');
 const authMiddleware = require('../utils/authMiddleware');
 const upload = require('../utils/upload');
 
-// Update Profile
-router.post('/setup', authMiddleware, upload.single('profile_photo'), async (req, res) => {
-    const { full_name, address, city } = req.body;
-    const profile_photo = req.file ? `/uploads/${req.file.filename}` : null;
+// Update Profile and KYC Docs in one go
+router.post('/setup', authMiddleware, (req, res, next) => {
+    upload.fields([
+        { name: 'aadhar', maxCount: 1 },
+        { name: 'license', maxCount: 1 }
+    ])(req, res, (err) => {
+        if (err instanceof multer.MulterError) {
+            console.error('Multer Error in /setup:', err.message, 'Field:', err.field);
+            return res.status(400).json({ error: `Multer error: ${err.message} on field ${err.field}` });
+        } else if (err) {
+            console.error('Unknown upload error:', err);
+            return res.status(500).json({ error: 'Upload error' });
+        }
+        next();
+    });
+}, async (req, res) => {
+    const { full_name, email, address, city } = req.body;
+    const aadharUrl = req.files['aadhar'] ? `/uploads/${req.files['aadhar'][0].filename}` : null;
+    const licenseUrl = req.files['license'] ? `/uploads/${req.files['license'][0].filename}` : null;
 
     try {
-        let query = 'UPDATE users SET full_name = ?, address = ?, city = ?';
-        let params = [full_name, address, city || 'Pondicherry'];
+        // 1. Update User Profile
+        await db.query('UPDATE users SET full_name = ?, email = ?, address = ?, city = ? WHERE id = ?', [
+            full_name, 
+            email,
+            address, 
+            city || 'Pondicherry', 
+            req.user.id
+        ]);
 
-        if (profile_photo) {
-            query += ', profile_photo = ?';
-            params.push(profile_photo);
+        // 2. Update/Insert Verification Docs
+        if (aadharUrl || licenseUrl) {
+            const [existing] = await db.query('SELECT * FROM verifications WHERE user_id = ?', [req.user.id]);
+            if (existing.length > 0) {
+                await db.query('UPDATE verifications SET aadhar_card_url = COALESCE(?, aadhar_card_url), driving_license_url = COALESCE(?, driving_license_url), status = "Pending" WHERE user_id = ?', [aadharUrl, licenseUrl, req.user.id]);
+            } else {
+                await db.query('INSERT INTO verifications (user_id, aadhar_card_url, driving_license_url) VALUES (?, ?, ?)', [req.user.id, aadharUrl, licenseUrl]);
+            }
         }
 
-        query += ' WHERE id = ?';
-        params.push(req.user.id);
-
-        await db.query(query, params);
-        res.json({ message: 'Profile updated' });
+        res.json({ message: 'Profile and Verification updated' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
@@ -88,6 +111,40 @@ router.get('/progress', authMiddleware, async (req, res) => {
         if (subs.length === 0) return res.json({ step: 6, vehicleId: vehicle.id, data: { user, verification, vehicle } });
 
         return res.json({ step: 7, data: { user, verification, vehicle } });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Request Email Change
+router.post('/request-email-change', authMiddleware, async (req, res) => {
+    const { newEmail } = req.body;
+    if (!newEmail) return res.status(400).json({ error: 'New email required' });
+
+    try {
+        const otp = '654321'; // Mock OTP for email
+        // Store in a temporary column or just 'otp' column
+        await db.query('UPDATE users SET otp = ? WHERE id = ?', [otp, req.user.id]);
+        console.log(`Email OTP for ${newEmail}: ${otp}`);
+        res.json({ message: 'OTP sent to ' + newEmail + ' (use 654321)' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Verify Email Change
+router.post('/verify-email-change', authMiddleware, async (req, res) => {
+    const { newEmail, otp } = req.body;
+    try {
+        const [rows] = await db.query('SELECT * FROM users WHERE id = ? AND otp = ?', [req.user.id, otp]);
+        if (rows.length > 0) {
+            await db.query('UPDATE users SET email = ?, otp = NULL WHERE id = ?', [newEmail, req.user.id]);
+            res.json({ message: 'Email updated successfully' });
+        } else {
+            res.status(400).json({ error: 'Invalid OTP' });
+        }
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });

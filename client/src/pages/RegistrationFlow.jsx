@@ -4,7 +4,7 @@ import axios from 'axios';
 import { 
   CheckCircle, ChevronRight, ChevronLeft, User, ShieldCheck, 
   Car, CreditCard, Star, LayoutGrid, Zap, Sparkles, Upload, MapPin, X, Film, Search, Globe, Plus, FileText, Clock,
-  Home, Tag, Hash, IndianRupee
+  Home, Tag, Hash, IndianRupee, Flag, Users, Navigation, Mail
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -85,12 +85,13 @@ export default function RegistrationFlow() {
   const [token] = useState(localStorage.getItem('token') || '');
   const [vehicleId, setVehicleId] = useState(null);
   
-  const [profile, setProfile] = useState({ full_name: '', address: '', city: 'Pondicherry' });
+  const [profile, setProfile] = useState({ full_name: '', email: '', address: '', city: 'Pondicherry' });
   const [docs, setDocs] = useState({ aadhar: null, license: null });
   const [vehicle, setVehicle] = useState({
     type: 'Car', name: '', model_year: '', registration_number: '', rc_book: null,
-    seating_capacity: '', fuel_type: '', mileage: '', price_per_day: '', price_per_hour: '',
-    price_per_km: '', max_km_per_day: '', pickup_location: '', landmark: ''
+    seating_capacity: '', fuel_type: '', mileage: '', 
+    price_per_day: '', price_per_hour: '', price_per_km: '', max_km_per_day: '', 
+    pickup_location: '', landmark: ''
   });
   const [media, setMedia] = useState([]);
   const [plan, setPlan] = useState(null);
@@ -99,11 +100,13 @@ export default function RegistrationFlow() {
 
   const navigate = useNavigate();
 
+  const vehicleTypes = ["Car", "Bike", "Bus", "Van", "Mini-Van", "Mini-Bus", "Tempo_traveller", "traveller"];
+
   useEffect(() => {
     if (!token) return navigate('/');
     axios.get(`${API_BASE}/profile/progress`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => {
-        if (res.data.step === 7) return navigate('/dashboard');
+        if (res.data.step === 8) return navigate('/dashboard');
         setStep(res.data.step);
         if (res.data.vehicleId) setVehicleId(res.data.vehicleId);
         const data = res.data.data;
@@ -114,12 +117,13 @@ export default function RegistrationFlow() {
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    if (!profile.full_name || !profile.address) return alert('Please fill in all details');
+    if (!profile.full_name || !profile.email || !profile.address) return alert('Please fill in all details');
     if (!docs.aadhar || !docs.license) return alert('Please upload both Aadhar and Driving License');
     
     setLoading(true);
     const formData = new FormData();
     formData.append('full_name', profile.full_name);
+    formData.append('email', profile.email);
     formData.append('address', profile.address);
     formData.append('city', profile.city);
     formData.append('aadhar', docs.aadhar);
@@ -140,15 +144,22 @@ export default function RegistrationFlow() {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData();
-    Object.keys(vehicle).forEach(key => { if (key !== 'rc_book') formData.append(key, vehicle[key]); });
+    
+    // Append vehicle meta-data skipping the file object
+    Object.keys(vehicle).forEach(k => {
+      if (k !== 'rc_book') formData.append(k, vehicle[k]);
+    });
+    
+    // Append files
     if (vehicle.rc_book) formData.append('rc_book', vehicle.rc_book);
     media.forEach(file => formData.append('media', file));
+    
     if (vehicleId) formData.append('vehicle_id', vehicleId);
 
     try {
       const res = await axios.post(`${API_BASE}/vehicles/add`, formData, { headers: { Authorization: `Bearer ${token}` } });
       setVehicleId(res.data.vehicleId);
-      setStep(6);
+      setStep(8);
     } catch (err) { alert('Error saving vehicle'); }
     finally { setLoading(false); }
   };
@@ -158,7 +169,7 @@ export default function RegistrationFlow() {
     setLoading(true);
     try {
       await axios.post(`${API_BASE}/vehicles/${vehicleId}/subscribe`, { plan_duration: plan.duration, plan_price: plan.price }, { headers: { Authorization: `Bearer ${token}` } });
-      setStep(7);
+      setStep(8);
     } catch (err) { alert('Error processing subscription'); }
     finally { setLoading(false); }
   };
@@ -176,16 +187,15 @@ export default function RegistrationFlow() {
         {/* Registration Logic - True Full Width */}
         <div className="flex-1 bg-white pt-10 pb-20 px-8 lg:px-20 flex flex-col relative w-full">
           
-          {/* Horizontal Stepper matching the UI Design image */}
           <div className="mb-8 px-4 w-full">
              <div className="flex items-center justify-between relative w-full">
                 <HorizontalStep num={1} label="Registry" active={step >= 2} current={step === 2} completed={step > 2} />
                 <StepLine active={step > 2} />
-                <HorizontalStep num={2} label="Asset" active={step >= 4} current={step === 4} completed={step > 4} />
-                <StepLine active={step > 4} />
-                <HorizontalStep num={3} label="Yield" active={step >= 6} current={step === 6} completed={step > 6} />
+                <HorizontalStep num={2} label="Asset" active={step >= 4} current={step === 4 || step === 5} completed={step > 5} />
+                <StepLine active={step > 5} />
+                <HorizontalStep num={3} label="Media" active={step >= 6} current={step === 6} completed={step > 6} />
                 <StepLine active={step > 6} />
-                <HorizontalStep num={4} label="Confirm" active={step >= 7} current={step === 7} completed={step >= 7} />
+                <HorizontalStep num={4} label="Confirm" active={step >= 8} current={step === 8} completed={step >= 8} />
              </div>
           </div>
 
@@ -199,120 +209,252 @@ export default function RegistrationFlow() {
                 </header>
 
                 <div className="space-y-8">
-                   <InputGroup label="Full Name" placeholder="Example: Rahul Sharma" value={profile.full_name} onChange={(v) => setProfile({...profile, full_name: v})} icon={User} required />
-                   <div className="grid grid-cols-2 gap-8">
-                      <InputGroup label="City" value="Pondicherry" disabled icon={MapPin} required />
-                      <InputGroup label="Address" placeholder="Example: 123 Street Name" value={profile.address} onChange={(v) => setProfile({...profile, address: v})} icon={Home} required />
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="p-6 bg-blue-50/50 rounded-[2rem] border border-blue-100 flex flex-col gap-4">
-                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-[#82d616]"><FileText size={20}/></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       <InputGroup label="Full Name" placeholder="Example: Rahul Sharma" value={profile.full_name} onChange={(v) => setProfile({...profile, full_name: v})} icon={User} required />
+                       <InputGroup label="Email Address" placeholder="Example: rahul@example.com" value={profile.email} onChange={(v) => setProfile({...profile, email: v})} icon={Mail} required />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       <InputGroup label="City" value="Pondicherry" disabled icon={MapPin} required />
+                       <InputGroup label="Address" placeholder="Example: 123 Street Name" value={profile.address} onChange={(v) => setProfile({...profile, address: v})} icon={Home} required />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="p-8 bg-blue-50/30 rounded-[2rem] border border-blue-100 flex flex-col gap-6">
+                         <div className="flex items-center gap-5">
+                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm overflow-hidden text-[#82d616]">
+                               {docs.aadhar ? (
+                                 <img src={URL.createObjectURL(docs.aadhar)} className="w-full h-full object-cover" alt="Aadhar" />
+                               ) : (
+                                 <FileText size={28}/>
+                               )}
+                            </div>
                             <div>
-                               <p className="font-bold text-[#252f40] text-sm">Aadhar Card</p>
-                               <p className="text-gray-500 text-[11px]">{docs.aadhar ? docs.aadhar.name : 'Government ID'}</p>
+                               <p className="font-bold text-[#252f40] text-lg">Aadhar Card</p>
+                               <p className="text-gray-400 text-sm">{docs.aadhar ? "Captured" : 'Front Image'}</p>
                             </div>
                          </div>
-                         <label className="w-full bg-white border border-blue-100 text-[#252f40] py-3 rounded-xl font-bold text-[11px] cursor-pointer hover:bg-blue-50 transition-all text-center">
-                            Select Aadhar
-                            <input type="file" className="hidden" onChange={(e) => setDocs({...docs, aadhar: e.target.files[0]})} />
+                         <label className="w-full bg-white border border-blue-100 text-[#252f40] py-4 rounded-xl font-bold text-[13px] cursor-pointer hover:bg-blue-50 transition-all text-center">
+                            {docs.aadhar ? "Change File" : "Upload Aadhar"}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => setDocs({...docs, aadhar: e.target.files[0]})} />
                          </label>
                       </div>
 
-                      <div className="p-6 bg-blue-50/50 rounded-[2rem] border border-blue-100 flex flex-col gap-4">
-                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-[#82d616]"><CreditCard size={20}/></div>
+                      <div className="p-8 bg-blue-50/30 rounded-[2rem] border border-blue-100 flex flex-col gap-6">
+                         <div className="flex items-center gap-5">
+                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm overflow-hidden text-[#82d616]">
+                               {docs.license ? (
+                                 <img src={URL.createObjectURL(docs.license)} className="w-full h-full object-cover" alt="License" />
+                               ) : (
+                                 <CreditCard size={28}/>
+                               )}
+                            </div>
                             <div>
-                               <p className="font-bold text-[#252f40] text-sm">Driving License</p>
-                               <p className="text-gray-500 text-[11px]">{docs.license ? docs.license.name : 'Operator Permit'}</p>
+                               <p className="font-bold text-[#252f40] text-lg">Driving License</p>
+                               <p className="text-gray-400 text-sm">{docs.license ? "Captured" : 'Operator Permit'}</p>
                             </div>
                          </div>
-                         <label className="w-full bg-white border border-blue-100 text-[#252f40] py-3 rounded-xl font-bold text-[11px] cursor-pointer hover:bg-blue-50 transition-all text-center">
-                            Select License
-                            <input type="file" className="hidden" onChange={(e) => setDocs({...docs, license: e.target.files[0]})} />
+                         <label className="w-full bg-white border border-blue-100 text-[#252f40] py-4 rounded-xl font-bold text-[13px] cursor-pointer hover:bg-blue-50 transition-all text-center">
+                            {docs.license ? "Change File" : "Upload License"}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => setDocs({...docs, license: e.target.files[0]})} />
                          </label>
                       </div>
                    </div>
                 </div>
 
-                <button onClick={handleProfileSubmit} disabled={loading} className="w-full bg-[#252f40] text-white py-5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl">
+                <button onClick={handleProfileSubmit} disabled={loading} className="w-full bg-[#252f40] text-white py-5 rounded-2xl font-bold text-[18px] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl">
                   {loading ? 'Processing...' : 'Proceed to Asset Config'}
-                  <ChevronRight size={20} />
+                  <ChevronRight size={24} />
                 </button>
               </div>
             )}
 
             {step === 4 && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-right-10 duration-500">
+              <div className="space-y-12 animate-in fade-in slide-in-from-right-10 duration-500">
                 <header className="space-y-4">
-                  <h2 className="text-[48px] font-bold text-[#252f40] leading-none">Asset Configuration</h2>
-                  <p className="text-gray-500 font-medium text-xl">Define the core telemetry for your rental asset.</p>
+                  <h2 className="text-[48px] font-bold text-[#252f40] leading-none">Basic Info</h2>
+                  <p className="text-gray-500 font-medium text-xl">Define the core specifications of your asset.</p>
                 </header>
 
-                <div className="space-y-6">
-                   <div className="grid grid-cols-2 gap-8">
-                     <InputGroup label="Asset Name" placeholder="Example: Audi A6" value={vehicle.name} onChange={(v) => setVehicle({...vehicle, name: v})} icon={Car} required />
-                     <InputGroup label="Type" value={vehicle.type} disabled icon={Tag} required />
-                   </div>
-                   <div className="grid grid-cols-2 gap-8">
-                     <InputGroup label="Reg Number" placeholder="Example: PY 01 XX 1234" value={vehicle.registration_number} onChange={(v) => setVehicle({...vehicle, registration_number: v.toUpperCase()})} icon={Hash} required />
-                     <InputGroup label="Daily Yield" placeholder="Example: 5000" type="number" value={vehicle.price_per_day} onChange={(v) => setVehicle({...vehicle, price_per_day: v})} icon={IndianRupee} required />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                   <div className="space-y-8">
+                     <SelectGroup label="Vehicle Type" options={vehicleTypes} value={vehicle.type} onChange={(v) => setVehicle({...vehicle, type: v})} icon={Car} required />
+                     <InputGroup label="Vehicle Name" placeholder="Example: Swift, Innova" value={vehicle.name} onChange={(v) => setVehicle({...vehicle, name: v.toUpperCase()})} icon={Tag} required />
+                     <InputGroup label="Model Year" placeholder="Example: 2022" type="number" value={vehicle.model_year} onChange={(v) => setVehicle({...vehicle, model_year: v})} icon={Clock} required />
+                     <InputGroup label="Registration Number" placeholder="Example: PY 01 XX 1234" value={vehicle.registration_number} onChange={(v) => setVehicle({...vehicle, registration_number: v.toUpperCase()})} icon={Hash} required />
                    </div>
                    
-                   <div className="p-8 bg-gray-50 rounded-[2rem] border border-gray-100 flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                         <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-500 shadow-sm"><MapPin size={24}/></div>
-                         <div className="max-w-[200px]">
-                            <p className="font-bold text-[#252f40] text-sm">Deployment Point</p>
-                            <p className="text-gray-400 text-xs font-medium truncate">{vehicle.pickup_location || "Renter pickup point"}</p>
-                         </div>
+                   <div className="p-8 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center gap-6">
+                      <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center shadow-lg overflow-hidden border border-gray-100 text-blue-500 shrink-0">
+                         {vehicle.rc_book ? (
+                           <img src={URL.createObjectURL(vehicle.rc_book)} className="w-full h-full object-cover" alt="RC Preview" />
+                         ) : (
+                           <FileText size={40} />
+                         )}
                       </div>
-                      <button onClick={() => setShowMap(true)} className="bg-white border border-gray-200 px-6 py-2 rounded-xl text-[11px] font-bold text-[#252f40] hover:border-blue-300 transition-all">Set Point</button>
-                   </div>
-
-                   <div className="p-8 border-2 border-dashed border-gray-200 rounded-[2.5rem] text-center space-y-4">
-                      <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 mx-auto"><Plus size={32}/></div>
                       <div>
-                        <p className="font-bold text-[#252f40]">Inject Asset Media</p>
-                        <p className="text-gray-400 text-xs">High-res photos increase yield by 40%</p>
+                        <p className="text-xl font-bold text-[#252f40]">RC Book Copy</p>
+                        <p className="text-gray-500 text-sm mt-1">Upload front side clear image</p>
                       </div>
-                      <input type="file" multiple className="hidden" id="asset-media" onChange={(e) => setMedia([...media, ...Array.from(e.target.files)])} />
-                      <label htmlFor="asset-media" className="inline-block bg-[#252f40] text-white px-8 py-3 rounded-xl font-bold text-[12px] cursor-pointer">Select Files</label>
-                      {media.length > 0 && <p className="text-[11px] font-bold text-[#82d616]">{media.length} files attached</p>}
+                      <label className="bg-[#252f40] text-white px-10 py-4 rounded-2xl font-bold text-sm cursor-pointer hover:bg-black transition-all">
+                         {vehicle.rc_book ? "Change RC Book" : "Select RC Image"}
+                         <input type="file" accept="image/*" className="hidden" onChange={(e) => setVehicle({...vehicle, rc_book: e.target.files[0]})} />
+                      </label>
                    </div>
                 </div>
 
-                <div className="flex gap-4 pt-4">
-                  <button onClick={() => setStep(2)} className="w-[80px] h-[64px] rounded-2xl border border-gray-100 flex items-center justify-center text-[#252f40] hover:bg-gray-50 transition-all"><ChevronLeft size={24}/></button>
-                  <button onClick={handleVehicleSubmit} disabled={loading} className="flex-1 bg-[#252f40] text-white py-5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl">Complete Configuration</button>
+                <div className="pt-10 border-t border-gray-100">
+                  <h3 className="text-3xl font-bold text-[#252f40] mb-8">Technical Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                     <InputGroup label="Seating" placeholder="Example: 5" type="number" value={vehicle.seating_capacity} onChange={(v) => setVehicle({...vehicle, seating_capacity: v})} icon={Users} required />
+                     <SelectGroup label="Fuel Type" options={["Petrol", "Diesel", "Electric", "CNG"]} value={vehicle.fuel_type} onChange={(v) => setVehicle({...vehicle, fuel_type: v})} icon={Zap} required />
+                     <InputGroup label="Mileage" placeholder="Example: 18" type="number" value={vehicle.mileage} onChange={(v) => setVehicle({...vehicle, mileage: v})} icon={Sparkles} required />
+                  </div>
+                </div>
+
+                <div className="pt-10 border-t border-gray-100">
+                  <h3 className="text-3xl font-bold text-[#252f40] mb-8">Pricing Strategy</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                     <InputGroup label="Per Day" placeholder="₹1500" type="number" value={vehicle.price_per_day} onChange={(v) => setVehicle({...vehicle, price_per_day: v})} icon={IndianRupee} required />
+                     <InputGroup label="Per Hour" placeholder="₹200" type="number" value={vehicle.price_per_hour} onChange={(v) => setVehicle({...vehicle, price_per_hour: v})} icon={Clock} required />
+                     <InputGroup label="Per KM" placeholder="₹15" type="number" value={vehicle.price_per_km} onChange={(v) => setVehicle({...vehicle, price_per_km: v})} icon={Navigation} required />
+                     <InputGroup label="Limit (KM/Day)" placeholder="200" type="number" value={vehicle.max_km_per_day} onChange={(v) => setVehicle({...vehicle, max_km_per_day: v})} icon={LayoutGrid} required />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-10">
+                  <button onClick={() => setStep(2)} className="w-[100px] h-[72px] rounded-[2rem] border border-gray-200 flex items-center justify-center text-[#252f40] hover:bg-gray-50 transition-all"><ChevronLeft size={32}/></button>
+                  <button onClick={() => setStep(5)} className="flex-1 bg-[#252f40] text-white py-6 rounded-[2rem] font-bold text-[18px] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl">Set Deployment Location</button>
+                </div>
+              </div>
+            )}
+
+            {step === 5 && (
+              <div className="space-y-12 animate-in fade-in slide-in-from-right-10 duration-500">
+                <header className="space-y-4">
+                  <h2 className="text-[48px] font-bold text-[#252f40] leading-none">Deployment Point</h2>
+                  <p className="text-gray-500 font-medium text-xl">Define where renters will collect the asset.</p>
+                </header>
+
+                <div className="space-y-8">
+                   <div className="p-10 bg-gray-50 rounded-[3rem] border border-gray-100 flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                         <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-blue-500 shadow-md"><MapPin size={32}/></div>
+                         <div>
+                            <p className="font-bold text-[#252f40] text-xl">Pickup Location</p>
+                            <p className="text-gray-400 text-sm font-medium mt-1">{vehicle.pickup_location || "Select location on map"}</p>
+                         </div>
+                      </div>
+                      <button onClick={() => setShowMap(true)} className="bg-white border border-gray-200 px-8 py-4 rounded-2xl font-bold text-sm text-[#252f40] hover:border-blue-400 transition-all shadow-sm">Set Location</button>
+                   </div>
+                   <InputGroup label="Landmark" placeholder="Example: Near Gym, Opposite Bakery" value={vehicle.landmark} onChange={(v) => setVehicle({...vehicle, landmark: v})} icon={Flag} required />
+                </div>
+
+                <div className="flex gap-4 pt-10">
+                  <button onClick={() => setStep(4)} className="w-[100px] h-[72px] rounded-[2rem] border border-gray-200 flex items-center justify-center text-[#252f40] hover:bg-gray-50 transition-all"><ChevronLeft size={32}/></button>
+                  <button onClick={() => setStep(6)} className="flex-1 bg-[#252f40] text-white py-6 rounded-[2rem] font-bold text-[18px] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl">Proceed to Media Upload</button>
                 </div>
               </div>
             )}
 
             {step === 6 && (
-              <div className="space-y-10 animate-in fade-in slide-in-from-right-10 duration-500">
-                 <header className="space-y-4">
-                    <h2 className="text-[48px] font-bold text-[#252f40] leading-none">Pricing Strategy</h2>
-                    <p className="text-gray-500 font-medium text-xl">Select a membership tier to launch your asset node.</p>
-                 </header>
+              <div className="space-y-12 animate-in fade-in slide-in-from-right-10 duration-500">
+                <header className="space-y-4">
+                  <h2 className="text-[48px] font-bold text-[#252f40] leading-none">Upload Media</h2>
+                  <div className="flex items-center gap-3 text-[#82d616] font-bold">
+                    <Sparkles size={20} />
+                    <span>Good photos = more bookings</span>
+                  </div>
+                </header>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-4">
-                    <YieldCard active={plan?.duration === 1} onSelect={() => setPlan({duration: 1, price: 700})} title="Starter" price="₹700" sub="1 Month Listing" />
-                    <YieldCard active={plan?.duration === 3} onSelect={() => setPlan({duration: 3, price: 1200})} title="Growth" price="₹1200" sub="3 Months Priority" popular />
-                 </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                   {/* Image Slots */}
+                   {[...Array(5)].map((_, i) => {
+                     const file = media.filter(m => m.type?.includes('image'))[i];
+                     const realIndex = media.indexOf(file);
+                     
+                     return (
+                       <div key={i} className="aspect-square bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center relative overflow-hidden group">
+                          {file ? (
+                            <>
+                              <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt={`preview ${i}`} />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                 {i > 0 && (
+                                   <button onClick={() => {
+                                      const images = media.filter(m => m.type?.includes('image'));
+                                      const otherMedia = media.filter(m => !m.type?.includes('image'));
+                                      const newImages = [...images];
+                                      [newImages[i-1], newImages[i]] = [newImages[i], newImages[i-1]];
+                                      setMedia([...newImages, ...otherMedia]);
+                                   }} className="w-8 h-8 bg-white/20 hover:bg-white/40 text-white rounded-full flex items-center justify-center transition-colors"><ChevronLeft size={16}/></button>
+                                 )}
+                                 <button onClick={() => setMedia(media.filter(m => m !== file))} className="w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors"><X size={20}/></button>
+                                 {i < media.filter(m => m.type?.includes('image')).length - 1 && (
+                                   <button onClick={() => {
+                                      const images = media.filter(m => m.type?.includes('image'));
+                                      const otherMedia = media.filter(m => !m.type?.includes('image'));
+                                      const newImages = [...images];
+                                      [newImages[i], newImages[i+1]] = [newImages[i+1], newImages[i]];
+                                      setMedia([...newImages, ...otherMedia]);
+                                   }} className="w-8 h-8 bg-white/20 hover:bg-white/40 text-white rounded-full flex items-center justify-center transition-colors"><ChevronRight size={16}/></button>
+                                 )}
+                              </div>
+                              {i === 0 && <div className="absolute top-4 left-4 bg-[#82d616] text-[#252f40] px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-lg">1st (Main)</div>}
+                              {i > 0 && <div className="absolute top-4 left-4 bg-white/90 text-[#252f40] px-3 py-1 rounded-lg text-[10px] font-bold shadow-lg">{i + 1}st</div>}
+                            </>
+                          ) : (
+                            <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
+                              <Plus size={32} className="text-gray-300" />
+                              <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">Image {i+1}</p>
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                const newFile = e.target.files[0];
+                                if (newFile) setMedia([...media, newFile]);
+                              }} />
+                            </label>
+                          )}
+                       </div>
+                     );
+                   })}
+                </div>
 
-                 <button onClick={handlePlanSubmit} disabled={loading || !plan} className="w-full bg-[#82d616] text-white py-6 rounded-2xl font-bold text-lg hover:opacity-90 transition-all shadow-xl shadow-[#82d616]/20">Synchronize & Launch Node</button>
+                {(!['Car', 'Bike'].includes(vehicle.type)) && (
+                   <div className="p-8 bg-blue-50/30 rounded-[2.5rem] border border-blue-100 flex items-center justify-between mt-10">
+                      <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-blue-500 shadow-sm"><Film size={32}/></div>
+                        <div>
+                           <p className="font-bold text-[#252f40] text-xl">Video Showcase</p>
+                           <p className="text-gray-400 text-sm font-medium">Capture a full walk-around of your {vehicle.type}</p>
+                        </div>
+                      </div>
+                      <label className="bg-[#252f40] text-white px-8 py-4 rounded-xl font-bold text-sm cursor-pointer">
+                         Upload Video
+                         <input type="file" accept="video/*" className="hidden" onChange={(e) => {
+                            const newMedia = [...media.filter(m => !m.type.includes('video'))];
+                            newMedia.push(e.target.files[0]);
+                            setMedia(newMedia);
+                         }} />
+                      </label>
+                   </div>
+                )}
+
+                <p className={`text-sm font-bold ${media.filter(m => m.type?.includes('image')).length >= 4 ? 'text-[#82d616]' : 'text-red-500'}`}>
+                  {media.filter(m => m.type?.includes('image')).length} / 4 minimum images uploaded
+                </p>
+
+                <div className="flex gap-4 pt-4">
+                  <button onClick={() => setStep(5)} className="w-[100px] h-[72px] rounded-[2rem] border border-gray-200 flex items-center justify-center text-[#252f40] hover:bg-gray-50 transition-all"><ChevronLeft size={32}/></button>
+                  <button onClick={handleVehicleSubmit} disabled={loading || media.filter(m => m.type?.includes('image')).length < 4} className="flex-1 bg-[#252f40] text-white py-6 rounded-[2rem] font-bold text-[18px] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl">Complete & Finalize Asset</button>
+                </div>
               </div>
             )}
 
-            {step === 7 && (
+
+            {step === 8 && (
               <div className="py-20 animate-in zoom-in-95 duration-700">
                 <div className="w-32 h-32 bg-[#e6ffed] rounded-[3rem] flex items-center justify-center text-[#82d616] mb-12 shadow-xl shadow-[#82d616]/10">
-                   <Clock size={64} />
+                   <CheckCircle size={64} />
                 </div>
-                <h2 className="text-[56px] font-bold text-[#252f40] leading-[1.1] mb-6">Security Audit In Progress</h2>
+                <h2 className="text-[56px] font-bold text-[#252f40] leading-[1.1] mb-6">Verification Pending</h2>
                 <p className="text-gray-500 text-xl font-medium leading-relaxed mb-16">
-                  Your asset node is being validated by our professional network auditors. Cycle completes in <span className="text-[#252f40] font-bold underline">12 hours</span>.
+                  Your vehicle listing is being validated by our professional verification team. Cycle completes in <span className="text-[#252f40] font-bold underline">12 hours</span>.
                 </p>
                 <button 
                   onClick={() => navigate('/dashboard')}

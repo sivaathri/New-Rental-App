@@ -76,19 +76,7 @@ export default function AdminPanel() {
 
         <div className="space-y-1 overflow-y-auto no-scrollbar flex-1 pb-10">
           <SidebarItem icon={<LayoutDashboard/>} label="Dashboard" active />
-          <SidebarItem icon={<UserCheck/>} label="Cab Drivers" />
-          <SidebarItem icon={<Smartphone/>} label="Cab Applications" count={0} />
-          <SidebarItem icon={<TrendingUp/>} label="Ongoing Rides" />
-          <SidebarItem icon={<Tag/>} label="Vehicle Pricing" />
-          <SidebarItem icon={<Users/>} label="Users" />
-          <SidebarItem icon={<CheckSquare/>} label="Approvals" count={3} />
-          <SidebarItem icon={<MessageSquare/>} label="Messages" count={0} />
-          <SidebarItem icon={<Star/>} label="Reviews" />
-          <SidebarItem icon={<Car/>} label="Rental Bike" />
-          <SidebarItem icon={<Landmark/>} label="Rental Brands" />
-          <SidebarItem icon={<FileText/>} label="Rental Models" />
-          <SidebarItem icon={<CreditCard/>} label="Rental Bookings" />
-          <SidebarItem icon={<Tag/>} label="Rental Coupons" />
+       
         </div>
 
         <div className="px-4 mt-auto pt-6 border-t border-gray-50">
