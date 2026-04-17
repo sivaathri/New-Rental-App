@@ -42,23 +42,25 @@ router.post('/purchase', authMiddleware, async (req, res) => {
     const plan = PLANS[planName];
     if (!plan) return res.status(400).json({ error: 'Invalid plan' });
 
+    console.log('Purchase request processing for user ID:', req.user?.id);
     try {
         // Get the latest end date of any active/stacked plan
-        const [lastSub] = await db.query('SELECT MAX(end_date) as lastEnd FROM subscriptions WHERE user_id = ? AND (status = "Active" OR status = "Stacked")', [req.user.id]);
+        const [lastSubRows] = await db.query('SELECT MAX(end_date) as lastEnd FROM subscriptions WHERE user_id = ? AND (status = "Active" OR status = "Stacked")', [req.user.id]);
         
         let startDate = new Date();
-        const lastEnd = lastSub[0].lastEnd;
+        const lastEnd = lastSubRows[0]?.lastEnd;
         
         if (lastEnd && new Date(lastEnd) > startDate) {
             startDate = new Date(lastEnd);
         }
 
-        const endDate = new Date(startDate);
+        const endDate = new Date(startDate.getTime());
         endDate.setDate(endDate.getDate() + plan.duration);
 
         // If there's already an active plan, this one is 'Stacked'
         let status = 'Active';
-        const [activeSubs] = await db.query('SELECT * FROM subscriptions WHERE user_id = ? AND status = "Active"', [req.user.id]);
+        const [activeSubs] = await db.query('SELECT id, end_date FROM subscriptions WHERE user_id = ? AND status = "Active"', [req.user.id]);
+        
         if (activeSubs.length > 0 && new Date(activeSubs[0].end_date) > new Date()) {
             status = 'Stacked';
         }
