@@ -4,6 +4,7 @@ const multer = require('multer');
 const db = require('../db');
 const authMiddleware = require('../utils/authMiddleware');
 const upload = require('../utils/upload');
+const { checkVehicleLimit } = require('../utils/subscriptionLimits');
 
 // Add Vehicle
 router.post('/add', authMiddleware, (req, res, next) => {
@@ -23,6 +24,22 @@ router.post('/add', authMiddleware, (req, res, next) => {
 }, async (req, res) => {
     try {
         const { type, name, model_year, registration_number, seating_capacity, fuel_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark } = req.body;
+        
+        // CHECK LIMITS
+        const [activeSubs] = await db.query('SELECT * FROM subscriptions WHERE user_id = ? AND status = "Active" AND end_date > NOW()', [req.user.id]);
+        
+        if (activeSubs.length > 0) {
+            const planName = activeSubs[0].plan_name;
+            const [existing] = await db.query('SELECT COUNT(*) as count FROM vehicles WHERE user_id = ? AND type = ? AND status != "Rejected"', [req.user.id, type]);
+            
+            if (!checkVehicleLimit(planName, type, existing[0].count)) {
+                return res.status(403).json({ 
+                    error: `Limit Reached: Your current ${planName} plan only allows up to ${existing[0].count} ${type}s. Please upgrade your membership.`,
+                    limitReached: true
+                });
+            }
+        }
+        
         const rc_book_url = req.files['rc_book'] ? `/uploads/${req.files['rc_book'][0].filename}` : null;
 
         // Basic validation: user full_name should conceptually match rc_owner name.
@@ -68,17 +85,6 @@ router.post('/update/:id', authMiddleware, upload.fields([
     res.json({ message: 'Updated and resubmitted' });
 });
 
-// Subscribe (Step 6)
-router.post('/:id/subscribe', authMiddleware, async (req, res) => {
-    const { plan_duration, plan_price } = req.body;
-    try {
-        await db.query('INSERT INTO subscriptions (user_id, plan_duration, plan_price, vehicle_id) VALUES (?, ?, ?, ?)', [req.user.id, plan_duration, plan_price, req.params.id]);
-        res.json({ message: 'Subscribed successfully' });
-    } catch(err) {
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
 // Reorder Media
 router.post('/:id/media/reorder', authMiddleware, async (req, res) => {
     console.log(`Reorder request for vehicle ${req.params.id}`);
@@ -115,14 +121,21 @@ router.get('/', authMiddleware, async (req, res) => {
     try {
         const [vehicles] = await db.query('SELECT * FROM vehicles WHERE user_id = ?', [req.user.id]);
         
+        // Fetch user's active membership once
+        const [subs] = await db.query('SELECT * FROM subscriptions WHERE user_id = ? AND status = "Active" AND end_date > NOW()', [req.user.id]);
+        const hasActiveMembership = subs.length > 0;
+
         const vehiclesWithMedia = [];
         for (let v of vehicles) {
             const [media] = await db.query('SELECT * FROM vehicle_media WHERE vehicle_id = ? ORDER BY sort_order ASC, id ASC', [v.id]);
-            // Ensure media is attached as 'vehicle_images' for distinctness
-            vehiclesWithMedia.push({ ...v, vehicle_images: media });
+            
+            vehiclesWithMedia.push({ 
+                ...v, 
+                vehicle_images: media,
+                has_active_subscription: hasActiveMembership 
+            });
         }
 
-        console.log('Final Response Vehicles:', JSON.stringify(vehiclesWithMedia, null, 2));
         res.json({ vehicles: vehiclesWithMedia });
     } catch(err) {
         console.error('Error fetching dashboard vehicles:', err);

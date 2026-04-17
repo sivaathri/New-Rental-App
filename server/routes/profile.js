@@ -104,9 +104,7 @@ router.get('/progress', authMiddleware, async (req, res) => {
 
         if (!vehicle) return res.json({ step: 4, data: { user, verification } });
 
-        const [subs] = await db.query('SELECT * FROM subscriptions WHERE user_id = ? AND (vehicle_id = ? OR vehicle_id IS NULL)', [req.user.id, vehicle.id]);
-        // Note: Subscriptions might need a vehicle_id column in the DB if we want to be precise for multiple vehicles.
-        // For now, let's assume one sub per vehicle or shared sub logic.
+        const [subs] = await db.query('SELECT * FROM subscriptions WHERE user_id = ? AND status = "Active" AND end_date > NOW()', [req.user.id]);
         
         if (subs.length === 0) return res.json({ step: 6, vehicleId: vehicle.id, data: { user, verification, vehicle } });
 

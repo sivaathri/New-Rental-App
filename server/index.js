@@ -70,10 +70,12 @@ async function initializeDB() {
         await db.query(`CREATE TABLE IF NOT EXISTS subscriptions (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT,
-            plan_duration INT,
+            plan_name VARCHAR(50),
+            duration_days INT,
             plan_price DECIMAL(10,2),
-            status ENUM('Active', 'Expired') DEFAULT 'Active',
-            start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            status ENUM('Active', 'Expired', 'Stacked') DEFAULT 'Active',
+            start_date DATETIME,
+            end_date DATETIME,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )`);
 
@@ -89,11 +91,13 @@ const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profile');
 const vehicleRoutes = require('./routes/vehicles');
 const adminRoutes = require('./routes/admin');
+const subscriptionRoutes = require('./routes/subscriptions');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

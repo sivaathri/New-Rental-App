@@ -160,7 +160,9 @@ export default function RegistrationFlow() {
       const res = await axios.post(`${API_BASE}/vehicles/add`, formData, { headers: { Authorization: `Bearer ${token}` } });
       setVehicleId(res.data.vehicleId);
       setStep(8);
-    } catch (err) { alert('Error saving vehicle'); }
+    } catch (err) { 
+      alert(err.response?.data?.error || 'Error saving vehicle'); 
+    }
     finally { setLoading(false); }
   };
 

@@ -114,6 +114,7 @@ export default function Dashboard() {
   const [showMap, setShowMap] = useState(false);
   const [updatingVehicle, setUpdatingVehicle] = useState(null);
   const [editingLandmark, setEditingLandmark] = useState("");
+  const [notifications, setNotifications] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -129,7 +130,29 @@ export default function Dashboard() {
   const [emailOtp, setEmailOtp] = useState("");
   const [showEmailOtpInput, setShowEmailOtpInput] = useState(false);
   const [isEmailUpdating, setIsEmailUpdating] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [selectedSubscriptionVehicle, setSelectedSubscriptionVehicle] = useState(null);
+  const [userSubscriptions, setUserSubscriptions] = useState([]);
 
+  const handleSubscribe = async () => {
+    if (!selectedPlan || !selectedVehicle) return;
+    setIsSubscribing(true);
+    try {
+      await axios.post(`${API_BASE}/vehicles/${selectedVehicle.id}/subscribe`, { 
+        plan_duration: selectedPlan.duration, 
+        plan_price: selectedPlan.price 
+      }, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
+      
+      setSelectedVehicle({ ...selectedVehicle, has_active_subscription: true });
+      fetchDashboard();
+      alert("Subscription activated! Your vehicle is now live.");
+    } catch (err) {
+      alert("Error activating subscription");
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
   const handleSavePricing = async () => {
     try {
       await axios.post(
@@ -236,6 +259,14 @@ export default function Dashboard() {
         if (v.status === "Waiting for Approval") counts.pending++;
         if (v.status === "Approved") counts.approved++;
       });
+      const unpaidApproved = res.data.vehicles.filter(v => v.status === "Approved" && !v.has_active_subscription);
+      setNotifications(unpaidApproved);
+
+      const subRes = await axios.get(`${API_BASE}/subscriptions/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUserSubscriptions(subRes.data.subscriptions);
+
       setStats({
         total: res.data.vehicles.length,
         ...counts,
@@ -342,6 +373,40 @@ export default function Dashboard() {
 
         {activeTab === "Dashboard" && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {notifications.length > 0 && (
+              <div className="space-y-4 mb-10">
+                {notifications.map(n => (
+                  <div key={n.id} className="bg-white p-6 rounded-[28px] border border-[#82d616]/20 shadow-xl shadow-[#82d616]/5 flex items-center justify-between group animate-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-6">
+                      <div className="relative">
+                        <div className="w-16 h-16 rounded-2xl bg-gray-50 overflow-hidden border border-gray-100">
+                          {n.vehicle_images?.[0] ? (
+                            <img src={`http://localhost:5000${n.vehicle_images[0].media_url}`} className="w-full h-full object-cover" alt="" />
+                          ) : <Car size={24} className="text-gray-300 m-auto mt-4"/>}
+                        </div>
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-[#82d616] rounded-full flex items-center justify-center text-white border-4 border-white">
+                          <Check size={12} strokeWidth={4} />
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-[17px] font-bold text-[#252f40]">Your {n.name} is approved! 🚀</h4>
+                        <p className="text-[13px] text-[#67748e]">Complete the listing by choosing a subscription plan.</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        setSelectedSubscriptionVehicle(n);
+                        setActiveTab("Subscription");
+                      }}
+                      className="px-8 py-3 bg-[#82d616] text-white rounded-xl font-bold text-[13px] hover:scale-105 transition-all shadow-lg shadow-[#82d616]/20"
+                    >
+                      Pay & List Vehicle
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <h2 className="text-[18px] font-bold text-[#252f40]">
               Portfolio Performance
             </h2>
@@ -686,7 +751,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {(activeTab === "My Vehicles" || activeTab === "Earnings" || activeTab === "Reports" || activeTab === "Reviews" || activeTab === "Subscription") && (
+        {(activeTab === "My Vehicles" || activeTab === "Earnings" || activeTab === "Reports" || activeTab === "Reviews") && (
           <div className="py-40 text-center bg-white rounded-[32px] border border-gray-50 flex flex-col items-center justify-center animate-in zoom-in-95 duration-500">
             <div className="w-20 h-20 bg-gray-50 rounded-[24px] flex items-center justify-center text-gray-300 mb-6">
               <Settings
@@ -707,6 +772,144 @@ export default function Dashboard() {
             >
               Back to Overview
             </button>
+          </div>
+        )}
+
+        {activeTab === "Subscription" && (
+          <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500 pb-20">
+            <header>
+              <h2 className="text-[32px] font-bold text-[#252f40]">Membership Plans</h2>
+              <p className="text-[#67748e] text-[15px] mt-1">Upgrade your fleet capacity and network reach.</p>
+            </header>
+
+            {/* Current Active Plan Alert */}
+            {userSubscriptions.find(s => s.status === "Active") && (
+              <div className="bg-black text-white p-8 rounded-[32px] flex items-center justify-between shadow-2xl shadow-black/20">
+                <div className="flex items-center gap-6">
+                  <div className="w-14 h-14 bg-[#82d616]/20 rounded-2xl flex items-center justify-center text-[#82d616]">
+                    <Zap size={28} />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold">Active {userSubscriptions.find(s => s.status === "Active").plan_name} Plan</h4>
+                    <p className="text-gray-400 text-sm">Valid until {new Date(userSubscriptions.find(s => s.status === "Active").end_date).toLocaleDateString()} • Your fleet is synchronized.</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                   <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Status</p>
+                   <span className="px-4 py-1.5 bg-[#82d616] text-black text-[12px] font-bold rounded-lg uppercase tracking-tight">Active Node</span>
+                </div>
+              </div>
+            )}
+
+            {/* Plan Comparison Table */}
+            <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl overflow-hidden">
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left border-collapse">
+                   <thead>
+                     <tr className="bg-gray-50/50">
+                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Plan Tier</th>
+                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Price</th>
+                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Duration</th>
+                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Bike</th>
+                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Car</th>
+                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Others (Bus/Van)</th>
+                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Action</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-gray-50">
+                     {[
+                       { name: "1 Month", price: 600, duration: "30 days", limits: { Bike: "Unlimited", Car: 2, Other: 1 } },
+                       { name: "3 Month", price: 1200, duration: "90 days", limits: { Bike: "Unlimited", Car: 3, Other: 2 } },
+                       { name: "6 Month", price: 2000, duration: "180 days", limits: { Bike: "Unlimited", Car: 5, Other: 3 } },
+                       { name: "12 Month", price: 3000, duration: "365 days", limits: { Bike: "Unlimited", Car: "Unlimited", Other: "Unlimited" } },
+                     ].map(p => (
+                       <tr key={p.name} className="hover:bg-gray-50/30 transition-all group">
+                         <td className="p-8">
+                           <p className="font-bold text-[#252f40] text-lg">{p.name}</p>
+                           {p.name === "12 Month" && <span className="text-[10px] font-bold text-[#82d616] uppercase">Best Value</span>}
+                         </td>
+                         <td className="p-8 font-bold text-[#252f40] text-xl">₹{p.price}</td>
+                         <td className="p-8 text-[#67748e] font-medium">{p.duration}</td>
+                         <td className="p-8 text-[#82d616] font-bold">{p.limits.Bike}</td>
+                         <td className="p-8 text-[#252f40] font-bold">{p.limits.Car}</td>
+                         <td className="p-8 text-[#252f40] font-bold">{p.limits.Other}</td>
+                         <td className="p-8">
+                           <button 
+                             onClick={async () => {
+                               if (!window.confirm(`Purchase ${p.name} Membership for ₹${p.price}?`)) return;
+                               setIsSubscribing(true);
+                               try {
+                                 await axios.post(`${API_BASE}/subscriptions/purchase`, { planName: p.name }, {
+                                   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+                                 });
+                                 alert("Plan activated successfully! Status updated.");
+                                 fetchDashboard();
+                               } catch(e) { alert("Purchase failed"); } finally { setIsSubscribing(false); }
+                             }}
+                             className="px-6 py-2.5 bg-black text-white rounded-xl font-bold text-[13px] hover:scale-105 transition-all shadow-md group-hover:bg-[#82d616] group-hover:text-black"
+                           >
+                             Select Plan
+                           </button>
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
+
+            {/* Tracking Table */}
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold text-[#252f40]">Plan Tracking</h3>
+              <div className="bg-white rounded-[32px] border border-gray-100 shadow-lg overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                   <thead>
+                     <tr className="bg-gray-50/30">
+                       <th className="p-6 text-[11px] font-bold text-[#67748e] uppercase border-b border-gray-50">Membership</th>
+                       <th className="p-6 text-[11px] font-bold text-[#67748e] uppercase border-b border-gray-50">Purchase Date</th>
+                       <th className="p-6 text-[11px] font-bold text-[#67748e] uppercase border-b border-gray-50">Activation Window</th>
+                       <th className="p-6 text-[11px] font-bold text-[#67748e] uppercase border-b border-gray-50">Status</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-gray-50">
+                     {userSubscriptions.map(s => (
+                       <tr key={s.id} className="text-[14px]">
+                         <td className="p-6 font-bold text-[#252f40]">{s.plan_name}</td>
+                         <td className="p-6 text-[#67748e] font-medium">{new Date(s.start_date).toLocaleDateString()}</td>
+                         <td className="p-6 text-[#67748e] font-bold">
+                           {new Date(s.start_date).toLocaleDateString()} - {new Date(s.end_date).toLocaleDateString()}
+                         </td>
+                         <td className="p-6">
+                           <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase ${
+                             s.status === 'Active' ? 'bg-[#e6ffed] text-[#82d616]' : 
+                             s.status === 'Stacked' ? 'bg-[#fff5e6] text-[#fbcf33]' : 
+                             'bg-red-50 text-red-500'
+                           }`}>
+                             {s.status}
+                           </span>
+                         </td>
+                       </tr>
+                     ))}
+                     {userSubscriptions.length === 0 && (
+                       <tr>
+                         <td colSpan="4" className="p-10 text-center text-[#67748e] font-medium italic">No subscription history found.</td>
+                       </tr>
+                     )}
+                   </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Reminder logic alert (optional Notification) */}
+            {userSubscriptions.find(s => s.status === 'Active' && (new Date(s.end_date) - new Date()) < (2 * 24 * 60 * 60 * 1000)) && (
+               <div className="bg-red-50 border border-red-100 p-6 rounded-[24px] flex items-center gap-4 text-red-600 animate-pulse">
+                 <AlertCircle size={24} />
+                 <div>
+                   <p className="font-bold">⚠️ Membership Expiring Soon!</p>
+                   <p className="text-sm opacity-80">Your plan expires in less than 2 days. Stack a new plan to avoid disruption.</p>
+                 </div>
+               </div>
+            )}
           </div>
         )}
       </main>
@@ -912,6 +1115,46 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              {selectedVehicle.status === "Approved" && !selectedVehicle.has_active_subscription && (
+                <div className="pt-10 border-t border-gray-100 animate-in fade-in slide-in-from-top-4 duration-700">
+                  <div className="flex flex-col gap-8">
+                    <div>
+                      <h3 className="text-2xl font-bold text-[#252f40] flex items-center gap-2">
+                        <Zap size={24} className="text-[#fbcf33]" />
+                        Subscription Activation Required
+                      </h3>
+                      <p className="text-[14px] text-[#67748e] mt-1">Your vehicle is approved! Select a plan to start receiving bookings.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <YieldCard 
+                         active={selectedPlan?.duration === 1} 
+                         onSelect={() => setSelectedPlan({duration: 1, price: 700})} 
+                         title="Starter" 
+                         price="₹700" 
+                         sub="1 Month Listing" 
+                       />
+                       <YieldCard 
+                         active={selectedPlan?.duration === 3} 
+                         onSelect={() => setSelectedPlan({duration: 3, price: 1200})} 
+                         title="Growth" 
+                         price="₹1200" 
+                         sub="3 Months Priority" 
+                         popular 
+                       />
+                    </div>
+
+                    <button 
+                      onClick={handleSubscribe}
+                      disabled={!selectedPlan || isSubscribing}
+                      className="w-full py-6 bg-[#82d616] text-white rounded-[2rem] font-bold text-lg hover:opacity-90 transition-all shadow-xl shadow-[#82d616]/20 disabled:grayscale disabled:opacity-50"
+                    >
+                      {isSubscribing ? "Activating Node..." : "Pay & Sync Listing"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Pricing Strategy Section */}
               <div className="pt-10 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-8">
@@ -1045,6 +1288,19 @@ export default function Dashboard() {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; }
       `}</style>
+    </div>
+  );
+}
+
+function YieldCard({ active, onSelect, title, price, sub, popular }) {
+  return (
+    <div onClick={onSelect} className={`p-8 rounded-[2.5rem] border-2 cursor-pointer transition-all relative overflow-hidden ${
+      active ? 'bg-[#252f40] border-[#82d616] text-white shadow-2xl scale-[1.02]' : 'bg-white border-gray-100 text-[#252f40] hover:border-gray-200'
+    }`}>
+       {popular && <div className="absolute top-0 right-0 bg-[#82d616] text-[#252f40] px-6 py-2 rounded-bl-3xl text-[10px] font-bold uppercase tracking-widest">Network Peak</div>}
+       <p className="text-[11px] font-bold uppercase tracking-[0.3em] opacity-60 mb-4">{title}</p>
+       <p className="text-4xl font-bold leading-none mb-4">{price}</p>
+       <p className={`text-xs font-medium ${active ? 'text-gray-400' : 'text-gray-500'}`}>{sub}</p>
     </div>
   );
 }
