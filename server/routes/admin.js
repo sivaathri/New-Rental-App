@@ -38,9 +38,30 @@ router.post('/verifications/:id/status', async (req, res) => {
 // Get all pending vehicles
 router.get('/vehicles/pending', async (req, res) => {
     try {
-        const [vehicles] = await db.query('SELECT * FROM vehicles WHERE status = "Waiting for Approval"');
-        res.json({ vehicles });
+        const [vehicles] = await db.query(`
+            SELECT v.*, 
+                   u.full_name as owner_name, 
+                   u.mobile_number as owner_mobile, 
+                   u.email as owner_email, 
+                   u.address as owner_address, 
+                   u.city as owner_city,
+                   ver.aadhar_card_url,
+                   ver.driving_license_url
+            FROM vehicles v
+            LEFT JOIN users u ON v.user_id = u.id
+            LEFT JOIN verifications ver ON v.user_id = ver.user_id
+            WHERE v.status = "Waiting for Approval"
+        `);
+
+        // For each vehicle, fetch its media
+        const vehiclesWithMedia = await Promise.all(vehicles.map(async (v) => {
+            const [media] = await db.query('SELECT * FROM vehicle_media WHERE vehicle_id = ? ORDER BY sort_order ASC, id ASC', [v.id]);
+            return { ...v, media };
+        }));
+
+        res.json({ vehicles: vehiclesWithMedia });
     } catch(err) {
+        console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
 });
