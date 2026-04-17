@@ -883,52 +883,16 @@ export default function Dashboard() {
                     </div>
 
                     <button 
-                      onClick={() => {
-                        const token = localStorage.getItem("token");
+                      onClick={async () => {
+                        if (!window.confirm(`Initiate ${p.name} Transmission for ₹${p.price}?`)) return;
                         setIsSubscribing(true);
-                        
-                        axios.post(`${API_BASE}/subscriptions/create-order`, { planName: p.id }, {
-                          headers: { Authorization: `Bearer ${token}` }
-                        }).then(res => {
-                          const order = res.data;
-                          
-                          const options = {
-                            key: "rzp_test_RqAz9S8L2bcJlg",
-                            amount: order.amount,
-                            currency: order.currency,
-                            name: "Pondy Rentals",
-                            description: `Upgrade to ${p.name}`,
-                            order_id: order.id,
-                            handler: async (response) => {
-                              try {
-                                await axios.post(`${API_BASE}/subscriptions/verify-payment`, {
-                                  razorpay_order_id: response.razorpay_order_id,
-                                  razorpay_payment_id: response.razorpay_payment_id,
-                                  razorpay_signature: response.razorpay_signature,
-                                  planName: p.id
-                                }, {
-                                  headers: { Authorization: `Bearer ${token}` }
-                                });
-                                alert("Success! Your membership node is now live.");
-                                fetchDashboard();
-                              } catch (e) {
-                                alert("Transmission Error: Verification failed.");
-                              } finally { setIsSubscribing(false); }
-                            },
-                            prefill: {
-                              name: userProfile?.user?.full_name || "",
-                              contact: userProfile?.user?.mobile_number || ""
-                            },
-                            theme: { color: "#6366f1" },
-                            modal: { ondismiss: () => setIsSubscribing(false) }
-                          };
-                          
-                          const rzp = new window.Razorpay(options);
-                          rzp.open();
-                        }).catch(err => {
-                          alert("Failed to initiate secure link. Check network.");
-                          setIsSubscribing(false);
-                        });
+                        try {
+                          await axios.post(`${API_BASE}/subscriptions/purchase`, { planName: p.id }, {
+                            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+                          });
+                          alert("Membership Link Established! Node Updated.");
+                          fetchDashboard();
+                        } catch(e) { alert("Transmission Interrupted: Purchase Failed"); } finally { setIsSubscribing(false); }
                       }}
                       className={`w-full py-4 rounded-2xl font-bold text-[15px] transition-all mb-10 ${p.popular ? 'bg-[#6366f1] text-white shadow-xl shadow-[#6366f1]/30 hover:bg-[#4f46e5]' : 'bg-white text-[#6366f1] border-2 border-[#6366f1] hover:bg-[#6366f1]/5'}`}
                     >
