@@ -39,6 +39,9 @@ import {
   Navigation,
   Mail,
   MapPin,
+  Globe,
+  AlertCircle,
+  CheckCircle,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -801,61 +804,151 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Plan Comparison Table */}
-            <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl overflow-hidden">
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left border-collapse">
-                   <thead>
-                     <tr className="bg-gray-50/50">
-                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Plan Tier</th>
-                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Price</th>
-                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Duration</th>
-                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Bike</th>
-                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Car</th>
-                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Others (Bus/Van)</th>
-                       <th className="p-8 text-[12px] font-bold text-[#67748e] uppercase tracking-widest border-b border-gray-50">Action</th>
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y divide-gray-50">
-                     {[
-                       { name: "1 Month", price: 600, duration: "30 days", limits: { Bike: "Unlimited", Car: 2, Other: 1 } },
-                       { name: "3 Month", price: 1200, duration: "90 days", limits: { Bike: "Unlimited", Car: 3, Other: 2 } },
-                       { name: "6 Month", price: 2000, duration: "180 days", limits: { Bike: "Unlimited", Car: 5, Other: 3 } },
-                       { name: "12 Month", price: 3000, duration: "365 days", limits: { Bike: "Unlimited", Car: "Unlimited", Other: "Unlimited" } },
-                     ].map(p => (
-                       <tr key={p.name} className="hover:bg-gray-50/30 transition-all group">
-                         <td className="p-8">
-                           <p className="font-bold text-[#252f40] text-lg">{p.name}</p>
-                           {p.name === "12 Month" && <span className="text-[10px] font-bold text-[#82d616] uppercase">Best Value</span>}
-                         </td>
-                         <td className="p-8 font-bold text-[#252f40] text-xl">₹{p.price}</td>
-                         <td className="p-8 text-[#67748e] font-medium">{p.duration}</td>
-                         <td className="p-8 text-[#82d616] font-bold">{p.limits.Bike}</td>
-                         <td className="p-8 text-[#252f40] font-bold">{p.limits.Car}</td>
-                         <td className="p-8 text-[#252f40] font-bold">{p.limits.Other}</td>
-                         <td className="p-8">
-                           <button 
-                             onClick={async () => {
-                               if (!window.confirm(`Purchase ${p.name} Membership for ₹${p.price}?`)) return;
-                               setIsSubscribing(true);
-                               try {
-                                 await axios.post(`${API_BASE}/subscriptions/purchase`, { planName: p.name }, {
-                                   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-                                 });
-                                 alert("Plan activated successfully! Status updated.");
-                                 fetchDashboard();
-                               } catch(e) { alert("Purchase failed"); } finally { setIsSubscribing(false); }
-                             }}
-                             className="px-6 py-2.5 bg-black text-white rounded-xl font-bold text-[13px] hover:scale-105 transition-all shadow-md group-hover:bg-[#82d616] group-hover:text-black"
-                           >
-                             Select Plan
-                           </button>
-                         </td>
-                       </tr>
-                     ))}
-                   </tbody>
-                 </table>
-               </div>
+            {/* Plan Comparison Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+               {[
+                 { 
+                   name: "Starter Node", 
+                   id: "1 Month",
+                   desc: "Perfect for single vehicle owners",
+                   price: 600, 
+                   oldPrice: 3999,
+                   off: "85%",
+                   duration: "30 days", 
+                   popular: false,
+                   features: ["Unlimited Bike Slots", "2 Car Limit", "1 Other (Bus/Van) Slot", "Basic Node Verification"],
+                   benefits: ["HQ Priority Support", "Standard Listing Status", "Basic Fleet Analytics"]
+                 },
+                 { 
+                   name: "Growth Node", 
+                   id: "3 Month",
+                   desc: "Power & efficiency for small fleets",
+                   price: 1200, 
+                   oldPrice: 5999,
+                   off: "80%",
+                   duration: "90 days", 
+                   popular: false,
+                   features: ["Unlimited Bike Slots", "3 Car Limit", "2 Other Slots", "Priority Node Verification"],
+                   benefits: ["Accelerated HQ Support", "Enhanced Listing Status", "Advanced Fleet Analytics"]
+                 },
+                 { 
+                   name: "Platinum Node", 
+                   id: "6 Month",
+                   desc: "Total control for professional fleets",
+                   price: 2000, 
+                   oldPrice: 9999,
+                   off: "80%",
+                   duration: "180 days", 
+                   popular: true,
+                   features: ["Unlimited Bike Slots", "5 Car Limit", "3 Other Slots", "Express Node Verification"],
+                   benefits: ["24/7 Direct HQ Access", "VIP Listing Priority", "Real-time Profit Analytics", "Multi-Region Visibility"]
+                 },
+                 { 
+                   name: "Cloud Fleet", 
+                   id: "12 Month",
+                   desc: "Unlimited power for global operations",
+                   price: 3000, 
+                   oldPrice: 14999,
+                   off: "80%",
+                   duration: "365 days", 
+                   popular: false,
+                   features: ["Unlimited Bike Slots", "Unlimited Car Limit", "Unlimited Other Slots", "Instant Node Activation"],
+                   benefits: ["Dedicated Account General", "Global Network Dominance", "AI-Powered Fleet Scaling", "Beta Access to New Tech"]
+                 },
+               ].map(p => (
+                 <div key={p.name} className={`relative bg-white rounded-[32px] p-10 flex flex-col border-[2px] transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] ${p.popular ? 'border-[#6366f1] shadow-2xl shadow-[#6366f1]/10' : 'border-gray-50'}`}>
+                    {p.popular && (
+                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-[#6366f1] text-white text-[11px] font-black uppercase tracking-[2px] py-2 px-6 rounded-full shadow-lg">
+                        Most Popular
+                      </div>
+                    )}
+                    <div className="absolute top-6 right-6 bg-red-50 text-red-600 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100">
+                      {p.off} OFF
+                    </div>
+
+                    <div className="mb-8">
+                       <h3 className="text-2xl font-bold text-[#252f40] mb-2">{p.name}</h3>
+                       <p className="text-[#67748e] text-[13px] leading-relaxed">{p.desc}</p>
+                    </div>
+
+                    <div className="mb-8">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[#67748e] text-lg line-through opacity-50 font-medium">₹{p.oldPrice}</span>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-4xl font-black text-[#252f40]">₹{p.price}</span>
+                         
+                        </div>
+                        <p className="text-[#6366f1] text-[11px] font-bold mt-2 uppercase tracking-wide">Valid for {p.duration}</p>
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        const token = localStorage.getItem("token");
+                        setIsSubscribing(true);
+                        
+                        axios.post(`${API_BASE}/subscriptions/create-order`, { planName: p.id }, {
+                          headers: { Authorization: `Bearer ${token}` }
+                        }).then(res => {
+                          const order = res.data;
+                          
+                          const options = {
+                            key: "rzp_test_RqAz9S8L2bcJlg",
+                            amount: order.amount,
+                            currency: order.currency,
+                            name: "Pondy Rentals",
+                            description: `Upgrade to ${p.name}`,
+                            order_id: order.id,
+                            handler: async (response) => {
+                              try {
+                                await axios.post(`${API_BASE}/subscriptions/verify-payment`, {
+                                  razorpay_order_id: response.razorpay_order_id,
+                                  razorpay_payment_id: response.razorpay_payment_id,
+                                  razorpay_signature: response.razorpay_signature,
+                                  planName: p.id
+                                }, {
+                                  headers: { Authorization: `Bearer ${token}` }
+                                });
+                                alert("Success! Your membership node is now live.");
+                                fetchDashboard();
+                              } catch (e) {
+                                alert("Transmission Error: Verification failed.");
+                              } finally { setIsSubscribing(false); }
+                            },
+                            prefill: {
+                              name: userProfile?.user?.full_name || "",
+                              contact: userProfile?.user?.mobile_number || ""
+                            },
+                            theme: { color: "#6366f1" },
+                            modal: { ondismiss: () => setIsSubscribing(false) }
+                          };
+                          
+                          const rzp = new window.Razorpay(options);
+                          rzp.open();
+                        }).catch(err => {
+                          alert("Failed to initiate secure link. Check network.");
+                          setIsSubscribing(false);
+                        });
+                      }}
+                      className={`w-full py-4 rounded-2xl font-bold text-[15px] transition-all mb-10 ${p.popular ? 'bg-[#6366f1] text-white shadow-xl shadow-[#6366f1]/30 hover:bg-[#4f46e5]' : 'bg-white text-[#6366f1] border-2 border-[#6366f1] hover:bg-[#6366f1]/5'}`}
+                    >
+                      Choose Plan
+                    </button>
+
+                    <div className="space-y-5 mt-auto border-t border-gray-50 pt-8">
+                       <div className="space-y-4">
+                          {p.features.map(f => (
+                            <div key={f} className="flex items-center gap-3 group/item">
+                               <div className="w-5 h-5 rounded-full bg-gray-50 flex items-center justify-center text-[#6366f1]">
+                                 <Globe size={12} strokeWidth={3} />
+                               </div>
+                               <span className="text-[13px] text-[#252f40] font-semibold border-b border-dotted border-gray-200 flex-1 py-1 group-hover/item:border-gray-400 transition-colors">{f}</span>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                 </div>
+               ))}
             </div>
 
             {/* Tracking Table */}
