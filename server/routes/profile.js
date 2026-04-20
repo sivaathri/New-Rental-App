@@ -163,4 +163,20 @@ router.post('/update-name', authMiddleware, async (req, res) => {
     }
 });
 
+// Get total enquiry count for an owner
+router.get('/enquiry-count', authMiddleware, async (req, res) => {
+    try {
+        const [rows] = await db.query(`
+            SELECT COUNT(*) as count 
+            FROM vehicle_calls vc
+            JOIN vehicles v ON vc.vehicle_id = v.id
+            WHERE v.user_id = ?
+        `, [req.user.id]);
+        res.json({ count: rows[0].count });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;
