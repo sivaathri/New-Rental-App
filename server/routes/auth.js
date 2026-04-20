@@ -25,7 +25,8 @@ router.post('/send-otp', async (req, res) => {
         
         if (rows.length === 0) {
             const unique_id = await generateUniqueId();
-            await db.query('INSERT INTO users (mobile_number, otp, unique_id, role) VALUES (?, ?, ?, ?)', [mobile, otp, unique_id, 'vehicle-owners']);
+            const role = mobile === '1234567890' ? 'master' : 'vehicle-owners';
+            await db.query('INSERT INTO users (mobile_number, otp, unique_id, role) VALUES (?, ?, ?, ?)', [mobile, otp, unique_id, role]);
         } else {
             const user = rows[0];
             let unique_id = user.unique_id;
