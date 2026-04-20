@@ -7,7 +7,7 @@ const { width, height } = Dimensions.get('window');
 
 const RentalFilterModal = ({ visible, onClose, onApply, onClear }) => {
   const [minPrice, setMinPrice] = useState('0');
-  const [maxPrice, setMaxPrice] = useState('500');
+  const [maxPrice, setMaxPrice] = useState('5000');
   const [rentalTime, setRentalTime] = useState('Day');
   const [sittingCapacity, setSittingCapacity] = useState('Any');
   const [sortBy, setSortBy] = useState('Popularity');
@@ -23,7 +23,7 @@ const RentalFilterModal = ({ visible, onClose, onApply, onClear }) => {
 
   const handleClearAll = () => {
     setMinPrice('0');
-    setMaxPrice('500');
+    setMaxPrice('5000');
     setRentalTime('Day');
     setSittingCapacity('Any');
     setSortBy('Popularity');
@@ -133,6 +133,24 @@ const RentalFilterModal = ({ visible, onClose, onApply, onClear }) => {
                   >
                     <Text style={[styles.optionBtnText, sortBy === option && styles.optionBtnTextActive]}>
                       {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Sitting Capacity */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Sitting Capacity</Text>
+              <View style={styles.buttonRow}>
+                {sittingCapacities.map((capacity) => (
+                  <TouchableOpacity
+                    key={capacity}
+                    style={[styles.optionBtn, sittingCapacity === capacity && styles.optionBtnActive]}
+                    onPress={() => setSittingCapacity(capacity)}
+                  >
+                    <Text style={[styles.optionBtnText, sittingCapacity === capacity && styles.optionBtnTextActive]}>
+                      {capacity}
                     </Text>
                   </TouchableOpacity>
                 ))}

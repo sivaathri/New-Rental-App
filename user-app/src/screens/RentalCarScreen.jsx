@@ -388,12 +388,46 @@ const RentalCarScreen = ({ navigation }) => {
     }
 
     if (appliedFilters) {
-      // Mock filter logic
+      // Filter by Price Range
+      const min = parseFloat(appliedFilters.minPrice) || 0;
+      const max = parseFloat(appliedFilters.maxPrice) || Infinity;
+      result = result.filter(car => car.price >= min && car.price <= max);
+
+      // Filter by Fuel Type
+      if (appliedFilters.fuelType) {
+        result = result.filter(car => car.fuel_type.toLowerCase() === appliedFilters.fuelType.toLowerCase());
+      }
+
+      // Filter by Sitting Capacity
+      if (appliedFilters.sittingCapacity && appliedFilters.sittingCapacity !== 'Any') {
+        const capacityValue = parseInt(appliedFilters.sittingCapacity.replace('+', ''));
+        result = result.filter(car => parseInt(car.seating_capacity) >= capacityValue);
+      }
+
+      // Apply Sorting
+      if (appliedFilters.sortBy) {
+        switch (appliedFilters.sortBy) {
+          case 'Price: Low to High':
+            result = [...result].sort((a, b) => a.price - b.price);
+            break;
+          case 'Price: High to Low':
+            result = [...result].sort((a, b) => b.price - a.price);
+            break;
+          case 'Top Rated':
+            result = [...result].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+            break;
+          case 'Popularity':
+          default:
+            // Assuming higher ID or a best_car flag means more popular for now
+            result = [...result].sort((a, b) => (b.is_best ? 1 : 0) - (a.is_best ? 1 : 0));
+            break;
+        }
+      }
     }
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setFilteredCars(result);
-    setIsSearching(searchQuery.length > 0 || selectedBrand !== 'all' || selectedCity !== 'All Cities');
+    setIsSearching(searchQuery.length > 0 || selectedBrand !== 'all' || selectedCity !== 'All Cities' || appliedFilters !== null);
   }, [cars, selectedBrand, searchQuery, appliedFilters, selectedCity]);
 
   const handleSearchTrigger = () => {

@@ -42,6 +42,7 @@ export const vehicleAPI = {
   }),
   subscribe: (vehicleId, data) => api.post(`/vehicles/${vehicleId}/subscribe`, data),
   updatePricing: (id, data) => api.post(`/vehicles/${id}/update-pricing`, data),
+  updateAvailability: (id, data) => api.post(`/vehicles/${id}/availability`, data),
 };
 
 export const adminAPI = {

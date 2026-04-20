@@ -150,6 +150,22 @@ router.post('/:id/resubmit', authMiddleware, async (req, res) => {
     }
 });
 
+// Update Availability
+router.post('/:id/availability', authMiddleware, async (req, res) => {
+    const { is_active, unavailable_dates } = req.body;
+    try {
+        await db.query(`
+            UPDATE vehicles 
+            SET is_active = ?, unavailable_dates = ?
+            WHERE id = ? AND user_id = ?
+        `, [is_active, unavailable_dates, req.params.id, req.user.id]);
+        res.json({ message: 'Availability updated successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Get User's Vehicles
 router.get('/', authMiddleware, async (req, res) => {
     try {
@@ -185,7 +201,7 @@ router.get('/public/approved', async (req, res) => {
             FROM vehicles v
             LEFT JOIN users u ON v.user_id = u.id
             LEFT JOIN vehicle_master vm ON v.type = vm.name
-            WHERE v.status = "Approved"
+            WHERE v.status = "Approved" AND v.is_active = 1
             ORDER BY v.sort_order ASC, v.approved_at DESC
         `);
 

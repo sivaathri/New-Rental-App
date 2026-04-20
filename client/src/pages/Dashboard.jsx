@@ -928,6 +928,35 @@ export default function Dashboard() {
     }
   };
 
+  const safeParseJSON = (jsonString, fallback = []) => {
+    try {
+      return jsonString ? JSON.parse(jsonString) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  };
+
+  const handleUpdateAvailability = async (vId, active, dates) => {
+    try {
+      await vehicleAPI.updateAvailability(vId, {
+        is_active: active ? 1 : 0,
+        unavailable_dates: Array.isArray(dates) ? JSON.stringify(dates) : dates,
+      });
+      fetchDashboard();
+      if (selectedVehicle && selectedVehicle.id === vId) {
+        setSelectedVehicle({
+          ...selectedVehicle,
+          is_active: active ? 1 : 0,
+          unavailable_dates: Array.isArray(dates)
+            ? JSON.stringify(dates)
+            : dates,
+        });
+      }
+    } catch (err) {
+      alert("Error updating availability");
+    }
+  };
+
   const navigate = useNavigate();
 
   const fetchDashboard = async () => {
@@ -2388,6 +2417,102 @@ export default function Dashboard() {
                 />
               </div>
 
+              {selectedVehicle.status === "Approved" && (
+                <div className="pt-10 border-t border-gray-100 space-y-8">
+                  <div className="flex items-center justify-between p-6 bg-gray-50 rounded-[2rem] border border-gray-100">
+                    <div>
+                      <h3 className="text-lg font-bold text-[#252f40]">
+                        Listing Visibility
+                      </h3>
+                      <p className="text-[12px] text-[#67748e] font-medium">
+                        Toggle to temporarily hide your vehicle from search
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        handleUpdateAvailability(
+                          selectedVehicle.id,
+                          !selectedVehicle.is_active,
+                          selectedVehicle.unavailable_dates,
+                        )
+                      }
+                      className={`w-14 h-8 rounded-full relative transition-all ${selectedVehicle.is_active ? "bg-[#82d616]" : "bg-gray-300"}`}
+                    >
+                      <div
+                        className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${selectedVehicle.is_active ? "left-7" : "left-1 shadow-sm"}`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-[#252f40] flex items-center gap-2">
+                      <Clock size={18} className="text-[#82d616]" />
+                      Unavailable Dates
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {safeParseJSON(selectedVehicle.unavailable_dates).map(
+                        (date, idx) => (
+                          <span
+                            key={idx}
+                            className="px-3 py-1 bg-red-50 text-red-600 rounded-lg text-[11px] font-bold border border-red-100 flex items-center gap-2"
+                          >
+                            {date}
+                            <button
+                              onClick={() => {
+                                const currentDates = safeParseJSON(
+                                  selectedVehicle.unavailable_dates,
+                                );
+                                const newDates = currentDates.filter(
+                                  (_, i) => i !== idx,
+                                );
+                                handleUpdateAvailability(
+                                  selectedVehicle.id,
+                                  selectedVehicle.is_active,
+                                  newDates,
+                                );
+                              }}
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ),
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-2 text-sm font-medium focus:border-[#82d616] outline-none"
+                        id="new-unavailable-date"
+                      />
+                      <button
+                        onClick={() => {
+                          const dateInput = document.getElementById(
+                            "new-unavailable-date",
+                          );
+                          const date = dateInput.value;
+                          if (!date) return;
+                          const currentDates = safeParseJSON(
+                            selectedVehicle.unavailable_dates,
+                          );
+                          if (currentDates.includes(date))
+                            return alert("Date already added");
+                          const newDates = [...currentDates, date].sort();
+                          handleUpdateAvailability(
+                            selectedVehicle.id,
+                            selectedVehicle.is_active,
+                            newDates,
+                          );
+                          dateInput.value = "";
+                        }}
+                        className="px-4 py-2 bg-black text-white rounded-xl text-sm font-bold"
+                      >
+                        Add Date
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {selectedVehicle.status === "Rejected" && (
                 <div className="pt-10 border-t border-gray-100">
                   <button
@@ -2566,14 +2691,18 @@ function VehicleCard({ vehicle, onDetails }) {
           <span
             className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all shadow-md border ${
               vehicle.status === "Approved"
-                ? "bg-[#e6ffed] text-[#82d616] border-[#82d616]/20"
+                ? vehicle.is_active
+                  ? "bg-[#e6ffed] text-[#82d616] border-[#82d616]/20"
+                  : "bg-gray-100 text-gray-400 border-gray-200"
                 : vehicle.status === "Rejected"
                   ? "bg-red-50 text-red-600 border-red-100"
                   : "bg-[#fff5e6] text-[#fbcf33] border-[#fbcf33]/20"
             }`}
           >
             {vehicle.status === "Approved"
-              ? "ACTIVE"
+              ? vehicle.is_active
+                ? "ACTIVE"
+                : "INACTIVE"
               : vehicle.status === "Rejected"
                 ? "REJECTED"
                 : "PENDING"}
