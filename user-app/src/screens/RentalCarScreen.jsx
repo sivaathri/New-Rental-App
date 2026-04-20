@@ -55,6 +55,114 @@ const FadeInView = ({ children, delay = 0, style }) => {
   );
 };
 
+const ScreenHeader = ({ 
+    locationName, 
+    selectedCity, 
+    setLocationModalVisible, 
+    unreadCount, 
+    handleSearchTrigger, 
+    searchQuery, 
+    setSearchQuery, 
+    setIsSearching, 
+    setFilterModalVisible, 
+    brands, 
+    renderBrand, 
+    isSearching, 
+    nearbyCars, 
+    renderCarCard, 
+    selectedBrand 
+}) => {
+    return (
+        <>
+            <View style={styles.header}>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                     <View style={styles.logoContainer}>
+                          <Ionicons name="car-sport" size={24} color="white" />
+                     </View>
+                     <TouchableOpacity onPress={() => setLocationModalVisible(true)}>
+                         <View style={{flexDirection: 'row', alignItems: 'center', marginBottom:5}}>
+                             <Ionicons name="location-sharp" size={20} color="#666" style={{marginRight: 2}} />
+                             <Text style={{fontSize: 12, color: '#666', fontWeight: 'bold'}}>{selectedCity === 'All Cities' ? locationName : selectedCity}</Text>
+                             <Ionicons name="chevron-down" size={14} color="#666" style={{marginLeft: 2}} />
+                         </View>
+                     </TouchableOpacity>
+                </View>
+                <View style={styles.headerRight}>
+                    <TouchableOpacity style={styles.notificationBtn}>
+                         <Ionicons name="notifications-outline" size={24} color="#333" />
+                         {unreadCount > 0 && <View style={styles.badge} />}
+                    </TouchableOpacity>
+                    <View style={styles.profilePlaceholder}>
+                        <Ionicons name="person-circle" size={42} color="black" />
+                    </View>
+                </View>
+            </View>
+    
+            <View style={styles.searchSection}>
+                <View style={styles.searchContainer}>
+                    <TouchableOpacity onPress={handleSearchTrigger}>
+                        <Ionicons name="search-outline" size={20} color="#888" style={styles.searchIcon} />
+                    </TouchableOpacity>
+                    <TextInput 
+                        placeholder="Search your dream car..." 
+                        style={styles.input}
+                        value={searchQuery}
+                        onChangeText={(val) => setSearchQuery(val)}
+                        onSubmitEditing={handleSearchTrigger}
+                        returnKeyType="search"
+                    />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => { setSearchQuery(''); setIsSearching(false); }}>
+                            <Ionicons name="close-circle" size={20} color="#888" />
+                        </TouchableOpacity>
+                    )}
+                </View>
+                <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterModalVisible(true)}>
+                    <Ionicons name="options-outline" size={24} color="#333" />
+                </TouchableOpacity>
+            </View>
+    
+            <View style={{ marginTop: 20, marginBottom: 15 }}>
+                <FlatList
+                    data={brands}
+                    renderItem={renderBrand}
+                    keyExtractor={item => item.id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 20 }}
+                />
+            </View>
+    
+            {!isSearching && nearbyCars.filter(c => c.distance <= 5).length > 0 && (
+                <View style={{ width: '100%' }}>
+                    <View style={styles.sectionHeader}>
+                        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                            <Text style={styles.sectionTitle}>Nearby Vehicles</Text>
+                            <View style={{backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, marginTop:10}}>
+                                 <Text style={{fontSize: 10, color: '#2E7D32', fontWeight: 'bold'}}>Within 5 km</Text>
+                            </View>
+                        </View>
+                    </View>
+                    <FlatList
+                        data={nearbyCars.filter(c => c.distance <= 5)} 
+                        renderItem={renderCarCard}
+                        keyExtractor={item => item.id}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.carsList}
+                    />
+                </View>
+            )}
+    
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>
+                    {isSearching ? (selectedBrand === 'all' ? 'All Vehicles' : ` All ${selectedBrand}`) : 'All Vehicles'}
+                </Text>
+            </View>
+        </>
+    );
+};
+
 const RentalCarScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { toggleFavorite, isFavorite } = useRentalFavorites();
@@ -123,7 +231,6 @@ const RentalCarScreen = ({ navigation }) => {
         }));
         setCars(formattedCars);
         setFilteredCars(formattedCars);
-        // console.log(formattedCars)
       }
     } catch (error) {
       console.log("Error fetching cars", error);
@@ -191,26 +298,45 @@ const RentalCarScreen = ({ navigation }) => {
   };
 
   const calculateNearbyCars = () => {
-    if (!userLocation || !cars.length) return;
+    if (!cars.length) return;
     
     let listToFilter = cars;
     if (selectedBrand !== 'all') {
       listToFilter = cars.filter(car => car.brand_id === selectedBrand);
     }
     
+    if (!userLocation) {
+        setNearbyCars(listToFilter);
+        return;
+    }
+
+    // console.log("--- Proximity Check ---");
+    // console.log(`Device Location: Lat ${userLocation.latitude}, Lon ${userLocation.longitude}`);
+    
     const carsWithDistance = listToFilter
-      .filter(car => car.latitude && car.longitude)
       .map(car => {
+        if (!car.latitude || !car.longitude) {
+           return { ...car, distance: 999999 }; 
+        }
+        
         const distance = calculateDistance(
           userLocation.latitude,
           userLocation.longitude,
           parseFloat(car.latitude),
           parseFloat(car.longitude)
         );
-        return { ...car, distance };
+
+        // console.log(`- Vehicle: ${car.name}, Distance: ${distance.toFixed(4)} km`);
+
+        // if (distance <= 5) {
+        //     console.log(`Nearby Vehicle Found: ${car.name} at ${distance.toFixed(2)} km (Lat: ${car.latitude}, Lon: ${car.longitude})`);
+        // }
+
+        return { ...car, distance: isNaN(distance) ? 999999 : distance };
       })
       .sort((a, b) => a.distance - b.distance);
     
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     setNearbyCars(carsWithDistance);
   };
 
@@ -226,15 +352,19 @@ const RentalCarScreen = ({ navigation }) => {
     return R * c; 
   };
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => {
-        setRefreshing(false);
+    try {
+        await Promise.all([fetchCars(), fetchBrands(), getUserLocation()]);
         setAppliedFilters(null);
         setSearchQuery('');
         setIsSearching(false);
         setSelectedBrand('all');
-    }, 1500);
+    } catch (error) {
+        console.log("Refresh failed", error);
+    } finally {
+        setRefreshing(false);
+    }
   };
 
   useEffect(() => {
@@ -263,7 +393,22 @@ const RentalCarScreen = ({ navigation }) => {
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setFilteredCars(result);
+    setIsSearching(searchQuery.length > 0 || selectedBrand !== 'all' || selectedCity !== 'All Cities');
   }, [cars, selectedBrand, searchQuery, appliedFilters, selectedCity]);
+
+  const handleSearchTrigger = () => {
+      console.log("hello")
+    Keyboard.dismiss();
+    const cleanQuery = searchQuery.trim();
+    
+    if (cleanQuery.length > 0 && cleanQuery.length < 2) {
+        console.log(`⚠️ Search Ignored: "${cleanQuery}" (Reason: Need at least 2 chars)`);
+        return; 
+    }
+    
+    console.log(`🔍 Search Active: "${cleanQuery || 'Reset/All'}"`);
+    setActiveSearchQuery(cleanQuery);
+  };
 
   const renderBrand = ({ item, index }) => {
     const isSelected = selectedBrand === item.id;
@@ -275,10 +420,7 @@ const RentalCarScreen = ({ navigation }) => {
                 onPress={() => {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                     setSelectedBrand(item.id);
-                    if (item.id !== 'all') {
-                        setIsSearching(true);
-                    } else {
-                        setIsSearching(false);
+                    if (item.id === 'all') {
                         setSearchQuery(''); 
                     }
                 }}
@@ -326,6 +468,14 @@ const RentalCarScreen = ({ navigation }) => {
                 <Text style={styles.gridLocationText} numberOfLines={1}>{item.location}</Text>
             </View>
 
+            {/* {item.distance && (
+                <View style={{ marginBottom: 8 }}>
+                    <Text style={{ fontSize: 10, color: '#2E7D32', fontWeight: 'bold' }}>
+                        Distance: {item.distance > 999 ? 'Unknown' : `${item.distance.toFixed(2)} km`}
+                    </Text>
+                </View>
+            )} */}
+
             <View style={styles.gridStatsRow}>
                 <View style={styles.gridStatItem}>
                     <MaterialCommunityIcons name="gas-station" size={16} color="#888" />
@@ -339,12 +489,14 @@ const RentalCarScreen = ({ navigation }) => {
             
             <View style={styles.gridFooter}>
                  <View style={styles.gridPriceContainer}>
-                    <Text style={styles.gridPriceText}>₹{Math.floor(item.price)}</Text>
-                    <Text style={styles.gridPeriodText}>/Day</Text>
+                    <Text style={styles.gridPriceText}>
+                        ₹{Math.floor(item.price)}
+                        <Text style={styles.gridPeriodText}>/Day</Text>
+                    </Text>
                  </View>
-                 <View style={styles.bookBtn}>
+                 {/* <View style={styles.bookBtn}>
                      <Text style={styles.bookBtnText}>Call</Text>
-                 </View>
+                 </View> */}
             </View>
           </View>
         </TouchableOpacity>
@@ -386,100 +538,37 @@ const RentalCarScreen = ({ navigation }) => {
   const numColumns = width > 768 ? 3 : 2;
   const itemWidth = (width - (numColumns + 1) * 15) / numColumns;
 
-  const renderHeader = () => (
-    <>
-        <View style={styles.header}>
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                 <View style={styles.logoContainer}>
-                      <Ionicons name="car-sport" size={24} color="white" />
-                 </View>
-                 <TouchableOpacity onPress={() => setLocationModalVisible(true)}>
-                     <View style={{flexDirection: 'row', alignItems: 'center', marginBottom:5}}>
-                         <Ionicons name="location-sharp" size={20} color="#666" style={{marginRight: 2}} />
-                         <Text style={{fontSize: 12, color: '#666', fontWeight: 'bold'}}>{selectedCity === 'All Cities' ? locationName : selectedCity}</Text>
-                         <Ionicons name="chevron-down" size={14} color="#666" style={{marginLeft: 2}} />
-                     </View>
-                 </TouchableOpacity>
-            </View>
-            <View style={styles.headerRight}>
-                <TouchableOpacity style={styles.notificationBtn}>
-                     <Ionicons name="notifications-outline" size={24} color="#333" />
-                     {unreadCount > 0 && <View style={styles.badge} />}
-                </TouchableOpacity>
-                <View style={styles.profilePlaceholder}>
-                    <Ionicons name="person-circle" size={42} color="black" />
-                </View>
-            </View>
-        </View>
-
-        <View style={styles.searchSection}>
-            <View style={styles.searchContainer}>
-                <Ionicons name="search-outline" size={20} color="#888" style={styles.searchIcon} />
-                <TextInput 
-                    placeholder="Search your dream car..." 
-                    style={styles.input}
-                    value={searchQuery}
-                    onChangeText={(val) => { setSearchQuery(val); setIsSearching(val.length > 0); }}
-                />
-            </View>
-            <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterModalVisible(true)}>
-                <Ionicons name="options-outline" size={24} color="#333" />
-            </TouchableOpacity>
-        </View>
-
-        <View style={{ marginTop: 20, marginBottom: 15 }}>
-            <FlatList
-                data={brands}
-                renderItem={renderBrand}
-                keyExtractor={item => item.id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 20 }}
-            />
-        </View>
-
-        {!isSearching && nearbyCars.filter(c => c.distance <= 5).length > 0 && (
-            <>
-                <View style={styles.sectionHeader}>
-                    <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-                        <Text style={styles.sectionTitle}>Nearby Vehicles</Text>
-                        <View style={{backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, marginTop:10}}>
-                             <Text style={{fontSize: 10, color: '#2E7D32', fontWeight: 'bold'}}>Within 5 km</Text>
-                        </View>
-                    </View>
-                </View>
-                <FlatList
-                    data={nearbyCars.filter(c => c.distance <= 5)} 
-                    renderItem={renderCarCard}
-                    keyExtractor={item => item.id}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.carsList}
-                />
-            </>
-        )}
-
-        <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-                {isSearching ? (selectedBrand === 'all' ? 'All Vehicles' : ` All ${selectedBrand}`) : 'All Vehicles'}
-            </Text>
-        </View>
-    </>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
       <FlatList 
-        data={isSearching ? filteredCars : nearbyCars}
+        data={isSearching ? filteredCars : nearbyCars.filter(c => c.distance > 5)}
         renderItem={({ item, index }) => (
-            <View style={{ width: itemWidth, marginLeft: 15, marginBottom: 15 }}>
+            <FadeInView delay={index * 50} style={{ width: itemWidth, marginLeft: 15, marginBottom: 15 }}>
                 {renderGridCard({ item, index })}
-            </View>
+            </FadeInView>
         )}
         keyExtractor={item => item.id}
         numColumns={numColumns}
-        key={numColumns} // Force re-render when numColumns changes
-        ListHeaderComponent={renderHeader}
+        key={numColumns} 
+        ListHeaderComponent={
+            <ScreenHeader 
+                locationName={locationName}
+                selectedCity={selectedCity}
+                setLocationModalVisible={setLocationModalVisible}
+                unreadCount={unreadCount}
+                handleSearchTrigger={handleSearchTrigger}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                setIsSearching={setIsSearching}
+                setFilterModalVisible={setFilterModalVisible}
+                brands={brands}
+                renderBrand={renderBrand}
+                isSearching={isSearching}
+                nearbyCars={nearbyCars}
+                renderCarCard={renderCarCard}
+                selectedBrand={selectedBrand}
+            />
+        }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#000']} />}

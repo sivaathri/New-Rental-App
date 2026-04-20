@@ -23,7 +23,7 @@ router.post('/add', authMiddleware, (req, res, next) => {
     });
 }, async (req, res) => {
     try {
-        const { type, name, model_year, registration_number, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark } = req.body;
+        const { type, name, model_year, registration_number, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, latitude, longitude } = req.body;
         
         // CHECK LIMITS
         const [activeSubs] = await db.query('SELECT * FROM subscriptions WHERE user_id = ? AND status = "Active" AND end_date > NOW()', [req.user.id]);
@@ -50,15 +50,15 @@ router.post('/add', authMiddleware, (req, res, next) => {
         if (vehicleId) {
             await db.query(`
                 UPDATE vehicles 
-                SET type=?, name=?, model_year=?, registration_number=?, rc_book_url=COALESCE(?, rc_book_url), seating_capacity=?, fuel_type=?, transmission_type=?, mileage=?, price_per_day=?, price_per_hour=?, price_per_km=?, max_km_per_day=?, pickup_location=?, landmark=?, status='Waiting for Approval'
+                SET type=?, name=?, model_year=?, registration_number=?, rc_book_url=COALESCE(?, rc_book_url), seating_capacity=?, fuel_type=?, transmission_type=?, mileage=?, price_per_day=?, price_per_hour=?, price_per_km=?, max_km_per_day=?, pickup_location=?, landmark=?, latitude=?, longitude=?, status='Waiting for Approval'
                 WHERE id=? AND user_id=?
-            `, [type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, vehicleId, req.user.id]);
+            `, [type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, latitude, longitude, vehicleId, req.user.id]);
         } else {
             const [result] = await db.query(`
                 INSERT INTO vehicles 
-                (user_id, type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Waiting for Approval')
-            `, [req.user.id, type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark]);
+                (user_id, type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, latitude, longitude, status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Waiting for Approval')
+            `, [req.user.id, type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, latitude, longitude]);
             vehicleId = result.insertId;
         }
 
@@ -126,13 +126,13 @@ router.post('/:id/media/add', authMiddleware, upload.array('media', 6), async (r
 });
 // Update Vehicle Pricing & Location
 router.post('/:id/update-pricing', authMiddleware, async (req, res) => {
-    const { price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark } = req.body;
+    const { price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, latitude, longitude } = req.body;
     try {
         await db.query(`
             UPDATE vehicles 
-            SET price_per_day = ?, price_per_hour = ?, price_per_km = ?, max_km_per_day = ?, pickup_location = ?, landmark = ?
+            SET price_per_day = ?, price_per_hour = ?, price_per_km = ?, max_km_per_day = ?, pickup_location = ?, landmark = ?, latitude = ?, longitude = ?
             WHERE id = ? AND user_id = ?
-        `, [price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, req.params.id, req.user.id]);
+        `, [price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, latitude, longitude, req.params.id, req.user.id]);
         res.json({ message: 'Vehicle details updated successfully' });
     } catch (err) {
         console.error(err);
