@@ -7,7 +7,9 @@ import {
     Text,
     Image,
     FlatList,
-    StyleSheet
+    StyleSheet,
+    Modal,
+    TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -21,6 +23,10 @@ const RentalHistoryScreen = ({ navigation }) => {
     const { user } = useAuth();
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedCarForReview, setSelectedCarForReview] = useState(null);
+    const [reviewRating, setReviewRating] = useState(0);
+    const [reviewComment, setReviewComment] = useState('');
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
     useEffect(() => {
         fetchHistory();
@@ -41,6 +47,28 @@ const RentalHistoryScreen = ({ navigation }) => {
             console.error('Failed to fetch call history', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSubmitReview = async () => {
+        if (reviewRating === 0) return alert('Please select a star rating');
+        setIsSubmittingReview(true);
+        try {
+            await axios.post(`${API_URL}/vehicles/${selectedCarForReview.id}/reviews`, {
+                rating: reviewRating,
+                comment: reviewComment
+            }, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            alert('Review shared! Thank you for your feedback.');
+            setSelectedCarForReview(null);
+            setReviewRating(0);
+            setReviewComment('');
+        } catch (error) {
+            console.error(error);
+            alert('Review transmission interrupted. Please try again.');
+        } finally {
+            setIsSubmittingReview(false);
         }
     };
 
@@ -84,7 +112,14 @@ const RentalHistoryScreen = ({ navigation }) => {
                         style={styles.reconnectBtn}
                         onPress={() => navigation.navigate('VehicleDetails', { car: item })}
                     >
-                        <Text style={styles.reconnectBtnText}>View Details</Text>
+                        <Text style={styles.reconnectBtnText}>View</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        style={styles.reviewBtn}
+                        onPress={() => setSelectedCarForReview(item)}
+                    >
+                        <Ionicons name="star" size={14} color="#FFF" style={{marginRight: 4}}/>
+                        <Text style={styles.reviewBtnText}>Rate</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -97,7 +132,7 @@ const RentalHistoryScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <Ionicons name="chevron-back" size={24} color="#000" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Engagement History</Text>
+                <Text style={styles.headerTitle}>Enquiry History</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -125,6 +160,65 @@ const RentalHistoryScreen = ({ navigation }) => {
                     showsVerticalScrollIndicator={false}
                 />
             )}
+
+            {/* Review Modal */}
+            <Modal
+                visible={!!selectedCarForReview}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setSelectedCarForReview(null)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Share Your Experience</Text>
+                            <TouchableOpacity onPress={() => setSelectedCarForReview(null)}>
+                                <Ionicons name="close" size={24} color="#000" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={styles.modalSubTitle}>How was your enquiry for {selectedCarForReview?.name}?</Text>
+                        
+                        <View style={styles.starsContainer}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <TouchableOpacity 
+                                    key={star} 
+                                    onPress={() => setReviewRating(star)}
+                                >
+                                    <Ionicons 
+                                        name={star <= reviewRating ? "star" : "star-outline"} 
+                                        size={40} 
+                                        color={star <= reviewRating ? "#FFD700" : "#CCC"} 
+                                        style={{ marginHorizontal: 5 }}
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        <TextInput
+                            style={styles.reviewInput}
+                            placeholder="Write your experience with this owner/vehicle..."
+                            placeholderTextColor="#999"
+                            multiline
+                            numberOfLines={4}
+                            value={reviewComment}
+                            onChangeText={setReviewComment}
+                        />
+
+                        <TouchableOpacity 
+                            style={[styles.submitReviewBtn, isSubmittingReview && { opacity: 0.7 }]}
+                            onPress={handleSubmitReview}
+                            disabled={isSubmittingReview}
+                        >
+                            {isSubmittingReview ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <Text style={styles.submitReviewText}>Submit Review</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -278,6 +372,82 @@ const styles = StyleSheet.create({
         borderRadius: 15,
     },
     browseBtnText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    reviewBtn: {
+        backgroundColor: '#FFB800',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 8,
+    },
+    reviewBtnText: {
+        color: '#FFF',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContainer: {
+        backgroundColor: '#FFF',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        padding: 25,
+        paddingBottom: 40,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#000',
+    },
+    modalSubTitle: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 20,
+    },
+    starsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginBottom: 25,
+    },
+    reviewInput: {
+        backgroundColor: '#F8F9FA',
+        borderRadius: 15,
+        padding: 15,
+        height: 120,
+        textAlignVertical: 'top',
+        fontSize: 14,
+        color: '#333',
+        marginBottom: 25,
+        borderWidth: 1,
+        borderColor: '#EEE',
+    },
+    submitReviewBtn: {
+        backgroundColor: '#000',
+        height: 55,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    submitReviewText: {
         color: '#FFF',
         fontSize: 16,
         fontWeight: 'bold',

@@ -260,4 +260,37 @@ router.get('/call-history/:userId', async (req, res) => {
     }
 });
 
+// Submit a review
+router.post('/:id/reviews', authMiddleware, async (req, res) => {
+    const { rating, comment } = req.body;
+    const vehicleId = req.params.id;
+    const userId = req.user.id;
+
+    if (!rating) return res.status(400).json({ error: 'Rating is required' });
+
+    try {
+        await db.query('INSERT INTO vehicle_reviews (vehicle_id, user_id, rating, comment) VALUES (?, ?, ?, ?)', [vehicleId, userId, rating, comment]);
+        res.json({ success: true, message: 'Review submitted' });
+    } catch (err) {
+        console.error('Error submitting review:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Get reviews for a vehicle
+router.get('/:id/reviews', async (req, res) => {
+    try {
+        const [reviews] = await db.query(`
+            SELECT r.*, u.full_name as user_name 
+            FROM vehicle_reviews r
+            JOIN users u ON r.user_id = u.id
+            WHERE r.vehicle_id = ?
+            ORDER BY r.created_at DESC
+        `, [req.params.id]);
+        res.json({ reviews });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

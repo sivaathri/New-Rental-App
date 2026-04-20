@@ -203,4 +203,26 @@ router.get('/enquiries', authMiddleware, async (req, res) => {
     }
 });
 
+// Get reviews for owner's vehicles
+router.get('/reviews', authMiddleware, async (req, res) => {
+    try {
+        const [reviews] = await db.query(`
+            SELECT 
+                r.*, 
+                u.full_name as reviewer_name,
+                v.name as vehicle_name,
+                v.registration_number
+            FROM vehicle_reviews r
+            JOIN users u ON r.user_id = u.id
+            JOIN vehicles v ON r.vehicle_id = v.id
+            WHERE v.user_id = ?
+            ORDER BY r.created_at DESC
+        `, [req.user.id]);
+        res.json({ reviews });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

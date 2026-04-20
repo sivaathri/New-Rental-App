@@ -31,6 +31,7 @@ export default function AdminPanel() {
   const [masterVehicles, setMasterVehicles] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [enquiries, setEnquiries] = useState([]);
+  const [allReviews, setAllReviews] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [subSearchQuery, setSubSearchQuery] = useState('');
   const [enquirySearchQuery, setEnquirySearchQuery] = useState('');
@@ -82,6 +83,8 @@ export default function AdminPanel() {
       setSubscriptions(subRes.data.subscriptions);
       const enquiryRes = await adminAPI.getEnquiries();
       setEnquiries(enquiryRes.data.enquiries);
+      const reviewRes = await adminAPI.getReviews();
+      setAllReviews(reviewRes.data.reviews);
     } catch(err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -205,6 +208,7 @@ export default function AdminPanel() {
           <SidebarItem icon={<Users/>} label="All Vehicle Owners" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
           <SidebarItem icon={<CreditCard/>} label="Subscriptions" count={subscriptions.length} active={activeTab === 'subscriptions'} onClick={() => setActiveTab('subscriptions')} />
           <SidebarItem icon={<MessageSquare/>} label="Enquiry List" count={enquiries.length} active={activeTab === 'enquiries'} onClick={() => setActiveTab('enquiries')} />
+          <SidebarItem icon={<Star/>} label="Reviews" active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')} />
         </div>
 
         <div className="px-4 mt-auto pt-6 border-t border-gray-50">

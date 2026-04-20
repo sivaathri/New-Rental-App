@@ -757,6 +757,7 @@ export default function Dashboard() {
   const [userProfile, setUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [detailedEnquiries, setDetailedEnquiries] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [enquirySearch, setEnquirySearch] = useState("");
   const [showMap, setShowMap] = useState(false);
   const [updatingVehicle, setUpdatingVehicle] = useState(null);
@@ -996,6 +997,9 @@ export default function Dashboard() {
 
       const detailedRes = await profileAPI.getDetailedEnquiries();
       setDetailedEnquiries(detailedRes.data.enquiries);
+
+      const reviewRes = await profileAPI.getReviews();
+      setReviews(reviewRes.data.reviews);
 
       setStats({
         total: res.data.vehicles.length,
@@ -1809,6 +1813,76 @@ export default function Dashboard() {
             >
               Back to Overview
             </button>
+          </div>
+        )}
+
+        {activeTab === "Reviews" && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm mb-10">
+              <h2 className="text-[20px] font-bold text-[#252f40]">
+                Customer Reviews
+              </h2>
+              <p className="text-[#67748e] text-[14px] mt-1">
+                Direct feedback from users who engaged with your fleet listings.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {reviews.map((rev) => (
+                <div
+                  key={rev.id}
+                  className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm hover:shadow-md transition-all"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">
+                        {rev.reviewer_name?.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-bold text-[#252f40]">
+                          {rev.reviewer_name}
+                        </p>
+                        <p className="text-[11px] text-[#67748e]">
+                          Reviewed {rev.vehicle_name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-0.5 bg-[#fff5e6] px-3 py-1 rounded-lg">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          size={12}
+                          className={
+                            s <= rev.rating
+                              ? "fill-[#fbcf33] text-[#fbcf33]"
+                              : "text-gray-200"
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-[#252f40] text-[14px] leading-relaxed italic mb-4">
+                    "{rev.comment}"
+                  </p>
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                    <p className="text-[11px] text-[#67748e] font-medium">
+                      {new Date(rev.created_at).toLocaleDateString()}
+                    </p>
+                    <span className="text-[11px] font-bold text-black uppercase tracking-wider">
+                      Verified User
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {reviews.length === 0 && (
+                <div className="col-span-full py-20 text-center bg-white rounded-[24px] border border-dashed border-gray-200">
+                  <Star size={48} className="text-gray-200 mx-auto mb-4" />
+                  <p className="text-gray-400 font-medium">
+                    No reviews received yet.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

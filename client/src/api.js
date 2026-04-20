@@ -30,6 +30,7 @@ export const profileAPI = {
   verifyEmailChange: (data) => api.post('/profile/verify-email-change', data),
   getEnquiryCount: () => api.get('/profile/enquiry-count'),
   getDetailedEnquiries: () => api.get('/profile/enquiries'),
+  getReviews: () => api.get('/profile/reviews'),
 };
 
 export const vehicleAPI = {
@@ -66,6 +67,7 @@ export const adminAPI = {
   updateApprovedVehicleOrder: (id, sort_order) => api.post(`/admin/vehicles/approved/${id}/order`, { sort_order }),
   getSubscriptions: () => api.get('/admin/subscriptions'),
   getEnquiries: () => api.get('/admin/enquiries'),
+  getReviews: () => api.get('/admin/reviews'),
 };
 
 export const subscriptionAPI = {
