@@ -619,6 +619,11 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/');
+      return;
+    }
     fetchDashboard();
   }, [navigate]);
 
@@ -692,9 +697,14 @@ export default function Dashboard() {
       <main className="flex-1 min-w-0 p-8 pt-6">
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-[24px] font-bold text-[#252f40] leading-tight flex items-center gap-2">
-              Welcome back, {userProfile?.user?.full_name ? userProfile.user.full_name.split(' ')[0] : "Owner"} 👋
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-[24px] font-bold text-[#252f40] leading-tight">
+                Welcome back, {userProfile?.user?.full_name ? userProfile.user.full_name.split(' ')[0] : "Owner"} 👋
+              </h1>
+              <span className="px-3 py-1 bg-[#82d616]/10 text-[#82d616] text-[11px] font-black rounded-lg border border-[#82d616]/20 tracking-tighter">
+                ID: Q1-{userProfile?.user?.unique_id || '----'}
+              </span>
+            </div>
             <p className="text-[#67748e] text-[14px] mt-0.5">
               Here's your fleet performance overview.
             </p>

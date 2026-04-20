@@ -25,8 +25,14 @@ async function initializeDB() {
             address TEXT,
             city VARCHAR(50) DEFAULT 'Pondicherry',
             profile_photo VARCHAR(255),
-            is_verified BOOLEAN DEFAULT false
+            is_verified BOOLEAN DEFAULT false,
+            role ENUM('master', 'vehicle-owners', 'user') DEFAULT 'user'
         )`);
+
+        // Migration: Add role if doesn't exist
+        try {
+            await db.query('ALTER TABLE users ADD COLUMN role ENUM(\'master\', \'vehicle-owners\', \'user\') DEFAULT \'user\'');
+        } catch(e) {}
 
         try {
             await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS unique_id VARCHAR(5) UNIQUE`);

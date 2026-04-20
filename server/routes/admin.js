@@ -201,7 +201,7 @@ router.post('/vehicles/master/:id/order', async (req, res) => {
 router.get('/subscriptions', async (req, res) => {
     try {
         const [subs] = await db.query(`
-            SELECT s.*, u.full_name as user_name, u.mobile_number, u.email as user_email
+            SELECT s.*, u.full_name as user_name, u.mobile_number, u.email as user_email, u.unique_id as user_unique_id
             FROM subscriptions s
             LEFT JOIN users u ON s.user_id = u.id
             ORDER BY s.id DESC

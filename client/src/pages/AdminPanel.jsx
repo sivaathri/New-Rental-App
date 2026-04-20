@@ -13,6 +13,14 @@ import {
 } from 'recharts';
 
 export default function AdminPanel() {
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
   const [verifications, setVerifications] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [rejectedVehicles, setRejectedVehicles] = useState([]);
@@ -23,6 +31,7 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [subSearchQuery, setSubSearchQuery] = useState('');
   const [subTimeFilter, setSubTimeFilter] = useState('all');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [masterFormData, setMasterFormData] = useState({ name: '', image: null });
   const [uploadingMaster, setUploadingMaster] = useState(false);
@@ -32,7 +41,15 @@ export default function AdminPanel() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => { fetchData(); fetchUsers(); }, []);
+  useEffect(() => { 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/');
+      return;
+    }
+    fetchData(); 
+    fetchUsers(); 
+  }, [navigate]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -319,7 +336,8 @@ export default function AdminPanel() {
                 v.owner_address?.toLowerCase().includes(query) ||
                 v.registration_number?.toLowerCase().includes(query) ||
                 v.type?.toLowerCase().includes(query) ||
-                v.owner_city?.toLowerCase().includes(query)
+                v.owner_city?.toLowerCase().includes(query) ||
+                v.owner_unique_id?.includes(query)
               );
             });
 
@@ -362,8 +380,13 @@ export default function AdminPanel() {
                               src={v.media?.[0] ? `http://localhost:5000${v.media[0].media_url}` : 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80'} 
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                           />
-                          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md text-[#82d616] text-[10px] font-bold px-3 py-1.5 rounded-full border border-green-100 shadow-sm flex items-center gap-1.5">
-                              <div className="w-1.5 h-1.5 bg-[#82d616] rounded-full animate-pulse" /> LIVE
+                          <div className="absolute top-4 right-4 flex flex-col gap-2">
+                            <div className="bg-white/90 backdrop-blur-md text-[#82d616] text-[10px] font-bold px-3 py-1.5 rounded-full border border-green-100 shadow-sm flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 bg-[#82d616] rounded-full animate-pulse" /> LIVE
+                            </div>
+                            <div className="bg-black/80 backdrop-blur-md text-white text-[9px] font-bold px-3 py-1.5 rounded-full border border-white/20 shadow-sm flex items-center gap-1.5">
+                                <Clock size={10} /> {formatDate(v.approved_at)}
+                            </div>
                           </div>
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
                               <button 
@@ -661,80 +684,120 @@ export default function AdminPanel() {
           )}
 
 
-          {activeTab === 'users' && (
-            <div className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden pb-6">
-              <div className="p-6 flex justify-between items-center border-b border-gray-50 mb-4">
-                <h3 className="text-[18px] font-bold text-[#252f40]">All Users</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-gray-50 bg-gray-50/50">
-                      <th className="px-6 py-4 text-[12px] font-bold text-gray-500 uppercase tracking-wider">ID</th>
-                      <th className="px-6 py-4 text-[12px] font-bold text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-4 text-[12px] font-bold text-gray-500 uppercase tracking-wider">Mobile</th>
-                      <th className="px-6 py-4 text-[12px] font-bold text-gray-500 uppercase tracking-wider">City</th>
-                      <th className="px-6 py-4 text-[12px] font-bold text-gray-500 uppercase tracking-wider">KYC Documents</th>
-                      <th className="px-6 py-4 text-[12px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {usersList.map((u) => (
-                      <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/20 transition-colors">
-                        <td className="px-6 py-4 text-[14px] text-gray-900">#{u.id}</td>
-                        <td className="px-6 py-4 text-[14px] font-bold text-[#82d616]">Q1-{u.unique_id || 'N/A'}</td>
-                        <td className="px-6 py-4 text-[14px] font-medium text-gray-900">{u.full_name || 'N/A'}</td>
-                        <td className="px-6 py-4 text-[14px] text-gray-600">{u.mobile_number}</td>
-                        <td className="px-6 py-4 text-[14px] text-gray-600">{u.city}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            {u.aadhar_card_url && (
-                              <button 
-                                onClick={() => setSelectedImg(`http://localhost:5000${u.aadhar_card_url}`)}
-                                className="p-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
-                                title="Aadhar Card"
-                              >
-                                <UserCheck size={14}/>
-                              </button>
-                            )}
-                            {u.driving_license_url && (
-                              <button 
-                                onClick={() => setSelectedImg(`http://localhost:5000${u.driving_license_url}`)}
-                                className="p-1.5 bg-green-50 text-green-600 rounded-md hover:bg-green-100"
-                                title="Driving License"
-                              >
-                                <ShieldCheck size={14}/>
-                              </button>
-                            )}
-                            {!u.aadhar_card_url && !u.driving_license_url && <span className="text-xs text-gray-400">No Docs</span>}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${u.is_verified ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                            {u.is_verified ? 'Verified' : 'Unverified'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    {usersList.length === 0 && (
+          {activeTab === 'users' && (() => {
+            const filteredUsers = usersList.filter(u => {
+              const query = userSearchQuery.toLowerCase();
+              return (
+                u.full_name?.toLowerCase().includes(query) ||
+                u.mobile_number?.includes(query) ||
+                u.city?.toLowerCase().includes(query) ||
+                u.unique_id?.includes(query)
+              );
+            });
+
+            return (
+              <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden pb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-gray-50 mb-6">
+                  <div>
+                    <h3 className="text-[20px] font-bold text-[#252f40]">Registry of Users</h3>
+                    <p className="text-[14px] text-[#67748e] mt-1">Manage and verify all registered fleet owners and drivers.</p>
+                  </div>
+                  <div className="relative group min-w-[320px] w-full md:w-auto">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#67748e] group-focus-within:text-[#82d616] transition-colors" size={18} />
+                    <input 
+                      type="text" 
+                      placeholder="Search name, ID, or mobile..." 
+                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-[#82d616]/10 focus:border-[#82d616] outline-none transition-all text-sm font-medium"
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto px-4">
+                  <table className="w-full text-left border-separate border-spacing-y-2">
+                    <thead>
                       <tr>
-                        <td colSpan="5" className="px-6 py-12 text-center text-[#67748e] text-[14px]">
-                          No users found
-                        </td>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Sys ID</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Quick1 ID</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Identity</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Compliance</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Status</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.map((u) => (
+                        <tr key={u.id} className="group hover:bg-gray-50/50 transition-all rounded-xl shadow-sm">
+                          <td className="px-6 py-4 bg-white border-y border-l border-gray-50 rounded-l-2xl group-hover:border-gray-100">
+                             <span className="text-[14px] text-gray-400 font-medium">#{u.id}</span>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                             <span className="text-[14px] font-bold text-[#82d616] bg-[#82d616]/10 px-3 py-1 rounded-lg">Q1-{u.unique_id || '----'}</span>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                             <div className="flex flex-col">
+                                <span className="text-[14px] font-bold text-[#252f40]">{u.full_name || 'Anonymous User'}</span>
+                                <span className="text-[12px] text-[#67748e]">{u.mobile_number} • {u.city}</span>
+                             </div>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                            <div className="flex gap-2">
+                              {u.aadhar_card_url && (
+                                <button 
+                                  onClick={() => setSelectedImg(`http://localhost:5000${u.aadhar_card_url}`)}
+                                  className="w-8 h-8 flex items-center justify-center bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                  title="Aadhar Card"
+                                >
+                                  <UserCheck size={14}/>
+                                </button>
+                              )}
+                              {u.driving_license_url && (
+                                <button 
+                                  onClick={() => setSelectedImg(`http://localhost:5000${u.driving_license_url}`)}
+                                  className="w-8 h-8 flex items-center justify-center bg-green-50 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all shadow-sm"
+                                  title="Driving License"
+                                >
+                                  <ShieldCheck size={14}/>
+                                </button>
+                              )}
+                              {!u.aadhar_card_url && !u.driving_license_url && <span className="text-[11px] font-bold text-gray-300 italic">No Uploads</span>}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-r border-gray-50 rounded-r-2xl group-hover:border-gray-100">
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              u.is_verified ? 'bg-[#82d616]/10 text-[#82d616] border border-[#82d616]/20' : 'bg-gray-100 text-gray-500 border border-gray-200'
+                            }`}>
+                              {u.is_verified ? 'Verified' : 'Unverified'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredUsers.length === 0 && (
+                        <tr>
+                          <td colSpan="5" className="px-6 py-20 text-center">
+                             <div className="flex flex-col items-center gap-4">
+                                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-200">
+                                   <Users size={32} />
+                                </div>
+                                <p className="text-[14px] font-bold text-[#252f40]">No matching users found</p>
+                             </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {activeTab === 'subscriptions' && (() => {
             const filteredSubs = subscriptions.filter(s => {
               const matchesSearch = 
                 s.user_name?.toLowerCase().includes(subSearchQuery.toLowerCase()) ||
                 s.mobile_number?.includes(subSearchQuery) ||
-                s.plan_name?.toLowerCase().includes(subSearchQuery.toLowerCase());
+                s.plan_name?.toLowerCase().includes(subSearchQuery.toLowerCase()) ||
+                String(s.user_unique_id)?.includes(subSearchQuery);
               
               if (!matchesSearch) return false;
               if (subTimeFilter === 'all') return true;
@@ -1032,7 +1095,7 @@ export default function AdminPanel() {
                            <h3 className="text-[15px] font-bold text-[#252f40] uppercase tracking-wider flex items-center gap-2">
                               <Landmark size={16} className="text-[#ea0606]" /> Base Operations
                            </h3>
-                           <div className="space-y-6">
+                             <div className="space-y-6">
                               <div>
                                  <p className="text-[11px] font-bold text-[#67748e] uppercase mb-1.5">Primary Pickup Point</p>
                                  <p className="text-[14px] font-semibold text-[#252f40] leading-relaxed">{selectedVehicleForDetails.pickup_location || 'Not Configured'}</p>
@@ -1040,6 +1103,10 @@ export default function AdminPanel() {
                               <div>
                                  <p className="text-[11px] font-bold text-[#67748e] uppercase mb-1.5">Strategic Landmark</p>
                                  <p className="text-[14px] font-semibold text-[#252f40]">{selectedVehicleForDetails.landmark || 'No specific identifier'}</p>
+                              </div>
+                              <div>
+                                 <p className="text-[11px] font-bold text-[#67748e] uppercase mb-1.5">Registry Active Since</p>
+                                 <p className="text-[14px] font-bold text-[#82d616]">{formatDate(selectedVehicleForDetails.approved_at)}</p>
                               </div>
                            </div>
                         </div>
@@ -1054,6 +1121,7 @@ export default function AdminPanel() {
                                     {selectedVehicleForDetails.owner_name?.[0].toUpperCase()}
                                  </div>
                                  <div>
+                                    <p className="text-[10px] font-bold text-[#82d616] uppercase tracking-[2px] mb-1">Q1-{selectedVehicleForDetails.owner_unique_id || 'N/A'}</p>
                                     <p className="text-[16px] font-bold text-[#252f40] leading-none mb-1">{selectedVehicleForDetails.owner_name}</p>
                                     <p className="text-[11px] text-[#67748e] font-medium uppercase tracking-widest">{selectedVehicleForDetails.owner_city}</p>
                                  </div>
