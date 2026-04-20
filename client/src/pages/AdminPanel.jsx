@@ -25,6 +25,8 @@ export default function AdminPanel() {
   const [uploadingMaster, setUploadingMaster] = useState(false);
   const [editingMaster, setEditingMaster] = useState(null);
   const [selectedImg, setSelectedImg] = useState(null);
+  const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => { fetchData(); fetchUsers(); }, []);
@@ -296,153 +298,120 @@ export default function AdminPanel() {
             </div>
           )}
  
-          {activeTab === 'approved' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h2 className="text-[20px] font-bold text-[#252f40]">Approved Assets</h2>
-                    <p className="text-[13px] text-[#67748e] mt-0.5">Comprehensive view of live fleet in the ecosystem.</p>
-                  </div>
-                  <span className="px-4 py-1.5 bg-green-50 text-green-600 text-[11px] font-bold rounded-lg border border-green-100">{approvedVehicles.length} LIVE</span>
-               </div>
+          {activeTab === 'approved' && (() => {
+            const filteredApproved = approvedVehicles.filter(v => {
+              const query = searchQuery.toLowerCase();
+              return (
+                v.name?.toLowerCase().includes(query) ||
+                v.owner_name?.toLowerCase().includes(query) ||
+                v.owner_email?.toLowerCase().includes(query) ||
+                v.owner_address?.toLowerCase().includes(query) ||
+                v.registration_number?.toLowerCase().includes(query) ||
+                v.type?.toLowerCase().includes(query) ||
+                v.owner_city?.toLowerCase().includes(query)
+              );
+            });
 
-               {approvedVehicles.map((v) => (
-                 <div key={v.id} className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm flex flex-col gap-8 group">
-                   <div className="flex flex-col lg:flex-row gap-8">
-                     {/* Left Column: Vehicle & Owner Info */}
-                     <div className="flex-1 space-y-8">
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                         {/* Vehicle Specs */}
-                         <div>
-                           <h3 className="text-[15px] font-bold text-[#252f40] border-b border-gray-50 pb-2 mb-4 flex items-center gap-2">
-                             <Car size={16} className="text-[#82d616]" /> Vehicle Information
-                           </h3>
-                           <div className="grid grid-cols-2 gap-y-3 text-[13px]">
-                             <div><span className="text-[#67748e]">Name:</span> <strong className="text-[#252f40] ml-1">{v.name}</strong></div>
-                             <div><span className="text-[#67748e]">Brand:</span> <strong className="text-[#252f40] ml-1">{v.type}</strong></div>
-                             <div><span className="text-[#67748e]">Year:</span> <strong className="text-[#252f40] ml-1">{v.model_year}</strong></div>
-                             <div><span className="text-[#67748e]">Reg No:</span> <strong className="text-[#252f40] ml-1">{v.registration_number}</strong></div>
-                             <div><span className="text-[#67748e]">Fuel:</span> <strong className="text-[#252f40] ml-1">{v.fuel_type}</strong></div>
-                             <div><span className="text-[#67748e]">Trans:</span> <strong className="text-[#252f40] ml-1">{v.transmission_type || 'Manual'}</strong></div>
-                             <div><span className="text-[#67748e]">Seating:</span> <strong className="text-[#252f40] ml-1">{v.seating_capacity}</strong></div>
-                             <div><span className="text-[#67748e]">Mileage:</span> <strong className="text-[#252f40] ml-1">{v.mileage} km/l</strong></div>
-                           </div>
-                         </div>
-                         
-                         {/* Owner Info */}
-                         <div>
-                           <h3 className="text-[15px] font-bold text-[#252f40] border-b border-gray-50 pb-2 mb-4 flex items-center gap-2">
-                             <Users size={16} className="text-[#2167f2]" /> Owner Details
-                           </h3>
-                           <div className="space-y-3 text-[13px]">
-                             <div className="flex justify-between"><span className="text-[#67748e]">Full Name:</span> <strong className="text-[#252f40]">{v.owner_name || 'N/A'}</strong></div>
-                             <div className="flex justify-between"><span className="text-[#67748e]">Mobile:</span> <strong className="text-[#252f40]">{v.owner_mobile}</strong></div>
-                             <div className="flex justify-between"><span className="text-[#67748e]">Email:</span> <strong className="text-[#252f40]">{v.owner_email || 'N/A'}</strong></div>
-                             <div className="flex justify-between"><span className="text-[#67748e]">City:</span> <strong className="text-[#252f40]">{v.owner_city || 'N/A'}</strong></div>
-                             <div><span className="text-[#67748e]">Address:</span> <p className="mt-1 font-medium text-[#252f40] leading-relaxed">{v.owner_address || 'N/A'}</p></div>
-                           </div>
-                         </div>
-                       </div>
-
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          {/* Pricing & Performance */}
-                          <div>
-                            <h3 className="text-[15px] font-bold text-[#252f40] border-b border-gray-50 pb-2 mb-4 flex items-center gap-2">
-                              <Tag size={16} className="text-[#fbcf33]" /> Pricing & Strategy
-                            </h3>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="bg-gray-50 p-3 rounded-xl">
-                                <p className="text-[10px] font-bold text-[#67748e] uppercase">Per Day</p>
-                                <p className="text-[16px] font-bold text-[#252f40]">₹{Math.floor(v.price_per_day)}</p>
-                              </div>
-                              <div className="bg-gray-50 p-3 rounded-xl">
-                                <p className="text-[10px] font-bold text-[#67748e] uppercase">Per Hour</p>
-                                <p className="text-[16px] font-bold text-[#252f40]">₹{Math.floor(v.price_per_hour)}</p>
-                              </div>
-                              <div className="bg-gray-50 p-3 rounded-xl">
-                                <p className="text-[10px] font-bold text-[#67748e] uppercase">Per KM</p>
-                                <p className="text-[16px] font-bold text-[#252f40]">₹{Math.floor(v.price_per_km)}</p>
-                              </div>
-                              <div className="bg-gray-50 p-3 rounded-xl">
-                                <p className="text-[10px] font-bold text-[#67748e] uppercase">KM Limit</p>
-                                <p className="text-[16px] font-bold text-[#252f40]">{v.max_km_per_day} km</p>
-                              </div>
+            return (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-2">
+                    <div>
+                      <h2 className="text-[24px] font-bold text-[#252f40]">Approved Assets Portfolio</h2>
+                      <p className="text-[14px] text-[#67748e] mt-0.5">Comprehensive view of live fleet in the ecosystem.</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="relative group min-w-[300px]">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#67748e] group-focus-within:text-[#82d616] transition-colors" size={18} />
+                        <input 
+                          type="text" 
+                          placeholder="Search model, owner, email..." 
+                          className="w-full pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-[#82d616]/10 focus:border-[#82d616] outline-none shadow-sm transition-all text-[13px] font-medium"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-gray-100 shadow-sm">
+                        <div className="flex -space-x-3">
+                          {approvedVehicles.slice(0, 5).map((v, i) => (
+                            <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 overflow-hidden shadow-sm">
+                              <img src={v.media?.[0] ? `http://localhost:5000${v.media[0].media_url}` : `https://ui-avatars.com/api/?name=${v.name}&background=random`} className="w-full h-full object-cover" />
                             </div>
-                          </div>
+                          ))}
+                        </div>
+                        <span className="text-[12px] font-bold text-[#252f40]">{approvedVehicles.length} LIVE</span>
+                      </div>
+                    </div>
+                </div>
 
-                          {/* Deployment & Location */}
-                          <div>
-                            <h3 className="text-[15px] font-bold text-[#252f40] border-b border-gray-50 pb-2 mb-4 flex items-center gap-2">
-                              <Landmark size={16} className="text-[#ea0606]" /> Deployment Point
-                            </h3>
-                            <div className="space-y-4">
-                              <div>
-                                <p className="text-[10px] font-bold text-[#67748e] uppercase">Primary Location</p>
-                                <p className="text-[13px] font-medium text-[#252f40] mt-1 leading-relaxed">{v.pickup_location || 'Not set'}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-[#67748e] uppercase">Landmark</p>
-                                <p className="text-[13px] font-medium text-[#252f40] mt-1 leading-relaxed">{v.landmark || 'None specified'}</p>
-                              </div>
-                            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredApproved.map((v) => (
+                    <div key={v.id} className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden group hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300">
+                        <div className="relative h-56 overflow-hidden">
+                          <img 
+                              src={v.media?.[0] ? `http://localhost:5000${v.media[0].media_url}` : 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80'} 
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                          />
+                          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md text-[#82d616] text-[10px] font-bold px-3 py-1.5 rounded-full border border-green-100 shadow-sm flex items-center gap-1.5">
+                              <div className="w-1.5 h-1.5 bg-[#82d616] rounded-full animate-pulse" /> LIVE
                           </div>
-                       </div>
-                     </div>
-
-                     {/* Right Column: Visuals & Actions */}
-                     <div className="w-full lg:w-[320px] space-y-6">
-                        <div className="bg-gray-50 rounded-[20px] p-6 space-y-4 border border-gray-100 flex flex-col items-center">
-                           <div className="flex items-center gap-2 text-[11px] font-bold text-[#82d616] bg-white border border-[#82d616]/20 px-4 py-2 rounded-full shadow-sm">
-                              <Clock size={12} />
-                              APPROVED ON {v.approved_at ? new Date(v.approved_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
-                           </div>
-                           
-                           <div className="flex flex-wrap justify-center gap-3 w-full">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
                               <button 
-                                onClick={() => handleAction('vehicles', v.id, 'Rejected')}
-                                className="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl text-[12px] hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
+                                onClick={() => setSelectedVehicleForDetails(v)}
+                                className="w-full py-3 bg-white text-black font-bold rounded-xl transition-all shadow-lg text-[13px] hover:bg-[#82d616] hover:text-white"
                               >
-                                <X size={14} /> Revoke Approval
+                                View Full Portfolio
                               </button>
-                           </div>
+                          </div>
                         </div>
-
-                        <div>
-                          <p className="text-[11px] font-bold text-[#67748e] uppercase tracking-wider mb-3">Vehicle Gallery</p>
-                          <div className="flex flex-wrap gap-2">
-                            {v.media && v.media.slice(0, 4).map((img, idx) => (
-                              <div key={idx} className="w-[70px] h-[70px] rounded-xl overflow-hidden border border-gray-100 cursor-pointer hover:border-[#82d616] transition-all shadow-sm" onClick={() => setSelectedImg(`http://localhost:5000${img.media_url}`)}>
-                                <img src={`http://localhost:5000${img.media_url}`} className="w-full h-full object-cover" alt="Media" />
+                        <div className="p-6">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-[18px] font-bold text-[#252f40] truncate pr-4">{v.name}</h4>
+                            <span className="text-[13px] font-bold text-[#2167f2]">₹{Math.floor(v.price_per_day)}/day</span>
+                          </div>
+                          <p className="text-[12px] text-[#67748e] flex items-center gap-2 mb-6">
+                              <Tag size={12} /> {v.type} • {v.registration_number}
+                          </p>
+                          
+                          <div className="flex items-center justify-between border-t border-gray-50 pt-5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-[11px] font-bold text-[#252f40] shadow-sm">
+                                    {v.owner_name?.[0].toUpperCase()}
+                                </div>
+                                <div>
+                                    <p className="text-[12px] font-bold text-[#252f40] leading-none mb-0.5">{v.owner_name}</p>
+                                    <p className="text-[10px] text-[#67748e] font-medium uppercase tracking-wider">Property Owner</p>
+                                </div>
                               </div>
-                            ))}
-                            {(!v.media || v.media.length === 0) && <p className="text-[11px] text-gray-400 italic">No media uploaded</p>}
+                              <button 
+                                onClick={() => setSelectedVehicleForDetails(v)}
+                                className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 hover:text-[#2167f2] hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100"
+                              >
+                                <MoreHorizontal size={18} />
+                              </button>
                           </div>
                         </div>
+                    </div>
+                  ))}
+                </div>
 
-                        <div>
-                          <p className="text-[11px] font-bold text-[#67748e] uppercase tracking-wider mb-3">Owner Verification Docs</p>
-                          <div className="flex gap-4">
-                            <DocThumbnail label="RC Book" url={v.rc_book_url} icon={<FileText size={14}/>} onClick={() => setSelectedImg(`http://localhost:5000${v.rc_book_url}`)} />
-                            <DocThumbnail label="Driving License" url={v.driving_license_url} icon={<ShieldCheck size={14}/>} onClick={() => setSelectedImg(`http://localhost:5000${v.driving_license_url}`)} />
-                            <DocThumbnail label="Aadhar Card" url={v.aadhar_card_url} icon={<UserCheck size={14}/>} onClick={() => setSelectedImg(`http://localhost:5000${v.aadhar_card_url}`)} />
-                          </div>
-                        </div>
-                     </div>
-                   </div>
-                 </div>
-               ))}
-
-               {approvedVehicles.length === 0 && (
-                 <div className="bg-white p-20 text-center rounded-[32px] border border-gray-100 shadow-sm">
-                   <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">
-                     <Car size={40} />
-                   </div>
-                   <h3 className="text-xl font-bold text-[#252f40]">No Approved Assets</h3>
-                   <p className="text-[#67748e] text-sm mt-1">When vehicles are validated, they will appear here.</p>
-                 </div>
-               )}
-            </div>
-          )}
+                {filteredApproved.length === 0 && (
+                  <div className="bg-white p-24 text-center rounded-[32px] border border-gray-100 shadow-sm">
+                    <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-200">
+                      <Search size={48} />
+                    </div>
+                    <h3 className="text-[22px] font-bold text-[#252f40]">No Matches Found</h3>
+                    <p className="text-[#67748e] text-sm mt-2 max-w-sm mx-auto">We couldn't find any approved assets matching "{searchQuery}". Try a different term.</p>
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="mt-6 px-6 py-2 bg-black text-white text-[12px] font-bold rounded-xl hover:bg-gray-800 transition-all"
+                    >
+                      CLEAR SEARCH
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {activeTab === 'rejected' && (
             <div className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -750,10 +719,206 @@ export default function AdminPanel() {
         </div>
       </main>
 
+      {/* Full Details Modal for Approved Assets */}
+      {selectedVehicleForDetails && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-[120] flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto"
+          onClick={() => setSelectedVehicleForDetails(null)}
+        >
+          <div 
+            className="bg-white w-full max-w-5xl rounded-[32px] overflow-hidden shadow-2xl relative my-8 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => setSelectedVehicleForDetails(null)}
+              className="absolute top-8 right-8 w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center hover:bg-black hover:text-white transition-all z-10 shadow-sm"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="flex flex-col h-[85vh]">
+               {/* Hero Section in Modal */}
+               <div className="relative h-72 shrink-0">
+                  <img 
+                    src={selectedVehicleForDetails.media?.[0] ? `http://localhost:5000${selectedVehicleForDetails.media[0].media_url}` : 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80'} 
+                    className="w-full h-full object-cover" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
+                  <div className="absolute bottom-0 left-0 p-10 w-full">
+                     <div className="flex justify-between items-end">
+                        <div>
+                           <div className="flex items-center gap-2 mb-2">
+                             <span className="px-3 py-1 bg-[#82d616] text-white text-[10px] font-bold rounded-full">ACTIVE FLEET</span>
+                             <span className="text-[13px] font-bold text-[#67748e]">{selectedVehicleForDetails.registration_number}</span>
+                           </div>
+                           <h2 className="text-[36px] font-extrabold text-[#252f40] leading-none mb-2">{selectedVehicleForDetails.name}</h2>
+                           <p className="text-[16px] text-[#67748e] font-medium flex items-center gap-2">
+                             <Tag size={16} className="text-[#2167f2]" /> {selectedVehicleForDetails.type} • Premium Tier Asset
+                           </p>
+                        </div>
+                        <div className="flex gap-3">
+                           <button 
+                             onClick={() => {
+                               if(window.confirm('Are you sure you want to revoke approval for this vehicle?')) {
+                                 handleAction('vehicles', selectedVehicleForDetails.id, 'Rejected');
+                                 setSelectedVehicleForDetails(null);
+                               }
+                             }}
+                             className="px-8 py-4 bg-red-50 text-red-600 font-bold rounded-2xl text-[14px] hover:bg-red-600 hover:text-white transition-all flex items-center gap-2 shadow-sm"
+                           >
+                             <ShieldCheck size={18} /> Revoke Permit
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="flex-1 overflow-y-auto p-10 pt-4 space-y-12 no-scrollbar">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                     {/* Specifications */}
+                     <div className="lg:col-span-2 space-y-10">
+                        <section>
+                           <h3 className="text-[18px] font-bold text-[#252f40] mb-6 flex items-center gap-3">
+                             <div className="w-10 h-10 bg-[#82d616]/10 rounded-xl flex items-center justify-center">
+                               <Car size={20} className="text-[#82d616]" />
+                             </div>
+                             Technical Specifications
+                           </h3>
+                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                              {[
+                                { label: 'Year', value: selectedVehicleForDetails.model_year, icon: <Clock size={16}/> },
+                                { label: 'Fuel', value: selectedVehicleForDetails.fuel_type, icon: <Zap size={16}/> },
+                                { label: 'Transmission', value: selectedVehicleForDetails.transmission_type || 'Manual', icon: <Settings size={16}/> },
+                                { label: 'Seating', value: `${selectedVehicleForDetails.seating_capacity} Seater`, icon: <Users size={16}/> },
+                                { label: 'Mileage', value: `${selectedVehicleForDetails.mileage} km/l`, icon: <TrendingUp size={16}/> },
+                                { label: 'Max KM/Day', value: `${selectedVehicleForDetails.max_km_per_day} km`, icon: <Search size={16}/> },
+                              ].map((spec, i) => (
+                                <div key={i} className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                                   <div className="text-[#67748e] mb-2">{spec.icon}</div>
+                                   <p className="text-[10px] font-bold text-[#67748e] uppercase tracking-wider mb-1">{spec.label}</p>
+                                   <p className="text-[15px] font-bold text-[#252f40]">{spec.value}</p>
+                                </div>
+                              ))}
+                           </div>
+                        </section>
+
+                        <section>
+                           <h3 className="text-[18px] font-bold text-[#252f40] mb-6 flex items-center gap-3">
+                             <div className="w-10 h-10 bg-[#fbcf33]/10 rounded-xl flex items-center justify-center">
+                               <Tag size={20} className="text-[#fbcf33]" />
+                             </div>
+                             Commercial Strategy
+                           </h3>
+                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                              <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-2xl shadow-xl text-white">
+                                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Daily Rental</p>
+                                 <h4 className="text-[28px] font-extrabold mb-1">₹{Math.floor(selectedVehicleForDetails.price_per_day)}</h4>
+                                 <p className="text-[11px] text-gray-400">Net revenue per 24 hours</p>
+                              </div>
+                              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                 <p className="text-[11px] font-bold text-[#67748e] uppercase tracking-widest mb-3">Hourly Rate</p>
+                                 <h4 className="text-[24px] font-bold text-[#252f40] mb-1">₹{Math.floor(selectedVehicleForDetails.price_per_hour)}</h4>
+                                 <p className="text-[11px] text-[#67748e]">Flexible booking unit</p>
+                              </div>
+                              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                 <p className="text-[11px] font-bold text-[#67748e] uppercase tracking-widest mb-3">Excess KM</p>
+                                 <h4 className="text-[24px] font-bold text-[#252f40] mb-1">₹{Math.floor(selectedVehicleForDetails.price_per_km)}</h4>
+                                 <p className="text-[11px] text-[#67748e] font-medium">Add-on per kilometer</p>
+                              </div>
+                           </div>
+                        </section>
+
+                        <section>
+                           <h3 className="text-[18px] font-bold text-[#252f40] mb-6">Visual Repository</h3>
+                           <div className="grid grid-cols-4 gap-4">
+                              {selectedVehicleForDetails.media?.map((img, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className="aspect-square rounded-2xl overflow-hidden border border-gray-100 cursor-pointer hover:border-[#82d616] transition-all group relative"
+                                  onClick={() => setSelectedImg(`http://localhost:5000${img.media_url}`)}
+                                >
+                                  <img src={`http://localhost:5000${img.media_url}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                     <Search size={20} className="text-white" />
+                                  </div>
+                                </div>
+                              ))}
+                              {(!selectedVehicleForDetails.media || selectedVehicleForDetails.media.length === 0) && (
+                                <div className="col-span-4 p-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-center text-gray-400">
+                                   No high-resolution images available
+                                </div>
+                              )}
+                           </div>
+                        </section>
+                     </div>
+
+                     {/* Sidebar Info */}
+                     <div className="space-y-10">
+                        <div className="bg-gray-50/50 p-8 rounded-[24px] border border-gray-100 space-y-8">
+                           <h3 className="text-[15px] font-bold text-[#252f40] uppercase tracking-wider flex items-center gap-2">
+                              <Landmark size={16} className="text-[#ea0606]" /> Base Operations
+                           </h3>
+                           <div className="space-y-6">
+                              <div>
+                                 <p className="text-[11px] font-bold text-[#67748e] uppercase mb-1.5">Primary Pickup Point</p>
+                                 <p className="text-[14px] font-semibold text-[#252f40] leading-relaxed">{selectedVehicleForDetails.pickup_location || 'Not Configured'}</p>
+                              </div>
+                              <div>
+                                 <p className="text-[11px] font-bold text-[#67748e] uppercase mb-1.5">Strategic Landmark</p>
+                                 <p className="text-[14px] font-semibold text-[#252f40]">{selectedVehicleForDetails.landmark || 'No specific identifier'}</p>
+                              </div>
+                           </div>
+                        </div>
+
+                        <div className="bg-white p-8 rounded-[24px] border border-gray-100 space-y-8 shadow-sm">
+                           <h3 className="text-[15px] font-bold text-[#252f40] uppercase tracking-wider flex items-center gap-2">
+                              <Users size={16} className="text-[#2167f2]" /> Ownership Details
+                           </h3>
+                           <div className="space-y-5">
+                              <div className="flex items-center gap-4">
+                                 <div className="w-12 h-12 bg-blue-50 text-[#2167f2] rounded-full flex items-center justify-center font-bold text-lg border border-blue-100">
+                                    {selectedVehicleForDetails.owner_name?.[0].toUpperCase()}
+                                 </div>
+                                 <div>
+                                    <p className="text-[16px] font-bold text-[#252f40] leading-none mb-1">{selectedVehicleForDetails.owner_name}</p>
+                                    <p className="text-[11px] text-[#67748e] font-medium uppercase tracking-widest">{selectedVehicleForDetails.owner_city}</p>
+                                 </div>
+                              </div>
+                              <div className="pt-4 space-y-4 border-t border-gray-50">
+                                 <div className="flex items-center gap-3 text-[13px] text-[#252f40]">
+                                    <Smartphone size={16} className="text-[#67748e]" /> <strong>{selectedVehicleForDetails.owner_mobile}</strong>
+                                 </div>
+                                 <div className="flex items-center gap-3 text-[13px] text-[#252f40]">
+                                    <MessageSquare size={16} className="text-[#67748e]" /> <strong>{selectedVehicleForDetails.owner_email || 'No email provided'}</strong>
+                                 </div>
+                                 <div className="p-4 bg-gray-50 rounded-xl">
+                                    <p className="text-[10px] font-bold text-[#67748e] uppercase mb-2">Registered Address</p>
+                                    <p className="text-[13px] font-medium text-[#252f40] leading-relaxed">{selectedVehicleForDetails.owner_address || 'N/A'}</p>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+
+                        <div className="space-y-6">
+                           <h3 className="text-[15px] font-bold text-[#252f40] uppercase tracking-wider">Compliance Documents</h3>
+                           <div className="grid grid-cols-3 gap-3">
+                              <DocThumbnail label="RC Book" url={selectedVehicleForDetails.rc_book_url} icon={<FileText size={16}/>} onClick={() => setSelectedImg(`http://localhost:5000${selectedVehicleForDetails.rc_book_url}`)} />
+                              <DocThumbnail label="License" url={selectedVehicleForDetails.driving_license_url} icon={<ShieldCheck size={16}/>} onClick={() => setSelectedImg(`http://localhost:5000${selectedVehicleForDetails.driving_license_url}`)} />
+                              <DocThumbnail label="Aadhar" url={selectedVehicleForDetails.aadhar_card_url} icon={<UserCheck size={16}/>} onClick={() => setSelectedImg(`http://localhost:5000${selectedVehicleForDetails.aadhar_card_url}`)} />
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Image Modal */}
       {selectedImg && (
         <div 
-          className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center p-4 backdrop-blur-sm"
           onClick={() => setSelectedImg(null)}
         >
           <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center">
@@ -780,6 +945,7 @@ export default function AdminPanel() {
           </div>
         </div>
       )}
+
 
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }

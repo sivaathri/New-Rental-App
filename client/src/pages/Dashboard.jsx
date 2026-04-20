@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { profileAPI, vehicleAPI, subscriptionAPI } from "../api";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   BarChart as BarChartIcon,
   Users,
@@ -53,10 +54,11 @@ import L from 'leaflet';
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+const API_BASE = "http://localhost:5000/api";
 
 function LocationPickerModal({ onSelect, onClose }) {
   const [position, setPosition] = useState([11.9416, 79.8083]); 
@@ -107,6 +109,57 @@ function LocationPickerModal({ onSelect, onClose }) {
               Select Point
            </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TransmissionFailedModal({ onClose, error }) {
+  return (
+    <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+      <div className="relative bg-white rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-red-100">
+        <div className="p-12 text-center space-y-8">
+          <div className="relative mx-auto w-24 h-24">
+             <div className="absolute inset-0 bg-red-100 rounded-full animate-ping opacity-20" />
+             <div className="relative w-24 h-24 bg-red-50 rounded-full flex items-center justify-center text-red-600 border-2 border-red-100">
+                <Zap size={40} className="animate-pulse" />
+             </div>
+             <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg text-red-600 border border-red-50">
+                <X size={20} strokeWidth={3} />
+             </div>
+          </div>
+          
+          <div className="space-y-3">
+             <h3 className="text-[28px] font-black text-[#252f40] leading-tight tracking-tight">Transmission Interrupted</h3>
+             <p className="text-[15px] font-medium text-gray-500 max-w-[280px] mx-auto">Purchase Failed. The secure link between nodes was severed during the transaction.</p>
+          </div>
+
+          <div className="bg-red-50/50 p-6 rounded-3xl border border-red-50 space-y-4">
+             <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-red-400">
+                <span>Error Log</span>
+                <span>ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
+             </div>
+             <p className="text-[13px] font-bold text-red-600 leading-relaxed italic">"{error || 'The system encountered an unexpected structural failure.'}"</p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+             <button 
+                onClick={onClose}
+                className="w-full py-4 bg-black text-white rounded-2xl font-bold text-[14px] shadow-xl shadow-black/10 transition-all hover:scale-[1.02] active:scale-95"
+             >
+                Initialize Manual Reset
+             </button>
+             <button 
+                onClick={onClose}
+                className="text-[12px] font-bold text-gray-400 hover:text-black transition-colors"
+             >
+                ABORT SEQUENCE
+             </button>
+          </div>
+        </div>
+        
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-white to-red-600 animate-shimmer" />
       </div>
     </div>
   );
@@ -190,7 +243,6 @@ function AddVehicleModal({ onClose, onVehicleAdded, vehicles, subscriptions }) {
   const limit = activePlan ? (PLAN_LIMITS[activePlan.plan_name]?.[vehicle.type] || 0) : 0;
   const isOverLimit = activePlan ? currentCount >= limit : true;
 
-  const API_BASE = "http://localhost:5000/api";
   const vehicleTypes = ["Car", "Bike", "Bus", "Van", "Mini-Van", "Mini-Bus", "Tempo_traveller", "traveller"];
 
   const handleSubmit = async (e) => {
@@ -390,6 +442,7 @@ export default function Dashboard() {
   const [selectedSubscriptionVehicle, setSelectedSubscriptionVehicle] = useState(null);
   const [userSubscriptions, setUserSubscriptions] = useState([]);
   const [showAddVehicleModal, setShowAddVehicleModal] = useState(false);
+  const [purchaseError, setPurchaseError] = useState(null);
 
   const handleSubscribe = async () => {
     if (!selectedPlan || !selectedVehicle) return;
@@ -404,7 +457,7 @@ export default function Dashboard() {
       fetchDashboard();
       alert("Subscription activated! Your vehicle is now live.");
     } catch (err) {
-      alert("Error activating subscription");
+      setPurchaseError(err.response?.data?.error || "Signal Interrupted: Unable to establish membership node.");
     } finally {
       setIsSubscribing(false);
     }
@@ -1194,7 +1247,11 @@ export default function Dashboard() {
                           });
                           alert("Membership Link Established! Node Updated.");
                           fetchDashboard();
-                        } catch(e) { alert("Transmission Interrupted: Purchase Failed"); } finally { setIsSubscribing(false); }
+                        } catch(e) { 
+                          setPurchaseError(e.response?.data?.error || "Transmission Interrupted: Purchase Failed"); 
+                        } finally { 
+                          setIsSubscribing(false); 
+                        }
                       }}
                       className={`w-full py-4 rounded-2xl font-bold text-[15px] transition-all mb-10 ${p.popular ? 'bg-[#6366f1] text-white shadow-xl shadow-[#6366f1]/30 hover:bg-[#4f46e5]' : 'bg-white text-[#6366f1] border-2 border-[#6366f1] hover:bg-[#6366f1]/5'}`}
                     >
@@ -1270,6 +1327,13 @@ export default function Dashboard() {
                </div>
             )}
           </div>
+        )}
+
+        {purchaseError && (
+          <TransmissionFailedModal 
+            error={purchaseError} 
+            onClose={() => setPurchaseError(null)} 
+          />
         )}
       </main>
 
