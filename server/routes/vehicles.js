@@ -23,7 +23,7 @@ router.post('/add', authMiddleware, (req, res, next) => {
     });
 }, async (req, res) => {
     try {
-        const { type, name, model_year, registration_number, seating_capacity, fuel_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark } = req.body;
+        const { type, name, model_year, registration_number, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark } = req.body;
         
         // CHECK LIMITS
         const [activeSubs] = await db.query('SELECT * FROM subscriptions WHERE user_id = ? AND status = "Active" AND end_date > NOW()', [req.user.id]);
@@ -50,15 +50,15 @@ router.post('/add', authMiddleware, (req, res, next) => {
         if (vehicleId) {
             await db.query(`
                 UPDATE vehicles 
-                SET type=?, name=?, model_year=?, registration_number=?, rc_book_url=COALESCE(?, rc_book_url), seating_capacity=?, fuel_type=?, mileage=?, price_per_day=?, price_per_hour=?, price_per_km=?, max_km_per_day=?, pickup_location=?, landmark=?, status='Waiting for Approval'
+                SET type=?, name=?, model_year=?, registration_number=?, rc_book_url=COALESCE(?, rc_book_url), seating_capacity=?, fuel_type=?, transmission_type=?, mileage=?, price_per_day=?, price_per_hour=?, price_per_km=?, max_km_per_day=?, pickup_location=?, landmark=?, status='Waiting for Approval'
                 WHERE id=? AND user_id=?
-            `, [type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, vehicleId, req.user.id]);
+            `, [type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, vehicleId, req.user.id]);
         } else {
             const [result] = await db.query(`
                 INSERT INTO vehicles 
-                (user_id, type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Waiting for Approval')
-            `, [req.user.id, type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark]);
+                (user_id, type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark, status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Waiting for Approval')
+            `, [req.user.id, type, name, model_year, registration_number, rc_book_url, seating_capacity, fuel_type, transmission_type, mileage, price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark]);
             vehicleId = result.insertId;
         }
 
@@ -99,7 +99,31 @@ router.post('/:id/media/reorder', authMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
+// Delete Specific Media
+router.delete('/:id/media/:mediaId', authMiddleware, async (req, res) => {
+    try {
+        await db.query('DELETE FROM vehicle_media WHERE id = ? AND vehicle_id = ?', [req.params.mediaId, req.params.id]);
+        res.json({ message: 'Media deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
 
+// Add more media to existing vehicle
+router.post('/:id/media/add', authMiddleware, upload.array('media', 6), async (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'No media provided' });
+        
+        for (let file of req.files) {
+            const isVideo = file.mimetype.includes('video') ? 'video' : 'image';
+            await db.query('INSERT INTO vehicle_media (vehicle_id, media_url, media_type) VALUES (?, ?, ?)', [req.params.id, `/uploads/${file.filename}`, isVideo]);
+        }
+        res.json({ message: 'Media added successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
 // Update Vehicle Pricing & Location
 router.post('/:id/update-pricing', authMiddleware, async (req, res) => {
     const { price_per_day, price_per_hour, price_per_km, max_km_per_day, pickup_location, landmark } = req.body;
@@ -112,6 +136,16 @@ router.post('/:id/update-pricing', authMiddleware, async (req, res) => {
         res.json({ message: 'Vehicle details updated successfully' });
     } catch (err) {
         console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Resubmit Rejected Vehicle
+router.post('/:id/resubmit', authMiddleware, async (req, res) => {
+    try {
+        await db.query('UPDATE vehicles SET status = "Waiting for Approval", rejection_reason = NULL WHERE id = ? AND user_id = ? AND status = "Rejected"', [req.params.id, req.user.id]);
+        res.json({ message: 'Vehicle resubmitted for approval' });
+    } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
 });

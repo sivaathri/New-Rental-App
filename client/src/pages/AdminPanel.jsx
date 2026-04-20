@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { adminAPI } from '../api';
 import { useNavigate } from 'react-router-dom';
 import { 
   BarChart as BarChartIcon, Users, Car, CheckSquare, MessageSquare, 
@@ -15,28 +15,34 @@ import {
 export default function AdminPanel() {
   const [verifications, setVerifications] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const [rejectedVehicles, setRejectedVehicles] = useState([]);
+  const [approvedVehicles, setApprovedVehicles] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(false);
+  const [selectedImg, setSelectedImg] = useState(null);
   const navigate = useNavigate();
-  const API_BASE = 'http://localhost:5000/api/admin';
 
   useEffect(() => { fetchData(); fetchUsers(); }, []);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const verifRes = await axios.get(`${API_BASE}/verifications/pending`);
+      const verifRes = await adminAPI.getPendingVerifications();
       setVerifications(verifRes.data.verifications);
-      const vehicRes = await axios.get(`${API_BASE}/vehicles/pending`);
+      const vehicRes = await adminAPI.getPendingVehicles();
       setVehicles(vehicRes.data.vehicles);
+      const rejectedRes = await adminAPI.getRejectedVehicles();
+      setRejectedVehicles(rejectedRes.data.vehicles);
+      const approvedRes = await adminAPI.getApprovedVehicles();
+      setApprovedVehicles(approvedRes.data.vehicles);
     } catch(err) { console.error(err); }
     finally { setLoading(false); }
   };
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/users`);
+      const res = await adminAPI.getUsers();
       setUsersList(res.data.users);
     } catch(err) { console.error(err); }
   };
@@ -48,7 +54,11 @@ export default function AdminPanel() {
       if (!reason) return;
     }
     try {
-      await axios.post(`${API_BASE}/${type}/${id}/status`, { status, reason });
+      if (type === 'vehicles') {
+        await adminAPI.updateVehicleStatus(id, { status, reason });
+      } else {
+        await adminAPI.updateVerificationStatus(id, { status, reason });
+      }
       fetchData();
     } catch(err) { alert('Error updating status'); }
   };
@@ -86,6 +96,8 @@ export default function AdminPanel() {
         <div className="space-y-1 overflow-y-auto no-scrollbar flex-1 pb-10">
           <SidebarItem icon={<LayoutDashboard/>} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
           <SidebarItem icon={<CheckSquare/>} label="New Requests" count={vehicles.length} active={activeTab === 'requests'} onClick={() => setActiveTab('requests')} />
+          <SidebarItem icon={<CheckSquare/>} label="Approved" count={approvedVehicles.length} active={activeTab === 'approved'} onClick={() => setActiveTab('approved')} />
+          <SidebarItem icon={<X/>} label="Rejected" count={rejectedVehicles.length} active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')} />
           <SidebarItem icon={<Users/>} label="All Users" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
         </div>
 
@@ -179,6 +191,7 @@ export default function AdminPanel() {
                           <div><span className="text-gray-500">Reg No:</span> <strong>{v.registration_number}</strong></div>
                           <div><span className="text-gray-500">Seating:</span> <strong>{v.seating_capacity}</strong></div>
                           <div><span className="text-gray-500">Fuel:</span> <strong>{v.fuel_type}</strong></div>
+                          <div><span className="text-gray-500">Transmission:</span> <strong>{v.transmission_type || 'Manual'}</strong></div>
                         </div>
                       </div>
                     </div>
@@ -225,7 +238,7 @@ export default function AdminPanel() {
                                 src={`http://localhost:5000${img.media_url}`} 
                                 alt="Vehicle" 
                                 className="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform"
-                                onClick={() => window.open(`http://localhost:5000${img.media_url}`, '_blank')}
+                                onClick={() => setSelectedImg(`http://localhost:5000${img.media_url}`)}
                               />
                             </div>
                           ))}
@@ -234,52 +247,194 @@ export default function AdminPanel() {
                       </div>
 
                       {/* Documents */}
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-tight">RC Book</p>
-                          {v.rc_book_url ? (
-                            <button 
-                              onClick={() => window.open(`http://localhost:5000${v.rc_book_url}`, '_blank')}
-                              className="flex items-center gap-2 text-[13px] px-3 py-1.5 bg-blue-50 text-blue-600 font-bold rounded-lg border border-blue-100"
-                            >
-                              <FileText size={14}/> View RC Book
-                            </button>
-                          ) : <p className="text-xs text-red-400">Not Provided</p>}
-                        </div>
-
-                        <div>
-                          <p className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-tight">Driving License</p>
-                          {v.driving_license_url ? (
-                            <button 
-                              onClick={() => window.open(`http://localhost:5000${v.driving_license_url}`, '_blank')}
-                              className="flex items-center gap-2 text-[13px] px-3 py-1.5 bg-blue-50 text-blue-600 font-bold rounded-lg border border-blue-100"
-                            >
-                              <ShieldCheck size={14}/> View License
-                            </button>
-                          ) : <p className="text-xs text-red-400">Not Provided</p>}
-                        </div>
-
-                        <div>
-                          <p className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-tight">Aadhar Card</p>
-                          {v.aadhar_card_url ? (
-                            <button 
-                              onClick={() => window.open(`http://localhost:5000${v.aadhar_card_url}`, '_blank')}
-                              className="flex items-center gap-2 text-[13px] px-3 py-1.5 bg-blue-50 text-blue-600 font-bold rounded-lg border border-blue-100"
-                            >
-                              <UserCheck size={14}/> View Aadhar
-                            </button>
-                          ) : <p className="text-xs text-red-400">Not Provided</p>}
+                        <div className="flex flex-wrap gap-6">
+                          <DocThumbnail 
+                            label="RC Book" 
+                            url={v.rc_book_url} 
+                            icon={<FileText size={16}/>} 
+                            onClick={() => setSelectedImg(`http://localhost:5000${v.rc_book_url}`)} 
+                          />
+                          <DocThumbnail 
+                            label="Driving License" 
+                            url={v.driving_license_url} 
+                            icon={<ShieldCheck size={16}/>} 
+                            onClick={() => setSelectedImg(`http://localhost:5000${v.driving_license_url}`)} 
+                          />
+                          <DocThumbnail 
+                            label="Aadhar Card" 
+                            url={v.aadhar_card_url} 
+                            icon={<UserCheck size={16}/>} 
+                            onClick={() => setSelectedImg(`http://localhost:5000${v.aadhar_card_url}`)} 
+                          />
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
               {vehicles.length === 0 && (
                 <div className="bg-white p-12 text-center rounded-[16px] border border-gray-100">
                   <p className="text-gray-500 font-medium">No pending requests at the moment.</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'approved' && (
+            <div className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-[20px] font-bold text-[#252f40]">Approved Assets</h3>
+                    <p className="text-[13px] text-[#67748e] mt-0.5">Live fleet currently active in the ecosystem.</p>
+                  </div>
+                  <span className="px-4 py-1.5 bg-green-50 text-green-600 text-[11px] font-bold rounded-lg border border-green-100">{approvedVehicles.length} LIVE</span>
+               </div>
+ 
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left border-collapse">
+                   <thead>
+                     <tr className="bg-gray-50/50">
+                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Vehicle Info</th>
+                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Technical Specs</th>
+                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Owner Identity</th>
+                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Status</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-gray-50">
+                     {approvedVehicles.map(v => (
+                       <tr key={v.id} className="group hover:bg-gray-50/50 transition-all">
+                         <td className="p-4">
+                           <div className="flex items-center gap-4">
+                             <div className="w-14 h-14 rounded-xl bg-gray-50 overflow-hidden border border-gray-100 cursor-pointer" onClick={() => v.media?.[0] && setSelectedImg(`http://localhost:5000${v.media[0].media_url}`)}>
+                                {v.media?.[0] ? <img src={`http://localhost:5000${v.media[0].media_url}`} className="w-full h-full object-cover" /> : <Car className="m-auto mt-4 text-gray-300"/>}
+                             </div>
+                             <div>
+                               <p className="text-[14px] font-bold text-[#252f40]">{v.name}</p>
+                               <p className="text-[11px] text-[#67748e] uppercase tracking-tight font-bold">{v.registration_number}</p>
+                             </div>
+                           </div>
+                         </td>
+                         <td className="p-4">
+                           <div className="space-y-1">
+                             <div className="flex items-center gap-2 text-[12px] text-[#252f40] font-bold">
+                               <Zap size={12} className="text-[#82d616]" /> {v.type} • {v.fuel_type}
+                             </div>
+                             <div className="flex items-center gap-2 text-[11px] text-[#67748e] font-medium">
+                               <Settings size={12} /> {v.transmission_type || 'Manual'} • {v.seating_capacity} Seater
+                             </div>
+                           </div>
+                         </td>
+                         <td className="p-4">
+                            <div className="space-y-1">
+                              <p className="text-[13px] font-bold text-[#252f40]">{v.owner_name}</p>
+                              <p className="text-[11px] text-[#67748e]">{v.owner_mobile}</p>
+                            </div>
+                         </td>
+                         <td className="p-4">
+                           <div className="flex flex-col gap-2">
+                             <span className="px-3 py-1 bg-[#e6ffed] text-[#82d616] text-[10px] font-bold rounded-lg border border-[#82d616]/20 text-center">ACTIVE</span>
+                             <div className="flex gap-2">
+                               <button onClick={() => setSelectedImg(`http://localhost:5000${v.rc_book_url}`)} className="p-1.5 bg-gray-100 text-gray-400 rounded-md hover:bg-black hover:text-white transition-all"><FileText size={14}/></button>
+                               <button onClick={() => handleAction('vehicles', v.id, 'Rejected')} className="p-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-600 hover:text-white transition-all"><X size={14}/></button>
+                             </div>
+                           </div>
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
+          )}
+
+          {activeTab === 'rejected' && (
+            <div className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-[20px] font-bold text-[#252f40]">Rejected Vehicle Requests</h3>
+                    <p className="text-[13px] text-[#67748e] mt-0.5">Manage assets that didn't meet the entry criteria.</p>
+                  </div>
+                  <span className="px-4 py-1.5 bg-red-50 text-red-600 text-[11px] font-bold rounded-lg border border-red-100">{rejectedVehicles.length} ASSETS</span>
+               </div>
+ 
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left border-collapse">
+                   <thead>
+                     <tr className="bg-gray-50/50">
+                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Vehicle & Owner</th>
+                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Contact Details</th>
+                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Rejection Reason</th>
+                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Actions</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-gray-50">
+                     {rejectedVehicles.map(v => (
+                       <tr key={v.id} className="group hover:bg-gray-50/50 transition-all">
+                         <td className="p-4">
+                           <div className="flex items-center gap-4">
+                             <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-100 cursor-pointer" onClick={() => v.media?.[0] && setSelectedImg(v.media[0].media_url)}>
+                                {v.media?.[0] ? <img src={`http://localhost:5000${v.media[0].media_url}`} className="w-full h-full object-cover" /> : <Car className="m-auto mt-3 text-gray-300"/>}
+                             </div>
+                             <div>
+                               <p className="text-[14px] font-bold text-[#252f40]">{v.name}</p>
+                               <p className="text-[12px] text-[#67748e]">{v.owner_name}</p>
+                             </div>
+                           </div>
+                         </td>
+                         <td className="p-4">
+                           <div className="space-y-0.5">
+                             <div className="flex items-center gap-2 text-[13px] text-[#252f40] font-medium">
+                               <Smartphone size={12} className="text-[#67748e]" />
+                               {v.owner_mobile}
+                             </div>
+                             <div className="flex items-center gap-2 text-[12px] text-[#67748e]">
+                               <Star size={12} />
+                               {v.type}
+                             </div>
+                           </div>
+                         </td>
+                         <td className="p-4">
+                            <div className="max-w-[200px]">
+                              <p className="text-[12px] text-red-600 font-medium italic">"{v.rejection_reason || 'No reason specified'}"</p>
+                            </div>
+                         </td>
+                         <td className="p-4">
+                           <div className="flex gap-2">
+                             <button 
+                               onClick={() => handleAction('vehicles', v.id, 'Approved')}
+                               className="px-4 py-1.5 bg-[#82d616]/10 text-[#82d616] text-[11px] font-bold rounded-lg hover:bg-[#82d616] hover:text-white transition-all border border-[#82d616]/20"
+                             >
+                               RE-APPROVE
+                             </button>
+                             {v.rc_book_url && (
+                                <button
+                                  onClick={() => setSelectedImg(v.rc_book_url)}
+                                  className="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-400 rounded-lg hover:bg-black hover:text-white transition-all"
+                                >
+                                  <FileText size={14} />
+                                </button>
+                             )}
+                           </div>
+                         </td>
+                       </tr>
+                     ))}
+                     {rejectedVehicles.length === 0 && (
+                       <tr>
+                         <td colSpan="4" className="p-12 text-center">
+                            <div className="flex flex-col items-center gap-4">
+                               <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300">
+                                  <Check size={32} />
+                               </div>
+                               <div>
+                                  <p className="text-[15px] font-bold text-[#252f40]">Clean Slate</p>
+                                  <p className="text-[13px] text-[#67748e]">No rejected assets found in the system.</p>
+                               </div>
+                            </div>
+                         </td>
+                       </tr>
+                     )}
+                   </tbody>
+                 </table>
+               </div>
             </div>
           )}
 
@@ -296,6 +451,7 @@ export default function AdminPanel() {
                       <th className="px-6 py-4 text-[12px] font-bold text-gray-500 uppercase tracking-wider">Name</th>
                       <th className="px-6 py-4 text-[12px] font-bold text-gray-500 uppercase tracking-wider">Mobile</th>
                       <th className="px-6 py-4 text-[12px] font-bold text-gray-500 uppercase tracking-wider">City</th>
+                      <th className="px-6 py-4 text-[12px] font-bold text-gray-500 uppercase tracking-wider">KYC Documents</th>
                       <th className="px-6 py-4 text-[12px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     </tr>
                   </thead>
@@ -306,6 +462,29 @@ export default function AdminPanel() {
                         <td className="px-6 py-4 text-[14px] font-medium text-gray-900">{u.full_name || 'N/A'}</td>
                         <td className="px-6 py-4 text-[14px] text-gray-600">{u.mobile_number}</td>
                         <td className="px-6 py-4 text-[14px] text-gray-600">{u.city}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            {u.aadhar_card_url && (
+                              <button 
+                                onClick={() => setSelectedImg(`http://localhost:5000${u.aadhar_card_url}`)}
+                                className="p-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
+                                title="Aadhar Card"
+                              >
+                                <UserCheck size={14}/>
+                              </button>
+                            )}
+                            {u.driving_license_url && (
+                              <button 
+                                onClick={() => setSelectedImg(`http://localhost:5000${u.driving_license_url}`)}
+                                className="p-1.5 bg-green-50 text-green-600 rounded-md hover:bg-green-100"
+                                title="Driving License"
+                              >
+                                <ShieldCheck size={14}/>
+                              </button>
+                            )}
+                            {!u.aadhar_card_url && !u.driving_license_url && <span className="text-xs text-gray-400">No Docs</span>}
+                          </div>
+                        </td>
                         <td className="px-6 py-4">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${u.is_verified ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
                             {u.is_verified ? 'Verified' : 'Unverified'}
@@ -328,11 +507,75 @@ export default function AdminPanel() {
         </div>
       </main>
 
+      {/* Image Modal */}
+      {selectedImg && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
+          onClick={() => setSelectedImg(null)}
+        >
+          <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center">
+            <button 
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition"
+              onClick={() => setSelectedImg(null)}
+            >
+              <X size={32} />
+            </button>
+            <img 
+              src={selectedImg} 
+              alt="Preview" 
+              className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="mt-4 flex gap-4">
+              <button 
+                onClick={() => window.open(selectedImg, '_blank')}
+                className="px-6 py-2 bg-white text-black font-bold rounded-full hover:bg-gray-100 transition shadow-lg flex items-center gap-2"
+              >
+                <FileText size={18}/> Open in New Tab
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         body { background-color: #f8f9fa; }
       `}</style>
+    </div>
+  );
+}
+
+function DocThumbnail({ label, url, icon, onClick }) {
+  if (!url) return (
+    <div className="space-y-2">
+      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{label}</p>
+      <div className="w-20 h-24 rounded-lg bg-gray-50 border border-dashed border-gray-200 flex flex-col items-center justify-center gap-1">
+        <X size={14} className="text-red-300"/>
+        <span className="text-[9px] text-red-400 font-bold">MISSING</span>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-2">
+      <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">{label}</p>
+      <div 
+        onClick={onClick}
+        className="group relative w-20 h-24 rounded-lg overflow-hidden border border-gray-200 cursor-pointer shadow-sm hover:shadow-md transition-all"
+      >
+        <img 
+          src={`http://localhost:5000${url}`} 
+          alt={label} 
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+        />
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-full border border-white/30 text-white">
+            {icon}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

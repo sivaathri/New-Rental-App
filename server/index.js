@@ -54,6 +54,7 @@ async function initializeDB() {
             max_km_per_day INT,
             pickup_location VARCHAR(255),
             landmark VARCHAR(255),
+            transmission_type VARCHAR(50),
             status ENUM('Waiting for Approval', 'Approved', 'Rejected') DEFAULT 'Waiting for Approval',
             rejection_reason TEXT,
             FOREIGN KEY (user_id) REFERENCES users(id)
@@ -64,6 +65,7 @@ async function initializeDB() {
             vehicle_id INT,
             media_url VARCHAR(255),
             media_type ENUM('image', 'video'),
+            sort_order INT DEFAULT 0,
             FOREIGN KEY (vehicle_id) REFERENCES vehicles(id)
         )`);
 

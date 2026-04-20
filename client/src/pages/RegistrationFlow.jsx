@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { profileAPI, vehicleAPI } from '../api';
 import { 
   CheckCircle, ChevronRight, ChevronLeft, User, ShieldCheck, 
   Car, CreditCard, Star, LayoutGrid, Zap, Sparkles, Upload, MapPin, X, Film, Search, Globe, Plus, FileText, Clock,
-  Home, Tag, Hash, IndianRupee, Flag, Users, Navigation, Mail
+  Home, Tag, Hash, IndianRupee, Flag, Users, Navigation, Mail, Settings
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -17,8 +17,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
-
-const API_BASE = 'http://localhost:5000/api';
 
 function LocationPickerModal({ onSelect, onClose }) {
   const [position, setPosition] = useState([11.9416, 79.8083]); // Default Pondy
@@ -82,14 +80,13 @@ function LocationPickerModal({ onSelect, onClose }) {
 
 export default function RegistrationFlow() {
   const [step, setStep] = useState(2);
-  const [token] = useState(localStorage.getItem('token') || '');
   const [vehicleId, setVehicleId] = useState(null);
   
   const [profile, setProfile] = useState({ full_name: '', email: '', address: '', city: 'Pondicherry' });
   const [docs, setDocs] = useState({ aadhar: null, license: null });
   const [vehicle, setVehicle] = useState({
     type: 'Car', name: '', model_year: '', registration_number: '', rc_book: null,
-    seating_capacity: '', fuel_type: '', mileage: '', 
+    seating_capacity: '', fuel_type: 'Petrol', transmission_type: 'Manual', mileage: '', 
     price_per_day: '', price_per_hour: '', price_per_km: '', max_km_per_day: '', 
     pickup_location: '', landmark: ''
   });
@@ -103,17 +100,16 @@ export default function RegistrationFlow() {
   const vehicleTypes = ["Car", "Bike", "Bus", "Van", "Mini-Van", "Mini-Bus", "Tempo_traveller", "traveller"];
 
   useEffect(() => {
-    if (!token) return navigate('/');
-    axios.get(`${API_BASE}/profile/progress`, { headers: { Authorization: `Bearer ${token}` } })
+    profileAPI.getProgress()
       .then(res => {
         if (res.data.step === 8) return navigate('/dashboard');
         setStep(res.data.step);
         if (res.data.vehicleId) setVehicleId(res.data.vehicleId);
         const data = res.data.data;
-        if (data.user?.full_name) setProfile({ full_name: data.user.full_name, address: data.user.address || '', city: data.user.city || 'Pondicherry' });
+        if (data.user?.full_name) setProfile({ full_name: data.user.full_name, address: data.user.address || '', city: data.user.city || 'Pondicherry', email: data.user.email || '' });
       })
       .catch(err => console.error(err));
-  }, [token, navigate]);
+  }, [navigate]);
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
@@ -130,11 +126,7 @@ export default function RegistrationFlow() {
     formData.append('license', docs.license);
 
     try {
-      await axios.post(`${API_BASE}/profile/setup`, formData, { 
-        headers: { 
-          Authorization: `Bearer ${token}`
-        } 
-      });
+      await profileAPI.setupProfile(formData);
       setStep(4);
     } catch (err) { alert('Error updating profile and documents'); }
     finally { setLoading(false); }
@@ -157,7 +149,7 @@ export default function RegistrationFlow() {
     if (vehicleId) formData.append('vehicle_id', vehicleId);
 
     try {
-      const res = await axios.post(`${API_BASE}/vehicles/add`, formData, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await vehicleAPI.addVehicle(formData);
       setVehicleId(res.data.vehicleId);
       setStep(8);
     } catch (err) { 
@@ -170,7 +162,7 @@ export default function RegistrationFlow() {
     if (!plan) return;
     setLoading(true);
     try {
-      await axios.post(`${API_BASE}/vehicles/${vehicleId}/subscribe`, { plan_duration: plan.duration, plan_price: plan.price }, { headers: { Authorization: `Bearer ${token}` } });
+      await vehicleAPI.subscribe(vehicleId, { plan_duration: plan.duration, plan_price: plan.price });
       setStep(8);
     } catch (err) { alert('Error processing subscription'); }
     finally { setLoading(false); }
@@ -305,9 +297,12 @@ export default function RegistrationFlow() {
 
                 <div className="pt-10 border-t border-gray-100">
                   <h3 className="text-3xl font-bold text-[#252f40] mb-8">Technical Details</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                      <InputGroup label="Seating" placeholder="Example: 5" type="number" value={vehicle.seating_capacity} onChange={(v) => setVehicle({...vehicle, seating_capacity: v})} icon={Users} required />
                      <SelectGroup label="Fuel Type" options={["Petrol", "Diesel", "Electric", "CNG"]} value={vehicle.fuel_type} onChange={(v) => setVehicle({...vehicle, fuel_type: v})} icon={Zap} required />
+                     {vehicle.type !== 'Bike' && (
+                       <SelectGroup label="Gear Type" options={["Manual", "Automatic"]} value={vehicle.transmission_type} onChange={(v) => setVehicle({...vehicle, transmission_type: v})} icon={Settings} required />
+                     )}
                      <InputGroup label="Mileage" placeholder="Example: 18" type="number" value={vehicle.mileage} onChange={(v) => setVehicle({...vehicle, mileage: v})} icon={Sparkles} required />
                   </div>
                 </div>

@@ -7,7 +7,11 @@ const db = require('../db');
 // Get all users
 router.get('/users', async (req, res) => {
     try {
-        const [users] = await db.query('SELECT * FROM users');
+        const [users] = await db.query(`
+            SELECT u.*, v.aadhar_card_url, v.driving_license_url, v.status as verification_status 
+            FROM users u
+            LEFT JOIN verifications v ON u.id = v.user_id
+        `);
         res.json({ users });
     } catch(err) {
         res.status(500).json({ error: 'Server error' });
@@ -65,7 +69,57 @@ router.get('/vehicles/pending', async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
+// Get all rejected vehicles
+router.get('/vehicles/rejected', async (req, res) => {
+    try {
+        const [vehicles] = await db.query(`
+            SELECT v.*, 
+                   u.full_name as owner_name, 
+                   u.mobile_number as owner_mobile, 
+                   u.email as owner_email,
+                   ver.aadhar_card_url,
+                   ver.driving_license_url
+            FROM vehicles v
+            LEFT JOIN users u ON v.user_id = u.id
+            LEFT JOIN verifications ver ON v.user_id = ver.user_id
+            WHERE v.status = "Rejected"
+        `);
+        const vehiclesWithMedia = await Promise.all(vehicles.map(async (v) => {
+            const [media] = await db.query('SELECT * FROM vehicle_media WHERE vehicle_id = ? ORDER BY sort_order ASC, id ASC', [v.id]);
+            return { ...v, media };
+        }));
+        res.json({ vehicles: vehiclesWithMedia });
+    } catch(err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
 
+// Get all approved vehicles
+router.get('/vehicles/approved', async (req, res) => {
+    try {
+        const [vehicles] = await db.query(`
+            SELECT v.*, 
+                   u.full_name as owner_name, 
+                   u.mobile_number as owner_mobile, 
+                   u.email as owner_email,
+                   u.address as owner_address,
+                   u.city as owner_city,
+                   ver.aadhar_card_url,
+                   ver.driving_license_url
+            FROM vehicles v
+            LEFT JOIN users u ON v.user_id = u.id
+            LEFT JOIN verifications ver ON v.user_id = ver.user_id
+            WHERE v.status = "Approved"
+        `);
+        const vehiclesWithMedia = await Promise.all(vehicles.map(async (v) => {
+            const [media] = await db.query('SELECT * FROM vehicle_media WHERE vehicle_id = ? ORDER BY sort_order ASC, id ASC', [v.id]);
+            return { ...v, media };
+        }));
+        res.json({ vehicles: vehiclesWithMedia });
+    } catch(err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
 // Approve or reject vehicle
 router.post('/vehicles/:id/status', async (req, res) => {
     const { status, reason } = req.body; // status: Approved or Rejected

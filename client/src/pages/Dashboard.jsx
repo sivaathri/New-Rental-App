@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { profileAPI, vehicleAPI, subscriptionAPI } from "../api";
 import { useNavigate } from "react-router-dom";
 import {
   BarChart as BarChartIcon,
@@ -429,10 +429,10 @@ export default function Dashboard() {
   const handleRequestEmailChange = async () => {
     if (!newEmail) return alert("Enter a valid email");
     setIsEmailUpdating(true);
+    if (!newEmail) return alert("Enter a valid email");
+    setIsEmailUpdating(true);
     try {
-      await axios.post(`${API_BASE}/profile/request-email-change`, { newEmail }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      });
+      await profileAPI.requestEmailChange(newEmail);
       setShowEmailOtpInput(true);
     } catch (err) {
       alert(err.response?.data?.error || "Error requesting email change");
@@ -445,9 +445,7 @@ export default function Dashboard() {
     if (!emailOtp) return alert("Enter OTP");
     setIsEmailUpdating(true);
     try {
-      await axios.post(`${API_BASE}/profile/verify-email-change`, { newEmail, otp: emailOtp }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      });
+      await profileAPI.verifyEmailChange({ newEmail, otp: emailOtp });
       setIsEditingEmail(false);
       setShowEmailOtpInput(false);
       setEmailOtp("");
@@ -463,11 +461,9 @@ export default function Dashboard() {
   const handleUpdateLocation = async (vId, address) => {
     try {
       const vehicle = vehicles.find(v => v.id === vId);
-      await axios.post(`${API_BASE}/vehicles/${vId}/update-pricing`, {
+      await vehicleAPI.updatePricing(vId, {
         ...vehicle,
         pickup_location: address
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
       fetchDashboard();
       setShowMap(false);
@@ -476,15 +472,53 @@ export default function Dashboard() {
       alert("Error updating location");
     }
   };
+  
+  const handleDeleteMedia = async (mediaId) => {
+    if (!window.confirm("Remove this image from listing?")) return;
+    try {
+      await vehicleAPI.deleteMedia(selectedVehicle.id, mediaId);
+      setSelectedVehicle({
+        ...selectedVehicle,
+        vehicle_images: selectedVehicle.vehicle_images.filter(img => img.id !== mediaId)
+      });
+      fetchDashboard();
+    } catch (err) {
+      alert("Error deleting media");
+    }
+  };
+
+  const handleAddMedia = async (files) => {
+    const formData = new FormData();
+    Array.from(files).forEach(f => formData.append('media', f));
+    try {
+      await vehicleAPI.addMedia(selectedVehicle.id, formData);
+      fetchDashboard();
+      // Need to re-fetch selected vehicle or update state
+      const res = await vehicleAPI.getUserVehicles();
+      const updated = res.data.vehicles.find(v => v.id === selectedVehicle.id);
+      setSelectedVehicle(updated);
+    } catch (err) {
+      alert("Error uploading media");
+    }
+  };
+
+  const handleResubmit = async () => {
+    try {
+      await vehicleAPI.resubmitVehicle(selectedVehicle.id);
+      alert("Asset resubmitted for admin validation.");
+      setSelectedVehicle(null);
+      fetchDashboard();
+    } catch (err) {
+      alert("Error resubmitting vehicle");
+    }
+  };
 
   const handleUpdateLandmark = async (vId, landmark) => {
     try {
       const vehicle = vehicles.find(v => v.id === vId);
-      await axios.post(`${API_BASE}/vehicles/${vId}/update-pricing`, {
+      await vehicleAPI.updatePricing(vId, {
         ...vehicle,
         landmark
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
       fetchDashboard();
       alert("Landmark updated!");
@@ -494,35 +528,33 @@ export default function Dashboard() {
   };
 
   const navigate = useNavigate();
-  const API_BASE = "http://localhost:5000/api";
+
 
   const fetchDashboard = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return navigate("/");
     try {
-      const res = await axios.get(`${API_BASE}/vehicles`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await vehicleAPI.getUserVehicles();
       setVehicles(res.data.vehicles);
-
-      const profileRes = await axios.get(`${API_BASE}/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+ 
+      const profileRes = await profileAPI.getProfile();
       setUserProfile(profileRes.data);
-
+ 
       const counts = { pending: 0, approved: 0 };
+      const alertVehicles = [];
+ 
       res.data.vehicles.forEach((v) => {
         if (v.status === "Waiting for Approval") counts.pending++;
-        if (v.status === "Approved") counts.approved++;
+        if (v.status === "Approved") {
+          counts.approved++;
+          if (!v.has_active_subscription) alertVehicles.push({ ...v, alertType: 'Approved' });
+        }
+        if (v.status === "Rejected") alertVehicles.push({ ...v, alertType: 'Rejected' });
       });
-      const unpaidApproved = res.data.vehicles.filter(v => v.status === "Approved" && !v.has_active_subscription);
-      setNotifications(unpaidApproved);
-
-      const subRes = await axios.get(`${API_BASE}/subscriptions/status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+ 
+      setNotifications(alertVehicles);
+ 
+      const subRes = await subscriptionAPI.getStatus();
       setUserSubscriptions(subRes.data.subscriptions);
-
+ 
       setStats({
         total: res.data.vehicles.length,
         ...counts,
@@ -632,7 +664,12 @@ export default function Dashboard() {
             {notifications.length > 0 && (
               <div className="space-y-4 mb-10">
                 {notifications.map(n => (
-                  <div key={n.id} className="bg-white p-6 rounded-[28px] border border-[#82d616]/20 shadow-xl shadow-[#82d616]/5 flex items-center justify-between group animate-in slide-in-from-top-4 duration-500">
+                  <div 
+                    key={n.id} 
+                    className={`bg-white p-6 rounded-[28px] border shadow-xl flex items-center justify-between group animate-in slide-in-from-top-4 duration-500 ${
+                      n.alertType === 'Rejected' ? 'border-red-100 shadow-red-500/5' : 'border-[#82d616]/20 shadow-[#82d616]/5'
+                    }`}
+                  >
                     <div className="flex items-center gap-6">
                       <div className="relative">
                         <div className="w-16 h-16 rounded-2xl bg-gray-50 overflow-hidden border border-gray-100">
@@ -640,23 +677,35 @@ export default function Dashboard() {
                             <img src={`http://localhost:5000${n.vehicle_images[0].media_url}`} className="w-full h-full object-cover" alt="" />
                           ) : <Car size={24} className="text-gray-300 m-auto mt-4"/>}
                         </div>
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-[#82d616] rounded-full flex items-center justify-center text-white border-4 border-white">
-                          <Check size={12} strokeWidth={4} />
+                        <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-white border-4 border-white ${
+                          n.alertType === 'Rejected' ? 'bg-red-500' : 'bg-[#82d616]'
+                        }`}>
+                          {n.alertType === 'Rejected' ? <X size={12} strokeWidth={4} /> : <Check size={12} strokeWidth={4} />}
                         </div>
                       </div>
                       <div>
-                        <h4 className="text-[17px] font-bold text-[#252f40]">Your {n.name} is approved! 🚀</h4>
-                        <p className="text-[13px] text-[#67748e]">Complete the listing by choosing a subscription plan.</p>
+                        <h4 className={`text-[17px] font-bold ${n.alertType === 'Rejected' ? 'text-red-600' : 'text-[#252f40]'}`}>
+                          {n.alertType === 'Rejected' ? `Action Required: ${n.name} Rejected` : `Your ${n.name} is approved! 🚀`}
+                        </h4>
+                        <p className="text-[13px] text-[#67748e]">
+                          {n.alertType === 'Rejected' 
+                            ? `Reason: ${n.rejection_reason || 'Incomplete documentation'}` 
+                            : 'Complete the listing by choosing a subscription plan.'}
+                        </p>
                       </div>
                     </div>
                     <button 
                       onClick={() => {
-                        setSelectedSubscriptionVehicle(n);
-                        setActiveTab("Subscription");
+                        setSelectedVehicle(n);
+                        if (n.alertType === 'Approved') setActiveTab("Subscription");
                       }}
-                      className="px-8 py-3 bg-[#82d616] text-white rounded-xl font-bold text-[13px] hover:scale-105 transition-all shadow-lg shadow-[#82d616]/20"
+                      className={`px-8 py-3 rounded-xl font-bold text-[13px] hover:scale-105 transition-all shadow-lg ${
+                        n.alertType === 'Rejected' 
+                          ? 'bg-red-600 text-white shadow-red-500/20' 
+                          : 'bg-[#82d616] text-white shadow-[#82d616]/20'
+                      }`}
                     >
-                      Pay & List Vehicle
+                      {n.alertType === 'Rejected' ? 'Fix & Resubmit' : 'Pay & List Vehicle'}
                     </button>
                   </div>
                 ))}
@@ -1263,11 +1312,21 @@ export default function Dashboard() {
                       {selectedVehicle.type}
                     </span>
                     <span
-                      className={`px-4 py-1.5 rounded-lg text-[12px] font-bold border ${selectedVehicle.status === "Approved" ? "bg-[#e6ffed] text-[#82d616] border-[#82d616]/20" : "bg-[#fff5e6] text-[#fbcf33] border-[#fbcf33]/20"}`}
+                      className={`px-4 py-1.5 rounded-lg text-[12px] font-bold border ${
+                        selectedVehicle.status === "Approved" ? "bg-[#e6ffed] text-[#82d616] border-[#82d616]/20" : 
+                        selectedVehicle.status === "Rejected" ? "bg-red-50 text-red-600 border-red-100" :
+                        "bg-[#fff5e6] text-[#fbcf33] border-[#fbcf33]/20"
+                      }`}
                     >
                       {selectedVehicle.status}
                     </span>
                   </div>
+                  {selectedVehicle.status === 'Rejected' && selectedVehicle.rejection_reason && (
+                    <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-xl">
+                      <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Rejection Reason</p>
+                      <p className="text-sm font-medium text-red-600 italic">"{selectedVehicle.rejection_reason}"</p>
+                    </div>
+                  )}
                 </div>
                 <div className="text-right flex flex-col items-end gap-2">
                   <div>
@@ -1336,6 +1395,13 @@ export default function Dashboard() {
                           alt=""
                         />
                         <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center gap-2">
+                          <button
+                            onClick={() => handleDeleteMedia(img.id)}
+                            className="w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-white mr-auto ml-1"
+                            title="Delete Image"
+                          >
+                            <X size={14} />
+                          </button>
                           {i > 0 && (
                             <button
                               onClick={async () => {
@@ -1415,13 +1481,21 @@ export default function Dashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="w-full py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400">
-                      <Plus size={32} />
-                      <p className="text-[12px] font-bold mt-2">
-                        No Media Uploaded
-                      </p>
-                    </div>
+                    <p className="text-[12px] font-bold text-gray-400">No Media Uploaded</p>
                   )}
+                  
+                  {/* Add Media Slot */}
+                  <label className="w-[180px] h-[120px] rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:bg-gray-50 hover:border-[#82d616]/30 transition-all shrink-0 group">
+                    <Plus size={24} className="group-hover:text-[#82d616] transition-colors" />
+                    <p className="text-[10px] font-bold mt-2 uppercase tracking-wider">Add Image</p>
+                    <input 
+                      type="file" 
+                      multiple 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => handleAddMedia(e.target.files)} 
+                    />
+                  </label>
                 </div>
               </div>
 
@@ -1544,6 +1618,21 @@ export default function Dashboard() {
                   value={selectedVehicle.registration_number}
                 />
               </div>
+
+              {selectedVehicle.status === 'Rejected' && (
+                <div className="pt-10 border-t border-gray-100">
+                  <button
+                    onClick={handleResubmit}
+                    className="w-full py-5 bg-[#82d616] text-white font-bold rounded-2xl hover:scale-[1.02] transition-all shadow-xl shadow-[#82d616]/20 flex items-center justify-center gap-3"
+                  >
+                    <CheckSquare size={24} />
+                    Resubmit for Approval
+                  </button>
+                  <p className="text-center text-[11px] text-gray-400 mt-4 font-medium uppercase tracking-wider">
+                    By resubmitting, you confirm that all issues have been addressed.
+                  </p>
+                </div>
+              )}
 
               <button
                 onClick={() => setSelectedVehicle(null)}
@@ -1678,12 +1767,12 @@ function VehicleCard({ vehicle, onDetails }) {
         <div className="absolute top-4 left-4 z-20">
           <span
             className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all shadow-md border ${
-              vehicle.status === "Approved"
-                ? "bg-[#e6ffed] text-[#82d616] border-[#82d616]/20"
-                : "bg-[#fff5e6] text-[#fbcf33] border-[#fbcf33]/20"
+              vehicle.status === "Approved" ? "bg-[#e6ffed] text-[#82d616] border-[#82d616]/20" : 
+              vehicle.status === "Rejected" ? "bg-red-50 text-red-600 border-red-100" :
+              "bg-[#fff5e6] text-[#fbcf33] border-[#fbcf33]/20"
             }`}
           >
-            {vehicle.status === "Approved" ? "ACTIVE" : "PENDING"}
+            {vehicle.status === "Approved" ? "ACTIVE" : vehicle.status === "Rejected" ? "REJECTED" : "PENDING"}
           </span>
         </div>
         {vehicle.vehicle_images?.[0] ? (
