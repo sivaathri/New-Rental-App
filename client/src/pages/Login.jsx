@@ -19,7 +19,9 @@ export default function Login() {
         headers: { Authorization: `Bearer ${token}` } 
       })
       .then(res => {
-        if (res.data.step === 7) navigate('/dashboard');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.role === 'master') navigate('/admin');
+        else if (res.data.step === 7) navigate('/dashboard');
         else navigate('/register');
       })
       .catch(() => localStorage.removeItem('token'));
@@ -45,10 +47,19 @@ export default function Login() {
     try {
       const res = await axios.post(`${API_BASE}/auth/verify-otp`, { mobile, otp });
       const token = res.data.token;
+      const user = res.data.user;
       localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
       const pr = await axios.get(`${API_BASE}/profile/progress`, { headers: { Authorization: `Bearer ${token}` } });
-      if (pr.data.step === 7) navigate('/dashboard');
-      else navigate('/register');
+      
+      if (user.role === 'master') {
+         navigate('/admin');
+      } else if (pr.data.step === 7) {
+         navigate('/dashboard');
+      } else {
+         navigate('/register');
+      }
     } catch(err) {
       alert('Invalid OTP');
     } finally { setLoading(false); }

@@ -43,7 +43,8 @@ export default function AdminPanel() {
 
   useEffect(() => { 
     const token = localStorage.getItem('token');
-    if (!token) {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token || user.role !== 'master') {
       navigate('/');
       return;
     }

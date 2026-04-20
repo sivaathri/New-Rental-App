@@ -50,7 +50,11 @@ router.post('/verify-otp', async (req, res) => {
         const [rows] = await db.query('SELECT * FROM users WHERE mobile_number = ? AND otp = ?', [mobile, otp]);
         if (rows.length > 0) {
             const user = rows[0];
-            const token = jwt.sign({ id: user.id, mobile: user.mobile_number }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+            const token = jwt.sign(
+                { id: user.id, mobile: user.mobile_number, role: user.role }, 
+                process.env.JWT_SECRET || 'secret', 
+                { expiresIn: '7d' }
+            );
             res.json({ message: 'Login successful', token, user });
         } else {
             res.status(400).json({ error: 'Invalid OTP' });
