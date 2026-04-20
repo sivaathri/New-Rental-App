@@ -269,10 +269,24 @@ router.post('/:id/reviews', authMiddleware, async (req, res) => {
     if (!rating) return res.status(400).json({ error: 'Rating is required' });
 
     try {
-        await db.query('INSERT INTO vehicle_reviews (vehicle_id, user_id, rating, comment) VALUES (?, ?, ?, ?)', [vehicleId, userId, rating, comment]);
-        res.json({ success: true, message: 'Review submitted' });
+        await db.query(`
+            INSERT INTO vehicle_reviews (vehicle_id, user_id, rating, comment) 
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE rating = VALUES(rating), comment = VALUES(comment), created_at = CURRENT_TIMESTAMP
+        `, [vehicleId, userId, rating, comment]);
+        res.json({ success: true, message: 'Review saved successfully' });
     } catch (err) {
         console.error('Error submitting review:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Get current user's review for a vehicle
+router.get('/:id/my-review', authMiddleware, async (req, res) => {
+    try {
+        const [reviews] = await db.query('SELECT * FROM vehicle_reviews WHERE vehicle_id = ? AND user_id = ?', [req.params.id, req.user.id]);
+        res.json({ review: reviews[0] || null });
+    } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
 });

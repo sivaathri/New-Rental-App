@@ -31,6 +31,7 @@ const RentalHistoryScreen = ({ navigation }) => {
     const [reviewRating, setReviewRating] = useState(0);
     const [reviewComment, setReviewComment] = useState('');
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
         fetchHistory();
@@ -73,6 +74,26 @@ const RentalHistoryScreen = ({ navigation }) => {
             alert('Review transmission interrupted. Please try again.');
         } finally {
             setIsSubmittingReview(false);
+        }
+    };
+
+    const handleOpenReview = async (car) => {
+        setSelectedCarForReview(car);
+        try {
+            const response = await axios.get(`${API_URL}/vehicles/${car.id}/my-review`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            if (response.data.review) {
+                setReviewRating(response.data.review.rating);
+                setReviewComment(response.data.review.comment);
+                setIsEditing(true);
+            } else {
+                setReviewRating(0);
+                setReviewComment('');
+                setIsEditing(false);
+            }
+        } catch (error) {
+            console.error('Error fetching my review', error);
         }
     };
 
@@ -120,7 +141,7 @@ const RentalHistoryScreen = ({ navigation }) => {
                     </TouchableOpacity>
                     <TouchableOpacity 
                         style={styles.reviewBtn}
-                        onPress={() => setSelectedCarForReview(item)}
+                        onPress={() => handleOpenReview(item)}
                     >
                         <Ionicons name="star" size={14} color="#FFF" style={{marginRight: 4}}/>
                         <Text style={styles.reviewBtnText}>Rate</Text>
@@ -184,13 +205,13 @@ const RentalHistoryScreen = ({ navigation }) => {
                         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                             <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
                                 <View style={styles.modalHeader}>
-                                    <Text style={styles.modalTitle}>Share Your Experience</Text>
+                                    <Text style={styles.modalTitle}>{isEditing ? 'Edit Your Experience' : 'Share Your Experience'}</Text>
                                     <TouchableOpacity onPress={() => setSelectedCarForReview(null)}>
                                         <Ionicons name="close" size={24} color="#000" />
                                     </TouchableOpacity>
                                 </View>
 
-                                <Text style={styles.modalSubTitle}>How was your enquiry for {selectedCarForReview?.name}?</Text>
+                                <Text style={styles.modalSubTitle}>{isEditing ? 'Update your review for' : 'How was your enquiry for'} {selectedCarForReview?.name}?</Text>
                                 
                                 <View style={styles.starsContainer}>
                                     {[1, 2, 3, 4, 5].map((star) => (

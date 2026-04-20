@@ -121,6 +121,27 @@ async function initializeDB() {
             await db.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
         } catch (e) {}
 
+        await db.query(`CREATE TABLE IF NOT EXISTS vehicle_calls (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            vehicle_id INT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (vehicle_id) REFERENCES vehicles(id)
+        )`);
+
+        await db.query(`CREATE TABLE IF NOT EXISTS vehicle_reviews (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            vehicle_id INT,
+            user_id INT,
+            rating INT,
+            comment TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user_vehicle (vehicle_id, user_id),
+            FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )`);
+
         console.log("Database tables checked/created.");
     } catch (error) {
         console.error("Failed to initialize database (is MySQL running and DB created?): ", error.message);
