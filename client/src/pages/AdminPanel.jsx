@@ -152,7 +152,7 @@ export default function AdminPanel() {
           <SidebarItem icon={<CheckSquare/>} label="Approved" count={approvedVehicles.length} active={activeTab === 'approved'} onClick={() => setActiveTab('approved')} />
           <SidebarItem icon={<X/>} label="Rejected" count={rejectedVehicles.length} active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')} />
           <SidebarItem icon={<Car/>} label="List Vehicles" count={masterVehicles.length} active={activeTab === 'list-vehicles'} onClick={() => setActiveTab('list-vehicles')} />
-          <SidebarItem icon={<Users/>} label="All Users" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
+          <SidebarItem icon={<Users/>} label="All Vehicle Owners" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
           <SidebarItem icon={<CreditCard/>} label="Subscriptions" count={subscriptions.length} active={activeTab === 'subscriptions'} onClick={() => setActiveTab('subscriptions')} />
         </div>
 
@@ -712,7 +712,7 @@ export default function AdminPanel() {
               <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden pb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-gray-50 mb-6">
                   <div>
-                    <h3 className="text-[20px] font-bold text-[#252f40]">Registry of Users</h3>
+                    <h3 className="text-[20px] font-bold text-[#252f40]">All vehicle owners</h3>
                     <p className="text-[14px] text-[#67748e] mt-1">Manage and verify all registered fleet owners and drivers.</p>
                   </div>
                   <div className="relative group min-w-[320px] w-full md:w-auto">
