@@ -382,13 +382,11 @@ const RentalCarScreen = ({ navigation }) => {
     </FadeInView>
   );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#000']} />}
-      >
+  const numColumns = width > 768 ? 3 : 2;
+  const itemWidth = (width - (numColumns + 1) * 15) / numColumns;
+
+  const renderHeader = () => (
+    <>
         <View style={styles.header}>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
                  <View style={styles.logoContainer}>
@@ -439,52 +437,47 @@ const RentalCarScreen = ({ navigation }) => {
             />
         </View>
 
-        {isSearching ? (
-             <View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 15 }}>
-                    <Text style={styles.sectionTitle}>
-                        {selectedBrand === 'all' ? 'All Vehicles' : ` All ${selectedBrand}`}
-                    </Text>
-                </View>
-                <View style={styles.gridContainer}>
-                    {filteredCars.map((item, index) => (
-                        <View key={item.id} style={{width: '48%', marginBottom: 15}}>
-                            {renderGridCard({ item, index })}
-                        </View>
-                    ))}
-                </View>
-            </View>
-        ) : (
-            <View>
-                {cars.filter(c => c.is_best).length > 0 && (
-                    <>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Nearby Vehicles</Text>
-                        </View>
-                        <FlatList
-                            data={cars.filter(c => c.is_best)} 
-                            renderItem={renderCarCard}
-                            keyExtractor={item => item.id}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.carsList}
-                        />
-                    </>
-                )}
+        {!isSearching && cars.filter(c => c.is_best).length > 0 && (
+            <>
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>All Vehicles</Text>
+                    <Text style={styles.sectionTitle}>Nearby Vehicles</Text>
                 </View>
-                <View style={styles.gridContainer}>
-                    {nearbyCars.map((item, index) => (
-                        <View key={`nearby-${item.id}`} style={{ width: '48%', marginBottom: 15 }}>
-                            {renderGridCard({ item, index })}
-                        </View>
-                    ))}
-                </View>
+                <FlatList
+                    data={cars.filter(c => c.is_best)} 
+                    renderItem={renderCarCard}
+                    keyExtractor={item => item.id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.carsList}
+                />
+            </>
+        )}
+
+        <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+                {isSearching ? (selectedBrand === 'all' ? 'All Vehicles' : ` All ${selectedBrand}`) : 'All Vehicles'}
+            </Text>
+        </View>
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <FlatList 
+        data={isSearching ? filteredCars : nearbyCars}
+        renderItem={({ item, index }) => (
+            <View style={{ width: itemWidth, marginLeft: 15, marginBottom: 15 }}>
+                {renderGridCard({ item, index })}
             </View>
         )}
-        <View style={{height: 100}} /> 
-      </ScrollView>
+        keyExtractor={item => item.id}
+        numColumns={numColumns}
+        key={numColumns} // Force re-render when numColumns changes
+        ListHeaderComponent={renderHeader}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#000']} />}
+      />
 
       <RentalFilterModal
         visible={filterModalVisible}
