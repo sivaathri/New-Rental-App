@@ -127,10 +127,34 @@ export default function AdminPanel() {
     } catch(err) { alert('Error updating status'); }
   };
 
-  const revenueData = [
-    { name: 'Mon', value: 2500 }, { name: 'Tue', value: 1800 }, { name: 'Wed', value: 9500 },
-    { name: 'Thu', value: 4200 }, { name: 'Fri', value: 5000 }, { name: 'Sat', value: 4000 }, { name: 'Sun', value: 4800 },
-  ];
+  const getRevenueData = () => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const last7Days = [...Array(7)].map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return { 
+        name: days[d.getDay()],
+        date: d.toISOString().split('T')[0],
+        value: 0 
+      };
+    });
+
+    subscriptions.forEach(sub => {
+      // Use created_at for revenue tracking so stacked plans show on payment date
+      const dataDate = sub.created_at || sub.start_date;
+      if (!dataDate) return;
+      
+      const subDate = new Date(dataDate).toISOString().split('T')[0];
+      const dataPoint = last7Days.find(d => d.date === subDate);
+      if (dataPoint) {
+        dataPoint.value += Number(sub.plan_price);
+      }
+    });
+
+    return last7Days;
+  };
+
+  const revenueData = getRevenueData();
 
   const SidebarItem = ({ icon, label, active, count, onClick }) => (
     <div onClick={onClick} className={`flex items-center justify-between px-4 py-3 mx-4 cursor-pointer transition-all duration-200 ${

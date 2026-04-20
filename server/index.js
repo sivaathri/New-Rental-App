@@ -98,6 +98,7 @@ async function initializeDB() {
             status ENUM('Active', 'Expired', 'Stacked') DEFAULT 'Active',
             start_date DATETIME,
             end_date DATETIME,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )`);
 
@@ -113,6 +114,9 @@ async function initializeDB() {
             await db.query(`ALTER TABLE vehicle_master ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0`);
         } catch (e) {}
 
+        try {
+            await db.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+        } catch (e) {}
 
         console.log("Database tables checked/created.");
     } catch (error) {
