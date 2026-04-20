@@ -239,13 +239,14 @@ router.get('/enquiries', async (req, res) => {
                 v.registration_number,
                 owner.full_name as owner_name,
                 owner.mobile_number as owner_mobile,
-                owner.unique_id as owner_unique_id
+                COALESCE(owner.unique_id, 'NO_ID') as owner_unique_id
             FROM vehicle_calls vc
             JOIN users u ON vc.user_id = u.id
             JOIN vehicles v ON vc.vehicle_id = v.id
             JOIN users owner ON v.user_id = owner.id
             ORDER BY vc.id DESC
         `);
+        console.log('Enquiries data:', enquiries);
         res.json({ enquiries });
     } catch(err) {
         console.error(err);

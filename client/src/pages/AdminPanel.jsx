@@ -1065,7 +1065,8 @@ export default function AdminPanel() {
                 e.user_mobile?.includes(query) ||
                 e.vehicle_name?.toLowerCase().includes(query) ||
                 e.registration_number?.toLowerCase().includes(query) ||
-                e.owner_name?.toLowerCase().includes(query)
+                e.owner_name?.toLowerCase().includes(query) ||
+                e.owner_unique_id?.toString().includes(query)
               );
             });
 
@@ -1121,7 +1122,7 @@ export default function AdminPanel() {
                           </td>
                           <td className="px-6 py-4 bg-white border-y border-r border-gray-50 rounded-r-2xl group-hover:border-gray-100">
                              <div className="flex flex-col">
-                                <span className="text-[12px] font-bold text-[#82d616] mb-1">Q1-{e.owner_unique_id || 'N/A'}</span>
+                                <span className="text-[12px] font-bold text-[#82d616] mb-1">Q1-{e.owner_unique_id || 'MISSING'}</span>
                                 <span className="text-[14px] font-bold text-[#252f40]">{e.owner_name}</span>
                                 <span className="text-[12px] text-[#67748e]">{e.owner_mobile}</span>
                              </div>
