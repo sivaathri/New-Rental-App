@@ -41,7 +41,7 @@ const VehicleDetails = ({ route, navigation }) => {
         return (
             <View style={styles.specItem}>
                 <View style={styles.specIconContainer}>
-                    <IconLib name={icon} size={24} color="#2E3192" />
+                    <IconLib name={icon} size={24} color="#000" />
                 </View>
                 <View>
                     <Text style={styles.specLabel}>{label}</Text>
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 4,
     },
     activeDot: {
-        backgroundColor: '#2E3192',
+        backgroundColor: '#000',
         width: 20,
     },
     content: {
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     priceValue: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#2E3192',
+        color: '#000',
     },
     priceUnit: {
         fontSize: 14,
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     callBtn: {
         flex: 1,
         height: 56,
-        backgroundColor: '#2E3192',
+        backgroundColor: '#000',
         borderRadius: 15,
         flexDirection: 'row',
         justifyContent: 'center',

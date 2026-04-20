@@ -103,7 +103,7 @@ const RentalFavoritesScreen = ({ navigation }) => {
 
             {loading ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#2E3192" />
+                    <ActivityIndicator size="large" color="#000" />
                 </View>
             ) : favoriteCars.length === 0 ? (
                 <View style={styles.center}>
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     priceText: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#2E3192',
+        color: '#000',
     },
     periodText: {
         fontSize: 14,
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     browseBtn: {
-        backgroundColor: '#2E3192',
+        backgroundColor: '#000',
         paddingHorizontal: 30,
         paddingVertical: 15,
         borderRadius: 15,
