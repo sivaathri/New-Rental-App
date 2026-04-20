@@ -197,7 +197,7 @@ router.get('/', authMiddleware, async (req, res) => {
 router.get('/public/approved', async (req, res) => {
     try {
         const [vehicles] = await db.query(`
-            SELECT v.*, u.full_name as owner_name, vm.name as brand_name
+            SELECT v.*, u.full_name as owner_name, u.mobile_number, vm.name as brand_name
             FROM vehicles v
             LEFT JOIN users u ON v.user_id = u.id
             LEFT JOIN vehicle_master vm ON v.type = vm.name
@@ -217,6 +217,20 @@ router.get('/public/approved', async (req, res) => {
         res.json({ success: true, data: vehiclesWithMedia });
     } catch (err) {
         console.error('Error fetching approved vehicles:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Log a call click
+router.post('/log-call', async (req, res) => {
+    const { userId, vehicleId } = req.body;
+    if (!userId || !vehicleId) return res.status(400).json({ error: 'Missing data' });
+
+    try {
+        await db.query('INSERT INTO vehicle_calls (user_id, vehicle_id) VALUES (?, ?)', [userId, vehicleId]);
+        res.json({ success: true, message: 'Call logged' });
+    } catch (err) {
+        console.error('Error logging call:', err);
         res.status(500).json({ error: 'Server error' });
     }
 });

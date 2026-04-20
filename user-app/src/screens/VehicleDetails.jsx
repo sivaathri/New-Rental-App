@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     StyleSheet,
     Text,
@@ -13,22 +13,51 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useRentalFavorites } from '../context/RentalFavoritesContext';
+import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../constants/api';
+import axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
 const VehicleDetails = ({ route, navigation }) => {
     const { car } = route.params;
+    const { user } = useAuth();
     const { toggleFavorite, isFavorite } = useRentalFavorites();
     const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const scrollRef = useRef(null);
 
     const images = car.images && car.images.length > 0 
         ? car.images.map(img => img.startsWith('http') ? img : `http://192.168.0.157:5000${img}`)
         : [car.image];
 
-    const handleCall = () => {
-        // Since mobile is not in car object usually (it belongs to user), 
-        // we might need to fetch it or use a default.
-        // Assuming we might have mobile if joined in public/approved route.
+    useEffect(() => {
+        if (images.length > 1) {
+            const interval = setInterval(() => {
+                let nextIndex = activeImageIndex + 1;
+                if (nextIndex >= images.length) {
+                    nextIndex = 0;
+                }
+                scrollRef.current?.scrollTo({ x: nextIndex * width, animated: true });
+                setActiveImageIndex(nextIndex);
+            }, 3000);
+
+            return () => clearInterval(interval);
+        }
+    }, [activeImageIndex, images.length]);
+
+    const handleCall = async () => {
+        // Log the click in the database
+        if (user && car.id) {
+            try {
+                await axios.post(`${API_URL}/vehicles/log-call`, {
+                    userId: user.id,
+                    vehicleId: car.id
+                });
+            } catch (error) {
+                console.error('Failed to log call click', error);
+            }
+        }
+
         if (car.mobile_number) {
             Linking.openURL(`tel:${car.mobile_number}`);
         } else {
@@ -57,6 +86,7 @@ const VehicleDetails = ({ route, navigation }) => {
                 {/* Image Gallery */}
                 <View style={styles.imageGallery}>
                     <ScrollView 
+                        ref={scrollRef}
                         horizontal 
                         pagingEnabled 
                         showsHorizontalScrollIndicator={false}

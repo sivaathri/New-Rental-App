@@ -7,10 +7,11 @@ router.get('/:userId', async (req, res) => {
     const { userId } = req.params;
     try {
         const [rows] = await db.query(`
-            SELECT v.*, 
+            SELECT v.*, u.mobile_number,
                    (SELECT media_url FROM vehicle_media WHERE vehicle_id = v.id ORDER BY sort_order ASC, id ASC LIMIT 1) as image
             FROM vehicles v
             JOIN user_favorites f ON v.id = f.vehicle_id
+            LEFT JOIN users u ON v.user_id = u.id
             WHERE f.user_id = ?
         `, [userId]);
         res.json(rows);
