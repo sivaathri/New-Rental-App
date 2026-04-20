@@ -23,7 +23,7 @@ export default function Login() {
         const profile = res.data.data?.user;
         if (user.role === 'master') {
           navigate('/admin');
-        } else if (profile?.full_name || res.data.step >= 2) {
+        } else if (res.data.step >= 7) {
           navigate('/dashboard');
         } else {
           navigate('/register');
@@ -60,7 +60,7 @@ export default function Login() {
       
       if (user.role === 'master') {
         navigate('/admin');
-      } else if (user.full_name || pr.data.step >= 2) {
+      } else if (pr.data.step >= 7) {
         navigate('/dashboard');
       } else {
         navigate('/register');
