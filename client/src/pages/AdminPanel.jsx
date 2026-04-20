@@ -82,7 +82,8 @@ export default function AdminPanel() {
   const fetchUsers = async () => {
     try {
       const res = await adminAPI.getUsers();
-      setUsersList(res.data.users);
+      const ownersOnly = res.data.users.filter(u => u.role === 'vehicle-owners');
+      setUsersList(ownersOnly);
     } catch(err) { console.error(err); }
   };
 
