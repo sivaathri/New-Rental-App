@@ -1791,8 +1791,7 @@ export default function Dashboard() {
 
         {(activeTab === "My Vehicles" ||
           activeTab === "Earnings" ||
-          activeTab === "Reports" ||
-          activeTab === "Reviews") && (
+          activeTab === "Reports") && (
           <div className="py-40 text-center bg-white rounded-[32px] border border-gray-50 flex flex-col items-center justify-center animate-in zoom-in-95 duration-500">
             <div className="w-20 h-20 bg-gray-50 rounded-[24px] flex items-center justify-center text-gray-300 mb-6">
               <Settings
@@ -1816,75 +1815,95 @@ export default function Dashboard() {
           </div>
         )}
 
-        {activeTab === "Reviews" && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm mb-10">
-              <h2 className="text-[20px] font-bold text-[#252f40]">
-                Customer Reviews
-              </h2>
-              <p className="text-[#67748e] text-[14px] mt-1">
-                Direct feedback from users who engaged with your fleet listings.
-              </p>
-            </div>
+        {activeTab === "Reviews" && (() => {
+          const filteredReviews = reviews.filter(rev => {
+            const query = enquirySearch.toLowerCase();
+            return (
+              rev.reviewer_name?.toLowerCase().includes(query) ||
+              rev.vehicle_name?.toLowerCase().includes(query) ||
+              rev.comment?.toLowerCase().includes(query)
+            );
+          });
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {reviews.map((rev) => (
-                <div
-                  key={rev.id}
-                  className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm hover:shadow-md transition-all"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">
-                        {rev.reviewer_name?.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-bold text-[#252f40]">
-                          {rev.reviewer_name}
-                        </p>
-                        <p className="text-[11px] text-[#67748e]">
-                          Reviewed {rev.vehicle_name}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-0.5 bg-[#fff5e6] px-3 py-1 rounded-lg">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star
-                          key={s}
-                          size={12}
-                          className={
-                            s <= rev.rating
-                              ? "fill-[#fbcf33] text-[#fbcf33]"
-                              : "text-gray-200"
-                          }
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-[#252f40] text-[14px] leading-relaxed italic mb-4">
-                    "{rev.comment}"
-                  </p>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                    <p className="text-[11px] text-[#67748e] font-medium">
-                      {new Date(rev.created_at).toLocaleDateString()}
-                    </p>
-                    <span className="text-[11px] font-bold text-black uppercase tracking-wider">
-                      Verified User
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {reviews.length === 0 && (
-                <div className="col-span-full py-20 text-center bg-white rounded-[24px] border border-dashed border-gray-200">
-                  <Star size={48} className="text-gray-200 mx-auto mb-4" />
-                  <p className="text-gray-400 font-medium">
-                    No reviews received yet.
+          return (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                  <h2 className="text-[20px] font-bold text-[#252f40]">
+                    Customer Reviews
+                  </h2>
+                  <p className="text-[#67748e] text-[14px] mt-1">
+                    Direct feedback from users who engaged with your fleet listings.
                   </p>
                 </div>
-              )}
+                <div className="relative group min-w-[320px] w-full md:w-auto">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#67748e] group-focus-within:text-black transition-colors" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="Search by customer or car..." 
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all text-sm font-medium"
+                    value={enquirySearch}
+                    onChange={(e) => setEnquirySearch(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredReviews.map((rev) => (
+                  <div
+                    key={rev.id}
+                    className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm hover:shadow-md transition-all group"
+                  >
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-[#f8f9fa] border border-gray-100 flex items-center justify-center font-bold text-lg text-[#252f40]">
+                          {rev.reviewer_name?.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#252f40] text-lg">
+                            {rev.reviewer_name}
+                          </p>
+                          <div className="flex items-center gap-2">
+                             <Car size={12} className="text-[#82d616]" />
+                             <p className="text-[12px] text-[#67748e] font-medium">
+                               {rev.vehicle_name}
+                             </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-[#fff5e6] px-3 py-1.5 rounded-lg border border-[#fbcf33]/20 shadow-sm">
+                        <Star size={14} className="fill-[#fbcf33] text-[#fbcf33]" />
+                        <span className="text-[13px] font-bold text-[#252f40]">{rev.rating}/5</span>
+                      </div>
+                    </div>
+
+                    <div className="relative">
+                      <div className="absolute -left-2 top-0 text-gray-100 transform -translate-x-1/2 opacity-20">
+                        <MessageSquare size={48} className="fill-current" />
+                      </div>
+                      <p className="text-[#252f40] text-[14px] leading-relaxed relative z-10 italic">
+                        "{rev.comment}"
+                      </p>
+                    </div>
+                    
+                    <div className="mt-6 pt-5 border-t border-gray-50 flex justify-between items-center">
+                       <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{new Date(rev.created_at).toLocaleDateString()}</span>
+                       <span className="text-[10px] bg-gray-50 px-2 py-1 rounded text-gray-400 font-bold uppercase">{rev.registration_number}</span>
+                    </div>
+                  </div>
+                ))}
+                {filteredReviews.length === 0 && (
+                  <div className="col-span-full py-20 text-center bg-white rounded-[32px] border border-dashed border-gray-100 flex flex-col items-center justify-center">
+                     <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-200 mb-4">
+                        <Star size={32} />
+                     </div>
+                     <p className="text-gray-400 font-bold">No reviews found matching your search</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {activeTab === "Subscription" && (
           <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500 pb-20">

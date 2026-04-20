@@ -244,6 +244,10 @@ const RentalCarScreen = ({ navigation }) => {
         }));
         setCars(formattedCars);
         setFilteredCars(formattedCars);
+        
+        // Extract unique cities
+        const cities = ['All Cities', ...new Set(formattedCars.map(c => c.location.split(',').pop().trim()))];
+        setAvailableCities(cities);
       }
     } catch (error) {
       console.log("Error fetching cars", error);
@@ -647,6 +651,145 @@ const RentalCarScreen = ({ navigation }) => {
         onApply={(filters) => { setAppliedFilters(filters); setFilterModalVisible(false); }}
         onClear={() => { setAppliedFilters(null); setFilterModalVisible(false); }}
       />
+
+      {/* Location Selection Modal */}
+      <Modal
+        visible={locationModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setLocationModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.locationModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Location</Text>
+              <TouchableOpacity onPress={() => setLocationModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.citySearchContainer}>
+              <Ionicons name="search-outline" size={18} color="#999" />
+              <TextInput
+                placeholder="Search city..."
+                style={styles.cityInput}
+                value={citySearchQuery}
+                onChangeText={setCitySearchQuery}
+              />
+            </View>
+
+            <TouchableOpacity 
+                style={styles.currentLocationBtn}
+                onPress={() => {
+                    getUserLocation();
+                    setSelectedCity('All Cities');
+                    setLocationModalVisible(false);
+                }}
+            >
+              <View style={styles.currentLocationIcon}>
+                <Ionicons name="locate" size={18} color="white" />
+              </View>
+              <Text style={styles.currentLocationText}>Use Current Location</Text>
+            </TouchableOpacity>
+
+            <View style={styles.cityListContainer}>
+              <Text style={styles.subTitle}>Available Cities</Text>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {availableCities
+                  .filter(city => city.toLowerCase().includes(citySearchQuery.toLowerCase()))
+                  .map((city, idx) => (
+                    <TouchableOpacity 
+                      key={idx} 
+                      style={[styles.cityItem, selectedCity === city && styles.selectedCityItem]}
+                      onPress={() => {
+                        setSelectedCity(city);
+                        setLocationModalVisible(false);
+                      }}
+                    >
+                      <Text style={[styles.cityItemText, selectedCity === city && styles.selectedCityItemText]}>
+                        {city}
+                      </Text>
+                      {selectedCity === city && <Ionicons name="checkmark-circle" size={18} color="black" />}
+                    </TouchableOpacity>
+                  ))}
+              </ScrollView>
+            </View>
+
+            <TouchableOpacity 
+                style={styles.mapPickerTrigger}
+                onPress={() => {
+                    setLocationModalVisible(false);
+                    setIsMapPickerVisible(true);
+                }}
+            >
+                <Ionicons name="map-outline" size={18} color="#666" />
+                <Text style={styles.mapPickerText}>Pick precisely on map</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Map Picker Modal */}
+      <Modal
+        visible={isMapPickerVisible}
+        animationType="fade"
+        transparent={false}
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.mapHeader}>
+             <TouchableOpacity style={styles.mapBackBtn} onPress={() => setIsMapPickerVisible(false)}>
+                <Ionicons name="arrow-back" size={24} color="black" />
+             </TouchableOpacity>
+             <Text style={styles.mapTitle}>Pick Location</Text>
+             <View style={{width: 40}} />
+          </View>
+
+          <MapView
+            style={{ flex: 1 }}
+            initialRegion={mapRegion}
+            onRegionChangeComplete={async (region) => {
+                setMapRegion(region);
+                if (geocodeTimeout.current) clearTimeout(geocodeTimeout.current);
+                geocodeTimeout.current = setTimeout(async () => {
+                    try {
+                        let address = await Location.reverseGeocodeAsync({
+                            latitude: region.latitude,
+                            longitude: region.longitude
+                        });
+                        if (address && address.length > 0) {
+                            setMapPickedAddress(`${address[0].name || ''}, ${address[0].city || ''}`);
+                        }
+                    } catch (e) {}
+                }, 1000);
+            }}
+          >
+            <Marker coordinate={mapRegion} />
+          </MapView>
+
+          <View style={styles.mapFooter}>
+              <View style={styles.addressDisplay}>
+                 <Ionicons name="location" size={20} color="#FF4D4D" />
+                 <Text style={styles.addressText} numberOfLines={2}>
+                    {mapPickedAddress || 'Panning map...'}
+                 </Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.confirmMapBtn}
+                onPress={() => {
+                    setUserLocation({
+                        latitude: mapRegion.latitude,
+                        longitude: mapRegion.longitude
+                    });
+                    setLocationName(mapPickedAddress || 'Selected Location');
+                    setSelectedCity('All Cities');
+                    setIsMapPickerVisible(false);
+                }}
+              >
+                 <Text style={styles.confirmMapText}>Confirm Location</Text>
+              </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -708,6 +851,32 @@ const styles = StyleSheet.create({
   priceContainer: { flexDirection: 'row', alignItems: 'baseline' },
   priceText: { fontSize: 13, fontWeight: 'bold', color: '#111' },
   dayText: { fontSize: 11, color: '#888' },
+  
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  locationModalContent: { backgroundColor: 'white', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, height: '70%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#252f40' },
+  citySearchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f5f5f5', borderRadius: 15, paddingHorizontal: 15, height: 50, marginBottom: 20 },
+  cityInput: { flex: 1, marginLeft: 10, fontSize: 14 },
+  currentLocationBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
+  currentLocationIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'black', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  currentLocationText: { fontSize: 14, fontWeight: 'bold', color: 'black' },
+  cityListContainer: { flex: 1 },
+  subTitle: { fontSize: 12, fontWeight: 'bold', color: '#999', uppercase: true, trackingWith: 1, marginBottom: 15 },
+  cityItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f9f9f9' },
+  selectedCityItem: { borderBottomColor: 'black' },
+  cityItemText: { fontSize: 15, color: '#666' },
+  selectedCityItemText: { color: 'black', fontWeight: 'bold' },
+  mapPickerTrigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 15, marginTop: 10, borderTopWidth: 1, borderTopColor: '#f0f0f0' },
+  mapPickerText: { fontSize: 13, color: '#666', fontWeight: 'bold', marginLeft: 8 },
+  mapHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: 'white' },
+  mapBackBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  mapTitle: { fontSize: 18, fontWeight: 'bold' },
+  mapFooter: { padding: 20, backgroundColor: 'white', borderTopLeftRadius: 25, borderTopRightRadius: 25, position: 'absolute', bottom: 0, left: 0, right: 0, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 20 },
+  addressDisplay: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, backgroundColor: '#f9f9f9', padding: 15, borderRadius: 15 },
+  addressText: { fontSize: 13, color: '#333', marginLeft: 10, flex: 1, fontWeight: 'medium' },
+  confirmMapBtn: { backgroundColor: 'black', paddingVertical: 18, borderRadius: 15, alignItems: 'center' },
+  confirmMapText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
 });
 
 export default RentalCarScreen;
