@@ -34,7 +34,9 @@ const RentalFavoritesScreen = ({ navigation }) => {
             const response = await axios.get(`${API_URL}/favorites/${user.id}`);
             const formatted = response.data.map(car => ({
                 ...car,
-                image: car.image.startsWith('http') ? car.image : `http://192.168.0.157:5000${car.image}`,
+                image: (car.image && car.image.startsWith('http')) 
+                    ? car.image 
+                    : (car.image ? `http://192.168.0.157:5000${car.image}` : 'https://via.placeholder.com/300'),
             }));
             setFavoriteCars(formatted);
         } catch (error) {
@@ -49,7 +51,7 @@ const RentalFavoritesScreen = ({ navigation }) => {
             <Image source={{ uri: item.image }} style={styles.carImage} resizeMode="contain" />
             <TouchableOpacity 
                 style={styles.favoriteBtn} 
-                onPress={() => toggleFavorite(item.id)}
+                onPress={() => toggleFavorite(item.id.toString())}
             >
                 <Ionicons name="heart" size={24} color="#FF4D4D" />
             </TouchableOpacity>
@@ -78,7 +80,7 @@ const RentalFavoritesScreen = ({ navigation }) => {
                         <Text style={styles.periodText}>/Day</Text>
                     </Text>
                     <TouchableOpacity style={styles.bookBtn}>
-                        <Text style={styles.bookBtnText}>Book Now</Text>
+                        <Text style={styles.bookBtnText}>Call Now</Text>
                     </TouchableOpacity>
                 </View>
             </View>

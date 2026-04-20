@@ -20,8 +20,8 @@ export const RentalFavoritesProvider = ({ children }) => {
     const fetchFavorites = async () => {
         try {
             const response = await axios.get(`${API_URL}/favorites/${user.id}`);
-            // Map to IDs for easier checking
-            setFavorites(response.data.map(item => item.id));
+            // Map to IDs for easier checking (consistent with car list IDs which are stringified)
+            setFavorites(response.data.map(item => item.id.toString()));
         } catch (error) {
             console.error('Failed to fetch favorites', error);
         }
