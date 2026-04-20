@@ -68,7 +68,7 @@ const RentalProfileScreen = ({ navigation }) => {
                     
                     <ProfileOption 
                         icon={<Ionicons name="heart-outline" size={20} color="#333" />}
-                        label="Favorite Cars"
+                        label="Favorite Vehicle"
                         onPress={() => navigation?.navigate('RentalFavorites')}
                     />
                     <ProfileOption 
