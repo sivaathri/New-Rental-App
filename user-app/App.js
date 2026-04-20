@@ -8,6 +8,7 @@ import RentalCarScreen from './src/screens/RentalCarScreen';
 import RentalProfileScreen from './src/screens/RentalProfileScreen';
 import RentalFavoritesScreen from './src/screens/RentalFavoritesScreen';
 import UserProfileScreen from './src/screens/UserProfileScreen';
+import VehicleDetails from './src/screens/VehicleDetails';
 import LoginScreen from './src/screens/LoginScreen';
 import RegistrationCompletionScreen from './src/screens/RegistrationCompletionScreen';
 import { ActivityIndicator, View } from 'react-native';
@@ -20,7 +21,7 @@ const Navigation = () => {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#2E3192" />
+        <ActivityIndicator size="large" color="#000" />
       </View>
     );
   }
@@ -39,6 +40,7 @@ const Navigation = () => {
             <Stack.Screen name="RentalProfile" component={RentalProfileScreen} />
             <Stack.Screen name="RentalFavorites" component={RentalFavoritesScreen} />
             <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+            <Stack.Screen name="VehicleDetails" component={VehicleDetails} />
           </>
         )}
       </Stack.Navigator>

@@ -506,7 +506,10 @@ const RentalCarScreen = ({ navigation }) => {
 
   const renderGridCard = ({ item, index }) => (
     <FadeInView delay={index * 100}>
-        <TouchableOpacity style={styles.gridCard}>
+        <TouchableOpacity 
+            style={styles.gridCard}
+            onPress={() => navigation.navigate('VehicleDetails', { car: item })}
+        >
           <TouchableOpacity style={styles.gridFavorite} onPress={() => toggleFavorite(item.id)}>
              <Ionicons 
                name={isFavorite(item.id) ? "heart" : "heart-outline"} 
@@ -564,7 +567,10 @@ const RentalCarScreen = ({ navigation }) => {
 
   const renderCarCard = ({ item, index }) => (
     <FadeInView delay={index * 150}>
-        <TouchableOpacity style={styles.card}>
+        <TouchableOpacity 
+            style={styles.card}
+            onPress={() => navigation.navigate('VehicleDetails', { car: item })}
+        >
           <TouchableOpacity style={styles.favoriteIcon} onPress={() => toggleFavorite(item.id)}>
              <Ionicons 
                 name={isFavorite(item.id) ? "heart" : "heart-outline"} 

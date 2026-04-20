@@ -47,7 +47,11 @@ const RentalFavoritesScreen = ({ navigation }) => {
     };
 
     const renderCarItem = ({ item }) => (
-        <TouchableOpacity style={styles.card} activeOpacity={0.9}>
+        <TouchableOpacity 
+            style={styles.card} 
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('VehicleDetails', { car: item })}
+        >
             <Image source={{ uri: item.image }} style={styles.carImage} resizeMode="contain" />
             <TouchableOpacity 
                 style={styles.favoriteBtn} 
