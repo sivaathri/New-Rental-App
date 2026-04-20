@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { adminAPI } from '../api';
 import { useNavigate } from 'react-router-dom';
+import AdminLogin from './AdminLogin';
 import { 
   BarChart as BarChartIcon, Users, Car, CheckSquare, MessageSquare, 
   Star, Tag, Landmark, Settings, LogOut, LayoutDashboard, 
@@ -39,18 +40,25 @@ export default function AdminPanel() {
   const [selectedImg, setSelectedImg] = useState(null);
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => { 
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (!token || user.role !== 'master') {
-      navigate('/');
-      return;
+    if (token && user.role === 'master') {
+      setIsAdminAuthenticated(true);
+      fetchData(); 
+      fetchUsers(); 
     }
-    fetchData(); 
-    fetchUsers(); 
-  }, [navigate]);
+  }, []);
+
+  useEffect(() => {
+    if (isAdminAuthenticated) {
+      fetchData();
+      fetchUsers();
+    }
+  }, [isAdminAuthenticated]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -77,6 +85,10 @@ export default function AdminPanel() {
       setUsersList(res.data.users);
     } catch(err) { console.error(err); }
   };
+
+  if (!isAdminAuthenticated) {
+    return <AdminLogin onLoginSuccess={() => setIsAdminAuthenticated(true)} />;
+  }
 
   const handleOrderChange = async (id, currentOrder, direction) => {
     const newOrder = direction === 'up' ? currentOrder - 1 : currentOrder + 1;

@@ -65,4 +65,23 @@ router.post('/verify-otp', async (req, res) => {
     }
 });
 
+// Admin Credential Login
+router.post('/admin-login', async (req, res) => {
+    const { id, password } = req.body;
+    // Hardcoded for master admin access as requested
+    if (id === '123456' && password === '123456') {
+        const token = jwt.sign(
+            { id: 0, mobile: '0000000000', role: 'master' }, 
+            process.env.JWT_SECRET || 'secret', 
+            { expiresIn: '7d' }
+        );
+        return res.json({ 
+            message: 'Master access granted', 
+            token, 
+            user: { id: 0, full_name: 'Master Admin', role: 'master', unique_id: 'MASTER' } 
+        });
+    }
+    res.status(401).json({ error: 'Invalid credentials' });
+});
+
 module.exports = router;
