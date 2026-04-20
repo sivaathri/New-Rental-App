@@ -27,6 +27,7 @@ export default function AdminPanel() {
   const [rejectedVehicles, setRejectedVehicles] = useState([]);
   const [approvedVehicles, setApprovedVehicles] = useState([]);
   const [usersList, setUsersList] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [masterVehicles, setMasterVehicles] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -41,6 +42,7 @@ export default function AdminPanel() {
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => { 
@@ -82,6 +84,7 @@ export default function AdminPanel() {
   const fetchUsers = async () => {
     try {
       const res = await adminAPI.getUsers();
+      setTotalUsers(res.data.users.length);
       const ownersOnly = res.data.users.filter(u => u.role === 'vehicle-owners');
       setUsersList(ownersOnly);
     } catch(err) { console.error(err); }
@@ -90,6 +93,13 @@ export default function AdminPanel() {
   if (!isAdminAuthenticated) {
     return <AdminLogin onLoginSuccess={() => setIsAdminAuthenticated(true)} />;
   }
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setIsAdminAuthenticated(false);
+    navigate('/');
+  };
 
   const handleOrderChange = async (id, currentOrder, direction) => {
     const newOrder = direction === 'up' ? currentOrder - 1 : currentOrder + 1;
@@ -159,7 +169,7 @@ export default function AdminPanel() {
 
         <div className="px-4 mt-auto pt-6 border-t border-gray-50">
           <button 
-            onClick={() => navigate('/')}
+            onClick={() => setShowLogoutConfirm(true)}
             className="w-full flex items-center gap-3 px-6 py-3 text-[#ea0606] font-bold hover:bg-red-50 rounded-xl transition-all"
           >
             <LogOut size={18} />
@@ -189,14 +199,14 @@ export default function AdminPanel() {
               <h2 className="text-[18px] font-bold text-[#252f40]">Dashboard Overview</h2>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-                <StatCard title="Total Users" value={usersList.length} icon={<Users/>} color="#e6f0ff" iconColor="#2167f2" growth="+5%" />
-                <StatCard title="Total Drivers" value="0" icon={<UserCheck/>} color="#e6ffed" iconColor="#17c1e8" growth="0%" />
+                <StatCard title="Total Vehicle Owners" value={usersList.length} icon={<Users/>} color="#e6f0ff" iconColor="#2167f2" growth="+5%" />
+                <StatCard title="Total Users" value={totalUsers} icon={<UserCheck/>} color="#e6ffed" iconColor="#17c1e8" growth="0%" />
                 <StatCard 
                   title="Total Revenue" 
                   value={`₹${subscriptions.reduce((acc, curr) => acc + Number(curr.plan_price), 0).toLocaleString('en-IN')}`} 
                   icon={<CreditCard/>} color="#f2e6ff" iconColor="#985eff" growth="0%" 
                 />
-                <StatCard title="Active Rides" value="0" icon={<TrendingUp/>} color="#fff5e6" iconColor="#fbcf33" growth="0%" />
+                <StatCard title="Approved Vehicle" value={approvedVehicles.length} icon={<TrendingUp/>} color="#fff5e6" iconColor="#fbcf33" growth="0%" />
                 <StatCard title="Pending Approvals" value={vehicles.length} icon={<Clock/>} color="#ffe6e6" iconColor="#ea0606" growth="0%" />
               </div>
 
@@ -1202,6 +1212,36 @@ export default function AdminPanel() {
         </div>
       )}
 
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[1001] flex items-center justify-center p-6 text-center">
+          <div 
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowLogoutConfirm(false)}
+          />
+          <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-sm p-10 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-[#ea0606] mx-auto mb-6">
+              <LogOut size={32} />
+            </div>
+            <h2 className="text-[20px] font-bold text-[#252f40] mb-2">Sign Out?</h2>
+            <p className="text-[#67748e] text-[14px] mb-8">Are you sure you want to end your administrative session?</p>
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => setShowLogoutConfirm(false)}
+                className="py-3 px-6 rounded-lg font-bold text-[13px] text-[#67748e] hover:bg-gray-50 transition-all border border-gray-100"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="py-3 px-6 bg-[#ea0606] text-white rounded-lg font-bold text-[13px] shadow-sm hover:opacity-90 transition-all"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
