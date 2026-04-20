@@ -186,6 +186,7 @@ router.get('/public/approved', async (req, res) => {
             LEFT JOIN users u ON v.user_id = u.id
             LEFT JOIN vehicle_master vm ON v.type = vm.name
             WHERE v.status = "Approved"
+            ORDER BY v.sort_order ASC, v.approved_at DESC
         `);
 
         const vehiclesWithMedia = await Promise.all(vehicles.map(async (v) => {

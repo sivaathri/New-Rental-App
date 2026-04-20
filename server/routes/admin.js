@@ -113,6 +113,7 @@ router.get('/vehicles/approved', async (req, res) => {
             LEFT JOIN users u ON v.user_id = u.id
             LEFT JOIN verifications ver ON v.user_id = ver.user_id
             WHERE v.status = "Approved"
+            ORDER BY v.sort_order ASC, v.approved_at DESC
         `);
         const vehiclesWithMedia = await Promise.all(vehicles.map(async (v) => {
             const [media] = await db.query('SELECT * FROM vehicle_media WHERE vehicle_id = ? ORDER BY sort_order ASC, id ASC', [v.id]);
@@ -192,6 +193,18 @@ router.post('/vehicles/master/:id/order', async (req, res) => {
     try {
         await db.query('UPDATE vehicle_master SET sort_order = ? WHERE id = ?', [sort_order, id]);
         res.json({ message: 'Order updated' });
+    } catch(err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Update approved vehicle sort order
+router.post('/vehicles/approved/:id/order', async (req, res) => {
+    const { id } = req.params;
+    const { sort_order } = req.body;
+    try {
+        await db.query('UPDATE vehicles SET sort_order = ? WHERE id = ?', [sort_order, id]);
+        res.json({ message: 'Vehicle order updated' });
     } catch(err) {
         res.status(500).json({ error: 'Server error' });
     }

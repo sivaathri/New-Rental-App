@@ -80,6 +80,7 @@ async function initializeDB() {
         try { await db.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,8)`); } catch (e) {}
         try { await db.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS longitude DECIMAL(11,8)`); } catch (e) {}
         try { await db.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS is_best_car BOOLEAN DEFAULT false`); } catch (e) {}
+        try { await db.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0`); } catch (e) {}
 
 
         await db.query(`CREATE TABLE IF NOT EXISTS vehicle_media (

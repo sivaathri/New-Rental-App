@@ -112,6 +112,16 @@ export default function AdminPanel() {
     }
   };
 
+  const handleApprovedVehicleOrderChange = async (id, currentOrder, direction) => {
+    const newOrder = direction === 'up' ? currentOrder - 1 : currentOrder + 1;
+    try {
+      await adminAPI.updateApprovedVehicleOrder(id, newOrder);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleAction = async (type, id, status) => {
     let reason = '';
     if (status === 'Rejected') {
@@ -376,13 +386,9 @@ export default function AdminPanel() {
           )}
  
           {activeTab === 'approved' && (() => {
-            const sortedByMaster = [...approvedVehicles].sort((a, b) => {
-              const orderA = masterVehicles.find(mv => mv.name === a.type)?.sort_order || 999;
-              const orderB = masterVehicles.find(mv => mv.name === b.type)?.sort_order || 999;
-              return orderA - orderB;
-            });
+            const sortedByOrder = [...approvedVehicles].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
-            const filteredApproved = sortedByMaster.filter(v => {
+            const filteredApproved = sortedByOrder.filter(v => {
               const query = searchQuery.toLowerCase();
               const matchesSearch = (
                 v.name?.toLowerCase().includes(query) ||
@@ -463,6 +469,24 @@ export default function AdminPanel() {
                                 <Clock size={10} /> {formatDate(v.approved_at)}
                             </div>
                           </div>
+                         <div className="absolute top-4 left-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex flex-col gap-1 bg-white/20 backdrop-blur-md p-1 rounded-lg border border-white/30">
+                               <button 
+                                onClick={(e) => { e.stopPropagation(); handleApprovedVehicleOrderChange(v.id, v.sort_order, 'up'); }}
+                                className="w-8 h-8 flex items-center justify-center bg-white text-black rounded-md hover:bg-[#82d616] hover:text-white transition-all shadow-sm"
+                               >
+                                  <ChevronUp size={16} />
+                               </button>
+                               <button 
+                                onClick={(e) => { e.stopPropagation(); handleApprovedVehicleOrderChange(v.id, v.sort_order, 'down'); }}
+                                className="w-8 h-8 flex items-center justify-center bg-white text-black rounded-md hover:bg-[#82d616] hover:text-white transition-all shadow-sm"
+                               >
+                                  <ChevronDown size={16} />
+                               </button>
+                            </div>
+                            <div className="bg-black/40 text-white text-[10px] font-bold px-2 py-1 rounded-lg text-center backdrop-blur-sm border border-white/10">#{v.sort_order || 0}</div>
+                          </div>
+                          
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
                               <button 
                                 onClick={() => setSelectedVehicleForDetails(v)}
