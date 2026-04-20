@@ -20,9 +20,14 @@ export default function Login() {
       })
       .then(res => {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (user.role === 'master') navigate('/admin');
-        else if (res.data.step === 7) navigate('/dashboard');
-        else navigate('/register');
+        const profile = res.data.data?.user;
+        if (user.role === 'master') {
+          navigate('/admin');
+        } else if (profile?.full_name || res.data.step >= 2) {
+          navigate('/dashboard');
+        } else {
+          navigate('/register');
+        }
       })
       .catch(() => localStorage.removeItem('token'));
     }
@@ -54,14 +59,14 @@ export default function Login() {
       const pr = await axios.get(`${API_BASE}/profile/progress`, { headers: { Authorization: `Bearer ${token}` } });
       
       if (user.role === 'master') {
-         navigate('/admin');
-      } else if (pr.data.step === 7) {
-         navigate('/dashboard');
+        navigate('/admin');
+      } else if (user.full_name || pr.data.step >= 2) {
+        navigate('/dashboard');
       } else {
-         navigate('/register');
+        navigate('/register');
       }
     } catch(err) {
-      alert('Invalid OTP');
+      alert(err.response?.data?.error || 'Verification failed');
     } finally { setLoading(false); }
   };
 

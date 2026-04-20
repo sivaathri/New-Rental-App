@@ -227,7 +227,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div className="lg:col-span-5 bg-white p-6 rounded-[16px] border border-gray-100 shadow-sm">
-                   <h3 className="text-[16px] font-bold text-[#252f40] mb-6">Ride Volume</h3>
+                   <h3 className="text-[16px] font-bold text-[#252f40] mb-6">Revenue Volume</h3>
                   <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={revenueData}>
