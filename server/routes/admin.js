@@ -49,6 +49,7 @@ router.get('/vehicles/pending', async (req, res) => {
                    u.email as owner_email, 
                    u.address as owner_address, 
                    u.city as owner_city,
+                   u.unique_id as owner_unique_id,
                    ver.aadhar_card_url,
                    ver.driving_license_url
             FROM vehicles v
@@ -77,6 +78,7 @@ router.get('/vehicles/rejected', async (req, res) => {
                    u.full_name as owner_name, 
                    u.mobile_number as owner_mobile, 
                    u.email as owner_email,
+                   u.unique_id as owner_unique_id,
                    ver.aadhar_card_url,
                    ver.driving_license_url
             FROM vehicles v
@@ -104,6 +106,7 @@ router.get('/vehicles/approved', async (req, res) => {
                    u.email as owner_email,
                    u.address as owner_address,
                    u.city as owner_city,
+                   u.unique_id as owner_unique_id,
                    ver.aadhar_card_url,
                    ver.driving_license_url
             FROM vehicles v
@@ -190,6 +193,22 @@ router.post('/vehicles/master/:id/order', async (req, res) => {
         await db.query('UPDATE vehicle_master SET sort_order = ? WHERE id = ?', [sort_order, id]);
         res.json({ message: 'Order updated' });
     } catch(err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Get all subscriptions
+router.get('/subscriptions', async (req, res) => {
+    try {
+        const [subs] = await db.query(`
+            SELECT s.*, u.full_name as user_name, u.mobile_number, u.email as user_email
+            FROM subscriptions s
+            LEFT JOIN users u ON s.user_id = u.id
+            ORDER BY s.id DESC
+        `);
+        res.json({ subscriptions: subs });
+    } catch(err) {
+        console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
 });

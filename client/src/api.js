@@ -60,6 +60,7 @@ export const adminAPI = {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
   updateMasterVehicleOrder: (id, sort_order) => api.post(`/admin/vehicles/master/${id}/order`, { sort_order }),
+  getSubscriptions: () => api.get('/admin/subscriptions'),
 };
 
 export const subscriptionAPI = {

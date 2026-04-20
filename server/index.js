@@ -19,6 +19,7 @@ async function initializeDB() {
         await db.query(`CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             mobile_number VARCHAR(15) UNIQUE NOT NULL,
+            unique_id VARCHAR(5) UNIQUE,
             otp VARCHAR(6),
             full_name VARCHAR(100),
             address TEXT,
@@ -26,6 +27,10 @@ async function initializeDB() {
             profile_photo VARCHAR(255),
             is_verified BOOLEAN DEFAULT false
         )`);
+
+        try {
+            await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS unique_id VARCHAR(5) UNIQUE`);
+        } catch (e) {}
 
         await db.query(`CREATE TABLE IF NOT EXISTS verifications (
             id INT AUTO_INCREMENT PRIMARY KEY,

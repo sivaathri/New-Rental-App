@@ -19,7 +19,10 @@ export default function AdminPanel() {
   const [approvedVehicles, setApprovedVehicles] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [masterVehicles, setMasterVehicles] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [subSearchQuery, setSubSearchQuery] = useState('');
+  const [subTimeFilter, setSubTimeFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [masterFormData, setMasterFormData] = useState({ name: '', image: null });
   const [uploadingMaster, setUploadingMaster] = useState(false);
@@ -44,6 +47,8 @@ export default function AdminPanel() {
       setApprovedVehicles(approvedRes.data.vehicles);
       const masterRes = await adminAPI.getMasterVehicles();
       setMasterVehicles(masterRes.data.vehicles);
+      const subRes = await adminAPI.getSubscriptions();
+      setSubscriptions(subRes.data.subscriptions);
     } catch(err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -118,6 +123,7 @@ export default function AdminPanel() {
           <SidebarItem icon={<X/>} label="Rejected" count={rejectedVehicles.length} active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')} />
           <SidebarItem icon={<Car/>} label="List Vehicles" count={masterVehicles.length} active={activeTab === 'list-vehicles'} onClick={() => setActiveTab('list-vehicles')} />
           <SidebarItem icon={<Users/>} label="All Users" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
+          <SidebarItem icon={<CreditCard/>} label="Subscriptions" count={subscriptions.length} active={activeTab === 'subscriptions'} onClick={() => setActiveTab('subscriptions')} />
         </div>
 
         <div className="px-4 mt-auto pt-6 border-t border-gray-50">
@@ -154,7 +160,11 @@ export default function AdminPanel() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 <StatCard title="Total Users" value={usersList.length} icon={<Users/>} color="#e6f0ff" iconColor="#2167f2" growth="+5%" />
                 <StatCard title="Total Drivers" value="0" icon={<UserCheck/>} color="#e6ffed" iconColor="#17c1e8" growth="0%" />
-                <StatCard title="Total Revenue" value="₹0" icon={<CreditCard/>} color="#f2e6ff" iconColor="#985eff" growth="0%" />
+                <StatCard 
+                  title="Total Revenue" 
+                  value={`₹${subscriptions.reduce((acc, curr) => acc + Number(curr.plan_price), 0).toLocaleString('en-IN')}`} 
+                  icon={<CreditCard/>} color="#f2e6ff" iconColor="#985eff" growth="0%" 
+                />
                 <StatCard title="Active Rides" value="0" icon={<TrendingUp/>} color="#fff5e6" iconColor="#fbcf33" growth="0%" />
                 <StatCard title="Pending Approvals" value={vehicles.length} icon={<Clock/>} color="#ffe6e6" iconColor="#ea0606" growth="0%" />
               </div>
@@ -219,6 +229,7 @@ export default function AdminPanel() {
                       <div>
                         <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-3">Owner Details</h3>
                         <div className="grid grid-cols-1 gap-y-2 text-sm">
+                          <div><span className="text-gray-500">Quick1 ID:</span> <strong className="text-[#82d616]">Q1-{v.owner_unique_id || 'N/A'}</strong></div>
                           <div><span className="text-gray-500">Owner Name:</span> <strong>{v.owner_name || 'N/A'}</strong></div>
                           <div><span className="text-gray-500">Mobile:</span> <strong>{v.owner_mobile}</strong></div>
                           <div><span className="text-gray-500">Email:</span> <strong>{v.owner_email || 'N/A'}</strong></div>
@@ -671,6 +682,7 @@ export default function AdminPanel() {
                     {usersList.map((u) => (
                       <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/20 transition-colors">
                         <td className="px-6 py-4 text-[14px] text-gray-900">#{u.id}</td>
+                        <td className="px-6 py-4 text-[14px] font-bold text-[#82d616]">Q1-{u.unique_id || 'N/A'}</td>
                         <td className="px-6 py-4 text-[14px] font-medium text-gray-900">{u.full_name || 'N/A'}</td>
                         <td className="px-6 py-4 text-[14px] text-gray-600">{u.mobile_number}</td>
                         <td className="px-6 py-4 text-[14px] text-gray-600">{u.city}</td>
@@ -716,6 +728,168 @@ export default function AdminPanel() {
               </div>
             </div>
           )}
+
+          {activeTab === 'subscriptions' && (() => {
+            const filteredSubs = subscriptions.filter(s => {
+              const matchesSearch = 
+                s.user_name?.toLowerCase().includes(subSearchQuery.toLowerCase()) ||
+                s.mobile_number?.includes(subSearchQuery) ||
+                s.plan_name?.toLowerCase().includes(subSearchQuery.toLowerCase());
+              
+              if (!matchesSearch) return false;
+              if (subTimeFilter === 'all') return true;
+
+              const subDate = new Date(s.start_date);
+              const now = new Date();
+              const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+              const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+              const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+              if (subTimeFilter === 'day') return subDate >= startOfDay;
+              if (subTimeFilter === 'week') return subDate >= startOfWeek;
+              if (subTimeFilter === 'month') return subDate >= startOfMonth;
+              if (subTimeFilter === 'year') return subDate >= startOfYear;
+              
+              return true;
+            });
+
+            const totalAmount = filteredSubs.reduce((acc, curr) => acc + Number(curr.plan_price), 0);
+
+            return (
+              <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden pb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="p-8 border-b border-gray-50 mb-6">
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+                    <div>
+                      <h3 className="text-[20px] font-bold text-[#252f40]">Membership Subscriptions</h3>
+                      <p className="text-[14px] text-[#67748e] mt-1">Manage and monitor all active and historical plan purchases.</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="bg-[#f2e6ff] px-6 py-3 rounded-2xl border border-purple-100">
+                        <p className="text-[10px] font-bold text-[#985eff] uppercase tracking-wider mb-0.5">Filtered Total</p>
+                        <p className="text-[18px] font-bold text-[#252f40]">₹{totalAmount.toLocaleString('en-IN')}</p>
+                      </div>
+                      <div className="bg-[#e6ffed] px-6 py-3 rounded-2xl border border-green-100">
+                        <p className="text-[10px] font-bold text-[#82d616] uppercase tracking-wider mb-0.5">Active Plans</p>
+                        <p className="text-[18px] font-bold text-[#252f40]">{filteredSubs.filter(s => s.status === 'Active').length}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col md:flex-row items-center gap-4">
+                    <div className="relative flex-1 group w-full">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#67748e] group-focus-within:text-[#82d616] transition-colors" size={18} />
+                      <input 
+                        type="text" 
+                        placeholder="Search user, mobile or plan..." 
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-[#82d616]/10 focus:border-[#82d616] outline-none transition-all text-sm font-medium"
+                        value={subSearchQuery}
+                        onChange={(e) => setSubSearchQuery(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-xl border border-gray-100 w-full md:w-auto">
+                      {[
+                        { label: 'Today', value: 'day' },
+                        { label: 'Week', value: 'week' },
+                        { label: 'Month', value: 'month' },
+                        { label: 'Year', value: 'year' },
+                        { label: 'All', value: 'all' },
+                      ].map((f) => (
+                        <button
+                          key={f.value}
+                          onClick={() => setSubTimeFilter(f.value)}
+                          className={`px-4 py-2 text-[11px] font-bold rounded-lg transition-all ${
+                            subTimeFilter === f.value 
+                              ? 'bg-black text-white shadow-lg' 
+                              : 'text-[#67748e] hover:bg-gray-100'
+                          }`}
+                        >
+                          {f.label.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto px-4">
+                  <table className="w-full text-left border-separate border-spacing-y-2">
+                    <thead>
+                      <tr>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">User Details</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Plan Architecture</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Financials</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Validity Period</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSubs.map((s) => (
+                        <tr key={s.id} className="group hover:bg-gray-50/50 transition-all rounded-xl shadow-sm">
+                          <td className="px-6 py-5 bg-white border-y border-l border-gray-50 rounded-l-2xl group-hover:border-gray-100">
+                            <div className="flex items-center gap-3">
+                               <div className="w-10 h-10 rounded-full bg-[#f2e6ff] flex items-center justify-center text-[#985eff] font-bold text-[14px]">
+                                 {s.user_name?.[0] || 'U'}
+                               </div>
+                               <div>
+                                 <p className="text-[14px] font-bold text-[#252f40] leading-none mb-1">{s.user_name || 'N/A'}</p>
+                                 <p className="text-[12px] text-[#67748e]">{s.mobile_number}</p>
+                               </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                             <div className="flex items-center gap-2">
+                                <ShieldCheck size={16} className="text-[#82d616]" />
+                                <span className="text-[14px] font-bold text-[#252f40]">{s.plan_name}</span>
+                             </div>
+                             <span className="text-[11px] text-[#67748e] mt-1 block uppercase font-medium">{s.duration_days} Days Access</span>
+                          </td>
+                          <td className="px-6 py-5 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                             <div className="text-[15px] font-bold text-[#252f40]">₹{s.plan_price}</div>
+                             <span className="text-[11px] text-[#67748e] uppercase tracking-wider font-bold">Paid</span>
+                          </td>
+                          <td className="px-6 py-5 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                             <div className="space-y-1">
+                                <div className="flex items-center gap-2 text-[12px] text-[#252f40] font-medium">
+                                   <Clock size={12} className="text-[#67748e]" />
+                                   Ends: {new Date(s.end_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </div>
+                                <div className="text-[10px] text-[#67748e] font-bold uppercase tracking-tighter">
+                                   Started {new Date(s.start_date).toLocaleDateString()}
+                                </div>
+                             </div>
+                          </td>
+                          <td className="px-6 py-5 bg-white border-y border-r border-gray-50 rounded-r-2xl group-hover:border-gray-100">
+                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm ${
+                               s.status === 'Active' ? 'bg-[#82d616]/10 text-[#82d616] border border-[#82d616]/20' : 
+                               s.status === 'Stacked' ? 'bg-[#2167f2]/10 text-[#2167f2] border border-[#2167f2]/20' : 
+                               'bg-gray-100 text-gray-500 border border-gray-200'
+                             }`}>
+                               {s.status}
+                             </span>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredSubs.length === 0 && (
+                        <tr>
+                          <td colSpan="5" className="px-6 py-20 text-center">
+                             <div className="flex flex-col items-center gap-4">
+                                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-200">
+                                   <Search size={32} />
+                                </div>
+                                <div>
+                                   <p className="text-[16px] font-bold text-[#252f40]">No Results Found</p>
+                                   <p className="text-[13px] text-[#67748e]">Try adjusting your search or filters.</p>
+                                </div>
+                             </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </main>
 
