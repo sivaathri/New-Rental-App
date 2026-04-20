@@ -71,7 +71,8 @@ const ScreenHeader = ({
     nearbyCars, 
     renderCarCard, 
     selectedBrand,
-    appliedFilters
+    appliedFilters,
+    navigation
 }) => {
     return (
         <>
@@ -626,6 +627,7 @@ const RentalCarScreen = ({ navigation }) => {
                 renderCarCard={renderCarCard}
                 selectedBrand={selectedBrand}
                 appliedFilters={appliedFilters}
+                navigation={navigation}
             />
         }
         showsVerticalScrollIndicator={false}
