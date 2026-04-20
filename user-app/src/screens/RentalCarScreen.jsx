@@ -1,0 +1,550 @@
+import React, { useState, useEffect, useRef } from 'react';
+import MapView, { Marker } from 'react-native-maps';
+import { 
+  View, Text, StyleSheet, ScrollView, TextInput, Image, 
+  TouchableOpacity, FlatList, Dimensions, Keyboard, 
+  RefreshControl, Modal, KeyboardAvoidingView, Platform, 
+  Animated, LayoutAnimation, UIManager 
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import { useRentalFavorites } from '../context/RentalFavoritesContext';
+import colors from '../constants/colors';
+import RentalFilterModal from '../components/RentalFilterModal';
+import * as Location from 'expo-location';
+import { useAuth } from '../context/AuthContext';
+
+const { width } = Dimensions.get('window');
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+// Mock Data
+const MOCK_BRANDS = [
+  { id: 'all', name: 'All', image_url: null },
+  { id: '1', name: 'BMW', image_url: 'https://www.carlogos.org/car-logos/bmw-logo.png' },
+  { id: '2', name: 'Audi', image_url: 'https://www.carlogos.org/car-logos/audi-logo.png' },
+  { id: '3', name: 'Mercedes', image_url: 'https://www.carlogos.org/car-logos/mercedes-benz-logo.png' },
+  { id: '4', name: 'Toyota', image_url: 'https://www.carlogos.org/car-logos/toyota-logo.png' },
+];
+
+const MOCK_CARS = [
+  {
+    id: '1',
+    brand_id: '1',
+    name: 'BMW M4 Competition',
+    rating: '4.9',
+    location: 'Mumbai, MH',
+    latitude: 19.0760,
+    longitude: 72.8777,
+    seats: 4,
+    mileage: '12 kmpl',
+    price: 15000,
+    pricePerHour: 1500,
+    fuel_type: 'Petrol',
+    features: ["Air Conditioning", "ABS", "Sunroof"],
+    image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=300',
+    images: [],
+    favorite: false,
+    is_best: true,
+    owner_name: 'John Doe',
+    registration_year: 2023,
+    description: 'High performance sports coupe.',
+    terms_conditions: 'Standard terms apply.',
+    landmark: 'Bandra'
+  },
+  {
+    id: '2',
+    brand_id: '2',
+    name: 'Audi RS5',
+    rating: '4.8',
+    location: 'Bangalore, KA',
+    latitude: 12.9716,
+    longitude: 77.5946,
+    seats: 4,
+    mileage: '10 kmpl',
+    price: 18000,
+    pricePerHour: 1800,
+    fuel_type: 'Petrol',
+    features: ["Air Conditioning", "Navigation"],
+    image: 'https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?auto=format&fit=crop&q=80&w=300',
+    images: [],
+    favorite: false,
+    is_best: true,
+    owner_name: 'Jane Smith',
+    registration_year: 2022,
+    description: 'Powerful and elegant.',
+    terms_conditions: 'No smoking.',
+    landmark: 'Indiranagar'
+  },
+  {
+    id: '3',
+    brand_id: '3',
+    name: 'Mercedes G-Wagon',
+    rating: '5.0',
+    location: 'Delhi, DL',
+    latitude: 28.6139,
+    longitude: 77.2090,
+    seats: 5,
+    mileage: '8 kmpl',
+    price: 25000,
+    pricePerHour: 2500,
+    fuel_type: 'Diesel',
+    features: ["Air Conditioning", "4WD", "Heated Seats"],
+    image: 'https://images.unsplash.com/photo-1520031441872-265e4ff70366?auto=format&fit=crop&q=80&w=300',
+    images: [],
+    favorite: false,
+    is_best: false,
+    owner_name: 'Mike Ross',
+    registration_year: 2024,
+    description: 'The ultimate off-road luxury.',
+    terms_conditions: 'Security deposit required.',
+    landmark: 'Connaught Place'
+  }
+];
+
+const FadeInView = ({ children, delay = 0, style }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 7,
+        delay,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View style={[style, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      {children}
+    </Animated.View>
+  );
+};
+
+const RentalCarScreen = ({ navigation }) => {
+  const { user } = useAuth();
+  const { toggleFavorite, isFavorite } = useRentalFavorites();
+  const [brands, setBrands] = useState(MOCK_BRANDS);
+  const [cars, setCars] = useState(MOCK_CARS); 
+  const [filteredCars, setFilteredCars] = useState(MOCK_CARS);
+  const [nearbyCars, setNearbyCars] = useState([]); 
+  const [selectedBrand, setSelectedBrand] = useState('all');
+  const [locationName, setLocationName] = useState('New York, USA');
+  const [userLocation, setUserLocation] = useState(null); 
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(2);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const [selectedCity, setSelectedCity] = useState('All Cities');
+  const [availableCities, setAvailableCities] = useState(['All Cities', 'Mumbai', 'Bangalore', 'Delhi']);
+  const [citySearchQuery, setCitySearchQuery] = useState('');
+  
+  const [isMapPickerVisible, setIsMapPickerVisible] = useState(false);
+  const [mapRegion, setMapRegion] = useState({
+      latitude: 19.0760,
+      longitude: 72.8777,
+      latitudeDelta: 0.05,
+      longitudeDelta: 0.05,
+  });
+  const [mapPickedAddress, setMapPickedAddress] = useState('');
+  const geocodeTimeout = useRef(null);
+
+  useEffect(() => {
+    getUserLocation();
+  }, []);
+
+  useEffect(() => {
+    calculateNearbyCars();
+  }, [userLocation, cars]);
+
+  const getUserLocation = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationName('Permission denied');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      
+      const coords = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude
+      };
+      
+      setUserLocation(coords);
+
+      try {
+        let address = await Location.reverseGeocodeAsync(coords);
+        if (address && address.length > 0) {
+          const { city, name, street } = address[0];
+          const display = [name || street, city].filter(Boolean).join(', ');
+          setLocationName(display);
+        } else {
+          setLocationName(`${coords.latitude.toFixed(2)}, ${coords.longitude.toFixed(2)}`);
+        }
+      } catch (geoError) {
+        console.log("Geocoding failed:", geoError);
+        // Fallback to coordinates if address lookup fails (e.g. rate limit)
+        setLocationName(`${coords.latitude.toFixed(2)}, ${coords.longitude.toFixed(2)}`);
+      }
+    } catch (error) {
+      console.log("Location error:", error);
+      setLocationName('Location unavailable');
+    }
+  };
+
+  const calculateNearbyCars = () => {
+    if (!userLocation || !cars.length) return;
+    
+    const carsWithDistance = cars
+      .map(car => {
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          car.latitude,
+          car.longitude
+        );
+        return { ...car, distance };
+      })
+      .sort((a, b) => a.distance - b.distance);
+    
+    setNearbyCars(carsWithDistance);
+  };
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; 
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+        setRefreshing(false);
+        setAppliedFilters(null);
+        setSearchQuery('');
+        setIsSearching(false);
+        setSelectedBrand('all');
+    }, 1500);
+  };
+
+  useEffect(() => {
+    let result = cars;
+
+    if (selectedBrand !== 'all') {
+        result = result.filter(c => c.brand_id === selectedBrand);
+    }
+
+    if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        result = result.filter(c => 
+            c.name.toLowerCase().includes(query)
+        );
+    }
+
+    if (selectedCity !== 'All Cities') {
+        result = result.filter(c => 
+            c.location.toLowerCase().includes(selectedCity.toLowerCase())
+        );
+    }
+
+    if (appliedFilters) {
+      // Mock filter logic
+    }
+
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setFilteredCars(result);
+  }, [cars, selectedBrand, searchQuery, appliedFilters, selectedCity]);
+
+  const renderBrand = ({ item, index }) => {
+    const isSelected = selectedBrand === item.id;
+    return (
+        <FadeInView delay={index * 50}>
+            <TouchableOpacity 
+                style={styles.brandContainer} 
+                activeOpacity={0.8}
+                onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                    setSelectedBrand(item.id);
+                    if (item.id !== 'all') {
+                        setIsSearching(true);
+                    } else {
+                        setIsSearching(false);
+                        setSearchQuery(''); 
+                    }
+                }}
+            >
+              <View style={[styles.brandIconContainer, isSelected && styles.brandSelected]}>
+                {item.id === 'all' ? (
+                     <Ionicons name="apps" size={28} color="black" />
+                ) : item.image_url ? (
+                    <Image source={{ uri: item.image_url }} style={styles.brandImage} resizeMode="contain" />
+                ) : (
+                    <MaterialCommunityIcons name="car" size={32} color="black" />
+                )}
+                {isSelected && (
+                    <View style={styles.brandTickBadge}>
+                        <Ionicons name="checkmark" size={10} color="white" />
+                    </View>
+                )}
+              </View>
+              <Text style={[styles.brandName, isSelected && styles.brandNameSelected]}>{item.name}</Text>
+            </TouchableOpacity>
+        </FadeInView>
+    );
+  };
+
+  const renderGridCard = ({ item, index }) => (
+    <FadeInView delay={index * 100}>
+        <TouchableOpacity style={styles.gridCard}>
+          <TouchableOpacity style={styles.gridFavorite} onPress={() => toggleFavorite(item.id)}>
+             <Ionicons 
+               name={isFavorite(item.id) ? "heart" : "heart-outline"} 
+               size={18} 
+               color={isFavorite(item.id) ? "#FF4D4D" : "#666"} 
+             />
+          </TouchableOpacity>
+          <View style={styles.gridImageContainer}>
+              <Image source={{ uri: item.image }} style={styles.gridImage} resizeMode="contain" />
+          </View>
+          <View style={styles.gridContent}>
+            <Text style={styles.gridTitle} numberOfLines={1}>{item.name}</Text>
+            <View style={styles.gridRatingRow}>
+                <Text style={styles.gridRatingText}>{item.rating}</Text>
+                <Ionicons name="star" size={10} color="#FFA500" style={{marginLeft: 2}} />
+            </View>
+            <View style={styles.gridLocationRow}>
+                <Ionicons name="location-outline" size={12} color="#888" />
+                <Text style={styles.gridLocationText} numberOfLines={1}>{item.location}</Text>
+            </View>
+            <View style={styles.gridFooter}>
+                 <Text style={styles.gridPrice}>₹{item.price}<Text style={styles.gridPeriod}>/Day</Text></Text>
+                 <View style={styles.bookBtn}>
+                     <Text style={styles.bookBtnText}>Book now</Text>
+                 </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+    </FadeInView>
+  );
+
+  const renderCarCard = ({ item, index }) => (
+    <FadeInView delay={index * 150}>
+        <TouchableOpacity style={styles.card}>
+          <TouchableOpacity style={styles.favoriteIcon} onPress={() => toggleFavorite(item.id)}>
+             <Ionicons 
+                name={isFavorite(item.id) ? "heart" : "heart-outline"} 
+                size={20} 
+                color={isFavorite(item.id) ? "#FF4D4D" : "#666"} 
+             />
+          </TouchableOpacity>
+          <Image source={{ uri: item.image }} style={styles.carImage} resizeMode="contain" />
+          <View style={styles.cardContent}>
+            <Text style={styles.carName}>{item.name}</Text>
+            <View style={styles.locationContainer}>
+                 <Ionicons name="location-outline" size={14} color="#888" />
+                 <Text style={styles.locationText} numberOfLines={1}>{item.location}</Text>
+            </View>
+            <View style={styles.cardFooter}>
+                 <View style={styles.featureItem}>
+                     <MaterialCommunityIcons name="gas-station" size={16} color="#888" />
+                     <Text style={styles.featureText}>{item.fuel_type}</Text>
+                 </View>
+                 <View style={styles.priceContainer}>
+                     <Text style={styles.priceText}>₹{item.price}</Text>
+                     <Text style={styles.dayText}>/Day</Text>
+                 </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+    </FadeInView>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#000']} />}
+      >
+        <View style={styles.header}>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                 <View style={styles.logoContainer}>
+                      <Ionicons name="car-sport" size={24} color="white" />
+                 </View>
+                 <TouchableOpacity onPress={() => setLocationModalVisible(true)}>
+                     <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 10}}>
+                         <Ionicons name="location-sharp" size={12} color="#666" style={{marginRight: 2}} />
+                         <Text style={{fontSize: 12, color: '#666', fontWeight: 'bold'}}>{selectedCity === 'All Cities' ? locationName : selectedCity}</Text>
+                         <Ionicons name="chevron-down" size={14} color="#666" style={{marginLeft: 2}} />
+                     </View>
+                 </TouchableOpacity>
+            </View>
+            <View style={styles.headerRight}>
+                <TouchableOpacity style={styles.notificationBtn}>
+                     <Ionicons name="notifications-outline" size={24} color="#333" />
+                     {unreadCount > 0 && <View style={styles.badge} />}
+                </TouchableOpacity>
+                <View style={styles.profilePlaceholder}>
+                    <Ionicons name="person-circle" size={42} color="black" />
+                </View>
+            </View>
+        </View>
+
+        <View style={styles.searchSection}>
+            <View style={styles.searchContainer}>
+                <Ionicons name="search-outline" size={20} color="#888" style={styles.searchIcon} />
+                <TextInput 
+                    placeholder="Search your dream car..." 
+                    style={styles.input}
+                    value={searchQuery}
+                    onChangeText={(val) => { setSearchQuery(val); setIsSearching(val.length > 0); }}
+                />
+            </View>
+            <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterModalVisible(true)}>
+                <Ionicons name="options-outline" size={24} color="#333" />
+            </TouchableOpacity>
+        </View>
+
+        <View style={{ marginTop: 20, marginBottom: 15 }}>
+            <FlatList
+                data={brands}
+                renderItem={renderBrand}
+                keyExtractor={item => item.id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20 }}
+            />
+        </View>
+
+        {isSearching ? (
+             <View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 15 }}>
+                    <Text style={styles.sectionTitle}>Recommendations</Text>
+                </View>
+                <View style={styles.gridContainer}>
+                    {filteredCars.map((item, index) => (
+                        <View key={item.id} style={{width: '48%', marginBottom: 15}}>
+                            {renderGridCard({ item, index })}
+                        </View>
+                    ))}
+                </View>
+            </View>
+        ) : (
+            <View>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Featured Cars</Text>
+                </View>
+                <FlatList
+                    data={cars.filter(c => c.is_best)} 
+                    renderItem={renderCarCard}
+                    keyExtractor={item => item.id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.carsList}
+                />
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>All Cars</Text>
+                </View>
+                <View style={styles.gridContainer}>
+                    {nearbyCars.map((item, index) => (
+                        <View key={`nearby-${item.id}`} style={{ width: '48%', marginBottom: 15 }}>
+                            {renderGridCard({ item, index })}
+                        </View>
+                    ))}
+                </View>
+            </View>
+        )}
+        <View style={{height: 100}} /> 
+      </ScrollView>
+
+      <RentalFilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApply={(filters) => { setAppliedFilters(filters); setFilterModalVisible(false); }}
+        onClear={() => { setAppliedFilters(null); setFilterModalVisible(false); }}
+      />
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F9F9F9' },
+  scrollContent: { paddingBottom: 20 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10 },
+  logoContainer: { backgroundColor: 'black', width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  headerRight: { flexDirection: 'row', alignItems: 'center' },
+  notificationBtn: { marginRight: 15, position: 'relative', width: 40, height: 40, borderWidth: 1, borderColor: '#eee', borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'white' },
+  badge: { position: 'absolute', top: 10, right: 10, backgroundColor: '#FF4D4D', width: 8, height: 8, borderRadius: 4 },
+  profilePlaceholder: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  searchSection: { flexDirection: 'row', paddingHorizontal: 20, marginTop: 20, alignItems: 'center' },
+  searchContainer: { flex: 1, flexDirection: 'row', backgroundColor: 'white', borderRadius: 12, paddingHorizontal: 15, height: 50, alignItems: 'center', borderWidth: 1, borderColor: '#eee', marginRight: 15 },
+  searchIcon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 14, color: '#333' },
+  filterBtn: { width: 50, height: 50, backgroundColor: 'white', borderRadius: 25, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#eee' },
+  brandContainer: { alignItems: 'center', marginHorizontal: 10 },
+  brandIconContainer: { width: 70, height: 70, borderRadius: 35, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', marginBottom: 8, borderWidth: 1.5, borderColor: '#f0f0f0', position: 'relative' },
+  brandSelected: { borderColor: 'black' },
+  brandImage: { width: '80%', height: '80%' },
+  brandTickBadge: { position: 'absolute', top: -2, right: -2, backgroundColor: 'black', width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white' },
+  brandName: { fontSize: 12, color: '#666' },
+  brandNameSelected: { fontWeight: 'bold', color: 'black' },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 20 },
+  gridCard: { backgroundColor: 'white', borderRadius: 16, padding: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 3, height: 240 },
+  gridFavorite: { position: 'absolute', top: 10, right: 10, zIndex: 1, backgroundColor: 'white', width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  gridImageContainer: { height: 100, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  gridImage: { width: '100%', height: '100%', borderRadius: 10 },
+  gridContent: { flex: 1 },
+  gridTitle: { fontSize: 14, fontWeight: 'bold', color: '#111', marginBottom: 4 },
+  gridRatingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  gridRatingText: { fontSize: 10, color: '#666', fontWeight: '600' },
+  gridLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  gridLocationText: { fontSize: 10, color: '#888', marginLeft: 2 },
+  gridFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' },
+  gridPrice: { fontSize: 12, fontWeight: 'bold', color: '#111' },
+  gridPeriod: { fontSize: 10, color: '#888' },
+  bookBtn: { backgroundColor: '#1a1a1a', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 },
+  bookBtnText: { color: 'white', fontSize: 10, fontWeight: '600' },
+  sectionHeader: { paddingHorizontal: 20, marginTop: 25, marginBottom: 15 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: 'black' },
+  carsList: { paddingHorizontal: 15 },
+  card: { width: width * 0.45, backgroundColor: 'white', borderRadius: 16, padding: 10, marginHorizontal: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 3 },
+  favoriteIcon: { position: 'absolute', top: 10, right: 10, zIndex: 1, backgroundColor: 'white', width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  carImage: { width: '100%', height: 100, borderRadius: 12, marginBottom: 8 },
+  cardContent: { paddingHorizontal: 5 },
+  carName: { fontSize: 14, fontWeight: 'bold', color: '#111', marginBottom: 4 },
+  locationContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  locationText: { fontSize: 11, color: '#888', marginLeft: 4 },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  featureItem: { flexDirection: 'row', alignItems: 'center' },
+  featureText: { fontSize: 11, color: '#888', marginLeft: 4 },
+  priceContainer: { flexDirection: 'row', alignItems: 'baseline' },
+  priceText: { fontSize: 13, fontWeight: 'bold', color: '#111' },
+  dayText: { fontSize: 11, color: '#888' },
+});
+
+export default RentalCarScreen;

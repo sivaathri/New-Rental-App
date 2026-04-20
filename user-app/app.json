@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "User Rental App",
+    "slug": "user-rental-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "experiments": {
+      "newArchEnabled": false
+    }
+  }
+}
