@@ -149,4 +149,18 @@ router.post('/verify-email-change', authMiddleware, async (req, res) => {
     }
 });
 
+// Update Name
+router.post('/update-name', authMiddleware, async (req, res) => {
+    const { full_name } = req.body;
+    if (!full_name) return res.status(400).json({ error: 'Name required' });
+
+    try {
+        await db.query('UPDATE users SET full_name = ? WHERE id = ?', [full_name, req.user.id]);
+        res.json({ message: 'Name updated successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

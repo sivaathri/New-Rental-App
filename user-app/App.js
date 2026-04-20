@@ -7,6 +7,7 @@ import { RentalFavoritesProvider } from './src/context/RentalFavoritesContext';
 import RentalCarScreen from './src/screens/RentalCarScreen';
 import RentalProfileScreen from './src/screens/RentalProfileScreen';
 import RentalFavoritesScreen from './src/screens/RentalFavoritesScreen';
+import UserProfileScreen from './src/screens/UserProfileScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegistrationCompletionScreen from './src/screens/RegistrationCompletionScreen';
 import { ActivityIndicator, View } from 'react-native';
@@ -37,6 +38,7 @@ const Navigation = () => {
             <Stack.Screen name="RentalCar" component={RentalCarScreen} />
             <Stack.Screen name="RentalProfile" component={RentalProfileScreen} />
             <Stack.Screen name="RentalFavorites" component={RentalFavoritesScreen} />
+            <Stack.Screen name="UserProfile" component={UserProfileScreen} />
           </>
         )}
       </Stack.Navigator>
