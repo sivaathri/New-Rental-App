@@ -70,7 +70,8 @@ const ScreenHeader = ({
     isSearching, 
     nearbyCars, 
     renderCarCard, 
-    selectedBrand 
+    selectedBrand,
+    appliedFilters
 }) => {
     return (
         <>
@@ -92,9 +93,12 @@ const ScreenHeader = ({
                          <Ionicons name="notifications-outline" size={24} color="#333" />
                          {unreadCount > 0 && <View style={styles.badge} />}
                     </TouchableOpacity>
-                    <View style={styles.profilePlaceholder}>
+                    <TouchableOpacity 
+                        style={styles.profilePlaceholder}
+                        onPress={() => navigation.navigate('RentalProfile')}
+                    >
                         <Ionicons name="person-circle" size={42} color="black" />
-                    </View>
+                    </TouchableOpacity>
                 </View>
             </View>
     
@@ -117,8 +121,16 @@ const ScreenHeader = ({
                         </TouchableOpacity>
                     )}
                 </View>
-                <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterModalVisible(true)}>
-                    <Ionicons name="options-outline" size={24} color="#333" />
+                <TouchableOpacity 
+                    style={[styles.filterBtn, appliedFilters && styles.filterBtnActive]} 
+                    onPress={() => setFilterModalVisible(true)}
+                >
+                    <Ionicons 
+                        name="options-outline" 
+                        size={24} 
+                        color={appliedFilters ? "#FFF" : "#333"} 
+                    />
+                    {appliedFilters && <View style={styles.filterBadge} />}
                 </TouchableOpacity>
             </View>
     
@@ -404,6 +416,18 @@ const RentalCarScreen = ({ navigation }) => {
         result = result.filter(car => parseInt(car.seating_capacity) >= capacityValue);
       }
 
+      // Filter by Driver Preference
+      if (appliedFilters.driverOption && appliedFilters.driverOption !== 'Any') {
+        const needsDriver = appliedFilters.driverOption === 'With Driver';
+        result = result.filter(car => {
+          // Check if car has driver info, otherwise show all
+          if (car.has_driver !== undefined) {
+             return needsDriver ? car.has_driver === 1 : car.has_driver === 0;
+          }
+          return true;
+        });
+      }
+
       // Apply Sorting
       if (appliedFilters.sortBy) {
         switch (appliedFilters.sortBy) {
@@ -601,6 +625,7 @@ const RentalCarScreen = ({ navigation }) => {
                 nearbyCars={nearbyCars}
                 renderCarCard={renderCarCard}
                 selectedBrand={selectedBrand}
+                appliedFilters={appliedFilters}
             />
         }
         showsVerticalScrollIndicator={false}
@@ -632,6 +657,8 @@ const styles = StyleSheet.create({
   searchIcon: { marginRight: 10 },
   input: { flex: 1, fontSize: 14, color: '#333' },
   filterBtn: { width: 50, height: 50, backgroundColor: 'white', borderRadius: 25, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#eee' },
+  filterBtnActive: { backgroundColor: '#000', borderColor: '#000' },
+  filterBadge: { position: 'absolute', top: 5, right: 5, width: 10, height: 10, borderRadius: 5, backgroundColor: '#FF4D4D', borderWidth: 2, borderColor: '#000' },
   brandContainer: { alignItems: 'center', marginHorizontal: 10 },
   brandIconContainer: { width: 70, height: 70, borderRadius: 35, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', marginBottom: 8, borderWidth: 1.5, borderColor: '#f0f0f0', position: 'relative' },
   brandSelected: { borderColor: 'black' },

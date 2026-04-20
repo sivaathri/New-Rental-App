@@ -13,13 +13,17 @@ const RentalFilterModal = ({ visible, onClose, onApply, onClear }) => {
   const [sortBy, setSortBy] = useState('Popularity');
 
   const [fuelType, setFuelType] = useState('Petrol');
-  const [pickupDate, setPickupDate] = useState('05 Jan, 2025');
+  const [fromDate, setFromDate] = useState('21 Apr, 2026');
+  const [toDate, setToDate] = useState('22 Apr, 2026');
+  const [driverOption, setDriverOption] = useState('Any');
+  const [datePickerType, setDatePickerType] = useState('from'); // 'from' or 'to'
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   const rentalTimes = ['Hour', 'Day'];
-  const sittingCapacities = ['Any', '2+'];
+  const sittingCapacities = ['Any', '2+', '4+', '5+', '7+'];
   const sortOptions = ['Popularity', 'Price: Low to High', 'Price: High to Low', 'Top Rated'];
   const fuelTypes = ['Electric', 'Petrol', 'Diesel', 'Hybrid'];
+  const driverOptions = ['Any', 'Self Drive', 'With Driver'];
 
   const handleClearAll = () => {
     setMinPrice('0');
@@ -28,6 +32,9 @@ const RentalFilterModal = ({ visible, onClose, onApply, onClear }) => {
     setSittingCapacity('Any');
     setSortBy('Popularity');
     setFuelType('Petrol');
+    setDriverOption('Any');
+    setFromDate('21 Apr, 2026');
+    setToDate('22 Apr, 2026');
     if (onClear) {
       onClear();
     }
@@ -41,7 +48,9 @@ const RentalFilterModal = ({ visible, onClose, onApply, onClear }) => {
       sittingCapacity,
       sortBy,
       fuelType,
-      pickupDate
+      driverOption,
+      fromDate,
+      toDate
     };
     onApply(filters);
     onClose();
@@ -159,12 +168,52 @@ const RentalFilterModal = ({ visible, onClose, onApply, onClear }) => {
 
             {/* Pick up and Drop Date */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Pick up and Drop Date</Text>
-              <TouchableOpacity style={styles.dateInput} onPress={() => setDatePickerVisible(true)}>
-                <Ionicons name="calendar-outline" size={20} color="#666" />
-                <Text style={styles.dateText}>{pickupDate}</Text>
-                <Ionicons name="chevron-down" size={20} color="#666" />
-              </TouchableOpacity>
+              <Text style={styles.sectionTitle}>Rental Period</Text>
+              <View style={styles.dateRangeContainer}>
+                <TouchableOpacity 
+                    style={styles.dateInputHalf} 
+                    onPress={() => { setDatePickerType('from'); setDatePickerVisible(true); }}
+                >
+                  <Text style={styles.dateLabelSmall}>From</Text>
+                  <View style={styles.dateValueRow}>
+                    <Ionicons name="calendar-outline" size={16} color="#666" />
+                    <Text style={styles.dateTextSmall}>{fromDate}</Text>
+                  </View>
+                </TouchableOpacity>
+                
+                <View style={styles.dateSeparator}>
+                    <Ionicons name="arrow-forward" size={16} color="#DDD" />
+                </View>
+
+                <TouchableOpacity 
+                    style={styles.dateInputHalf} 
+                    onPress={() => { setDatePickerType('to'); setDatePickerVisible(true); }}
+                >
+                  <Text style={styles.dateLabelSmall}>To</Text>
+                  <View style={styles.dateValueRow}>
+                    <Ionicons name="calendar-outline" size={16} color="#666" />
+                    <Text style={styles.dateTextSmall}>{toDate}</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Driver Preference */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Driver</Text>
+              <View style={styles.buttonRow}>
+                {driverOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[styles.optionBtn, driverOption === option && styles.optionBtnActive]}
+                    onPress={() => setDriverOption(option)}
+                  >
+                    <Text style={[styles.optionBtnText, driverOption === option && styles.optionBtnTextActive]}>
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             {/* Fuel Type */}
@@ -205,9 +254,13 @@ const RentalFilterModal = ({ visible, onClose, onApply, onClear }) => {
         visible={datePickerVisible}
         onClose={() => setDatePickerVisible(false)}
         onSelect={(dateTime) => {
-          setPickupDate(dateTime.date);
+          if (datePickerType === 'from') {
+            setFromDate(dateTime.date);
+          } else {
+            setToDate(dateTime.date);
+          }
         }}
-        initialDate={pickupDate}
+        initialDate={datePickerType === 'from' ? fromDate : toDate}
       />
     </Modal>
   );
@@ -326,6 +379,39 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 14,
     backgroundColor: '#FFF',
+  },
+  dateRangeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  dateInputHalf: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: '#FAFAFA',
+  },
+  dateLabelSmall: {
+    fontSize: 10,
+    color: '#999',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  dateValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dateTextSmall: {
+    fontSize: 13,
+    color: '#000',
+    fontWeight: '500',
+  },
+  dateSeparator: {
+    width: 24,
+    alignItems: 'center',
   },
   dateText: {
     flex: 1,
