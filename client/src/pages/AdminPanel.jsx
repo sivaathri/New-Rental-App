@@ -30,8 +30,10 @@ export default function AdminPanel() {
   const [totalUsers, setTotalUsers] = useState(0);
   const [masterVehicles, setMasterVehicles] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
+  const [enquiries, setEnquiries] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [subSearchQuery, setSubSearchQuery] = useState('');
+  const [enquirySearchQuery, setEnquirySearchQuery] = useState('');
   const [subTimeFilter, setSubTimeFilter] = useState('all');
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -78,6 +80,8 @@ export default function AdminPanel() {
       setMasterVehicles(masterRes.data.vehicles);
       const subRes = await adminAPI.getSubscriptions();
       setSubscriptions(subRes.data.subscriptions);
+      const enquiryRes = await adminAPI.getEnquiries();
+      setEnquiries(enquiryRes.data.enquiries);
     } catch(err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -200,6 +204,7 @@ export default function AdminPanel() {
           <SidebarItem icon={<Car/>} label="List Vehicles" count={masterVehicles.length} active={activeTab === 'list-vehicles'} onClick={() => setActiveTab('list-vehicles')} />
           <SidebarItem icon={<Users/>} label="All Vehicle Owners" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
           <SidebarItem icon={<CreditCard/>} label="Subscriptions" count={subscriptions.length} active={activeTab === 'subscriptions'} onClick={() => setActiveTab('subscriptions')} />
+          <SidebarItem icon={<MessageSquare/>} label="Enquiry List" count={enquiries.length} active={activeTab === 'enquiries'} onClick={() => setActiveTab('enquiries')} />
         </div>
 
         <div className="px-4 mt-auto pt-6 border-t border-gray-50">
@@ -1042,6 +1047,95 @@ export default function AdminPanel() {
                                    <p className="text-[16px] font-bold text-[#252f40]">No Results Found</p>
                                    <p className="text-[13px] text-[#67748e]">Try adjusting your search or filters.</p>
                                 </div>
+                             </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
+          {activeTab === 'enquiries' && (() => {
+            const filteredEnquiries = enquiries.filter(e => {
+              const query = enquirySearchQuery.toLowerCase();
+              return (
+                e.user_name?.toLowerCase().includes(query) ||
+                e.user_mobile?.includes(query) ||
+                e.vehicle_name?.toLowerCase().includes(query) ||
+                e.registration_number?.toLowerCase().includes(query) ||
+                e.owner_name?.toLowerCase().includes(query)
+              );
+            });
+
+            return (
+              <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden pb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="p-8 border-b border-gray-50 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                  <div>
+                    <h3 className="text-[20px] font-bold text-[#252f40]">Enquiry List (Call Logs)</h3>
+                    <p className="text-[14px] text-[#67748e] mt-1">Track which users are contacting owners for specific vehicles.</p>
+                  </div>
+                  <div className="relative group min-w-[320px] w-full md:w-auto">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#67748e] group-focus-within:text-black transition-colors" size={18} />
+                    <input 
+                      type="text" 
+                      placeholder="Search user, vehicle or owner..." 
+                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all text-sm font-medium"
+                      value={enquirySearchQuery}
+                      onChange={(e) => setEnquirySearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto px-4">
+                  <table className="w-full text-left border-separate border-spacing-y-2">
+                    <thead>
+                      <tr>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Time</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">User (Buyer)</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Vehicle Details</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Owner (Seller)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredEnquiries.map((e) => (
+                        <tr key={e.id} className="group hover:bg-gray-50/50 transition-all rounded-xl shadow-sm">
+                          <td className="px-6 py-4 bg-white border-y border-l border-gray-50 rounded-l-2xl group-hover:border-gray-100">
+                             <div className="flex flex-col">
+                                <span className="text-[13px] font-bold text-[#252f40]">{new Date(e.created_at).toLocaleDateString()}</span>
+                                <span className="text-[11px] text-[#67748e]">{new Date(e.created_at).toLocaleTimeString()}</span>
+                             </div>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                             <div className="flex flex-col">
+                                <span className="text-[14px] font-bold text-[#252f40]">{e.user_name}</span>
+                                <span className="text-[12px] text-[#67748e]">{e.user_mobile}</span>
+                             </div>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                             <div className="flex flex-col">
+                                <span className="text-[14px] font-bold text-black">{e.vehicle_name}</span>
+                                <span className="text-[12px] text-[#67748e]">{e.registration_number}</span>
+                             </div>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-r border-gray-50 rounded-r-2xl group-hover:border-gray-100">
+                             <div className="flex flex-col">
+                                <span className="text-[12px] font-bold text-[#82d616] mb-1">Q1-{e.owner_unique_id || 'N/A'}</span>
+                                <span className="text-[14px] font-bold text-[#252f40]">{e.owner_name}</span>
+                                <span className="text-[12px] text-[#67748e]">{e.owner_mobile}</span>
+                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredEnquiries.length === 0 && (
+                        <tr>
+                          <td colSpan="4" className="px-6 py-20 text-center">
+                             <div className="flex flex-col items-center gap-4">
+                                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-200">
+                                   <MessageSquare size={32} />
+                                </div>
+                                <p className="text-[14px] font-bold text-[#252f40]">No enquiries found</p>
                              </div>
                           </td>
                         </tr>

@@ -226,4 +226,31 @@ router.get('/subscriptions', async (req, res) => {
     }
 });
 
+// Get all enquiry (call clicks)
+router.get('/enquiries', async (req, res) => {
+    try {
+        const [enquiries] = await db.query(`
+            SELECT 
+                vc.id,
+                vc.created_at,
+                u.full_name as user_name,
+                u.mobile_number as user_mobile,
+                v.name as vehicle_name,
+                v.registration_number,
+                owner.full_name as owner_name,
+                owner.mobile_number as owner_mobile,
+                owner.unique_id as owner_unique_id
+            FROM vehicle_calls vc
+            JOIN users u ON vc.user_id = u.id
+            JOIN vehicles v ON vc.vehicle_id = v.id
+            JOIN users owner ON v.user_id = owner.id
+            ORDER BY vc.id DESC
+        `);
+        res.json({ enquiries });
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

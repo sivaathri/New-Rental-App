@@ -63,6 +63,7 @@ export const adminAPI = {
   updateMasterVehicleOrder: (id, sort_order) => api.post(`/admin/vehicles/master/${id}/order`, { sort_order }),
   updateApprovedVehicleOrder: (id, sort_order) => api.post(`/admin/vehicles/approved/${id}/order`, { sort_order }),
   getSubscriptions: () => api.get('/admin/subscriptions'),
+  getEnquiries: () => api.get('/admin/enquiries'),
 };
 
 export const subscriptionAPI = {
