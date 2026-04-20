@@ -69,15 +69,17 @@ async function initializeDB() {
             status ENUM('Waiting for Approval', 'Approved', 'Rejected') DEFAULT 'Waiting for Approval',
             rejection_reason TEXT,
             approved_at DATETIME,
+            latitude DECIMAL(10,8),
+            longitude DECIMAL(11,8),
+            is_best_car BOOLEAN DEFAULT false,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )`);
         
         // Migration for existing tables
-        try {
-            await db.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS approved_at DATETIME`);
-        } catch (e) {
-            // IF NOT EXISTS might not be supported in all MySQL versions for ADD COLUMN, but this is a safe way to try
-        }
+        try { await db.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS approved_at DATETIME`); } catch (e) {}
+        try { await db.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,8)`); } catch (e) {}
+        try { await db.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS longitude DECIMAL(11,8)`); } catch (e) {}
+        try { await db.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS is_best_car BOOLEAN DEFAULT false`); } catch (e) {}
 
 
         await db.query(`CREATE TABLE IF NOT EXISTS vehicle_media (

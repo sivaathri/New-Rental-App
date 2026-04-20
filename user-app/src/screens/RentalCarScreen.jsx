@@ -22,79 +22,8 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const MOCK_CARS = [
-  {
-    id: '1',
-    brand_id: '1',
-    name: 'BMW M4 Competition',
-    rating: '4.9',
-    location: 'Mumbai, MH',
-    latitude: 19.0760,
-    longitude: 72.8777,
-    seats: 4,
-    mileage: '12 kmpl',
-    price: 15000,
-    pricePerHour: 1500,
-    fuel_type: 'Petrol',
-    features: ["Air Conditioning", "ABS", "Sunroof"],
-    image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=300',
-    images: [],
-    favorite: false,
-    is_best: true,
-    owner_name: 'John Doe',
-    registration_year: 2023,
-    description: 'High performance sports coupe.',
-    terms_conditions: 'Standard terms apply.',
-    landmark: 'Bandra'
-  },
-  {
-    id: '2',
-    brand_id: '2',
-    name: 'Audi RS5',
-    rating: '4.8',
-    location: 'Bangalore, KA',
-    latitude: 12.9716,
-    longitude: 77.5946,
-    seats: 4,
-    mileage: '10 kmpl',
-    price: 18000,
-    pricePerHour: 1800,
-    fuel_type: 'Petrol',
-    features: ["Air Conditioning", "Navigation"],
-    image: 'https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?auto=format&fit=crop&q=80&w=300',
-    images: [],
-    favorite: false,
-    is_best: true,
-    owner_name: 'Jane Smith',
-    registration_year: 2022,
-    description: 'Powerful and elegant.',
-    terms_conditions: 'No smoking.',
-    landmark: 'Indiranagar'
-  },
-  {
-    id: '3',
-    brand_id: '3',
-    name: 'Mercedes G-Wagon',
-    rating: '5.0',
-    location: 'Delhi, DL',
-    latitude: 28.6139,
-    longitude: 77.2090,
-    seats: 5,
-    mileage: '8 kmpl',
-    price: 25000,
-    pricePerHour: 2500,
-    fuel_type: 'Diesel',
-    features: ["Air Conditioning", "4WD", "Heated Seats"],
-    image: 'https://images.unsplash.com/photo-1520031441872-265e4ff70366?auto=format&fit=crop&q=80&w=300',
-    images: [],
-    favorite: false,
-    is_best: false,
-    owner_name: 'Mike Ross',
-    registration_year: 2024,
-    description: 'The ultimate off-road luxury.',
-    terms_conditions: 'Security deposit required.',
-    landmark: 'Connaught Place'
-  }
+const MOCK_BRANDS = [
+  { id: 'all', name: 'All', image_url: null },
 ];
 
 const FadeInView = ({ children, delay = 0, style }) => {
@@ -130,8 +59,8 @@ const RentalCarScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { toggleFavorite, isFavorite } = useRentalFavorites();
   const [brands, setBrands] = useState([]);
-  const [cars, setCars] = useState(MOCK_CARS); 
-  const [filteredCars, setFilteredCars] = useState(MOCK_CARS);
+  const [cars, setCars] = useState([]); 
+  const [filteredCars, setFilteredCars] = useState([]); 
   const [nearbyCars, setNearbyCars] = useState([]); 
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [locationName, setLocationName] = useState('Locating...');
@@ -159,8 +88,47 @@ const RentalCarScreen = ({ navigation }) => {
 
   useEffect(() => {
     fetchBrands();
+    fetchCars();
     getUserLocation();
   }, []);
+
+  const fetchCars = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/vehicles/public/approved`);
+      if (response.data.success) {
+        const formattedCars = response.data.data.map(car => ({
+          ...car,
+          id: car.id.toString(),
+          brand_id: car.brand_name, 
+          price: parseFloat(car.price_per_day),
+          rating: car.rating || "5.0",
+          location: car.pickup_location || car.landmark || "Unknown",
+          image: car.image.startsWith('http') ? car.image : `http://192.168.0.157:5000${car.image}`,
+          is_best: car.is_best_car === 1,
+          transmission_type: car.transmission_type,
+          fuel_type: car.fuel_type,
+          seating_capacity: car.seating_capacity,
+          mileage: car.mileage,
+          price_per_hour: car.price_per_hour,
+          price_per_km: car.price_per_km,
+          max_km_per_day: car.max_km_per_day,
+          pickup_location: car.pickup_location,
+          landmark: car.landmark,
+          status: car.status,
+          rejection_reason: car.rejection_reason,
+          approved_at: car.approved_at,
+          latitude: car.latitude,
+          longitude: car.longitude,
+          is_best_car: car.is_best_car,
+        }));
+        setCars(formattedCars);
+        setFilteredCars(formattedCars);
+        console.log(formattedCars)
+      }
+    } catch (error) {
+      console.log("Error fetching cars", error);
+    }
+  };
 
   const fetchBrands = async () => {
     try {
@@ -168,7 +136,7 @@ const RentalCarScreen = ({ navigation }) => {
       if (response.data.vehicles) {
         const allOption = { id: 'all', name: 'All', image_url: null };
         const fetchedBrands = response.data.vehicles.map(v => ({
-            id: v.id.toString(),
+            id: v.name, 
             name: v.name,
             image_url: v.image_url ? `http://192.168.0.157:5000${v.image_url}` : null
         }));
@@ -340,27 +308,41 @@ const RentalCarScreen = ({ navigation }) => {
           <TouchableOpacity style={styles.gridFavorite} onPress={() => toggleFavorite(item.id)}>
              <Ionicons 
                name={isFavorite(item.id) ? "heart" : "heart-outline"} 
-               size={18} 
-               color={isFavorite(item.id) ? "#FF4D4D" : "#666"} 
+               size={24} 
+               color={isFavorite(item.id) ? "#FF4D4D" : "#333"} 
              />
           </TouchableOpacity>
           <View style={styles.gridImageContainer}>
               <Image source={{ uri: item.image }} style={styles.gridImage} resizeMode="contain" />
           </View>
           <View style={styles.gridContent}>
-            <Text style={styles.gridTitle} numberOfLines={1}>{item.name}</Text>
-            <View style={styles.gridRatingRow}>
-                <Text style={styles.gridRatingText}>{item.rating}</Text>
-                <Ionicons name="star" size={10} color="#FFA500" style={{marginLeft: 2}} />
-            </View>
+            <Text style={styles.gridTitle} numberOfLines={1}>
+                {item.name.toLowerCase()} ({item.model_year || 2026})
+            </Text>
+            
             <View style={styles.gridLocationRow}>
-                <Ionicons name="location-outline" size={12} color="#888" />
+                <Ionicons name="location-outline" size={14} color="#888" />
                 <Text style={styles.gridLocationText} numberOfLines={1}>{item.location}</Text>
             </View>
+
+            <View style={styles.gridStatsRow}>
+                <View style={styles.gridStatItem}>
+                    <MaterialCommunityIcons name="gas-station" size={16} color="#888" />
+                    <Text style={styles.gridStatText}>{item.fuel_type}</Text>
+                </View>
+                <View style={styles.gridStatItem}>
+                    <MaterialCommunityIcons name="seat-passenger" size={16} color="#888" />
+                    <Text style={styles.gridStatText}>{item.seating_capacity}</Text>
+                </View>
+            </View>
+            
             <View style={styles.gridFooter}>
-                 <Text style={styles.gridPrice}>₹{item.price}<Text style={styles.gridPeriod}>/Day</Text></Text>
+                 <View style={styles.gridPriceContainer}>
+                    <Text style={styles.gridPriceText}>₹{Math.floor(item.price)}</Text>
+                    <Text style={styles.gridPeriodText}>/Day</Text>
+                 </View>
                  <View style={styles.bookBtn}>
-                     <Text style={styles.bookBtnText}>Book now</Text>
+                     <Text style={styles.bookBtnText}>Call</Text>
                  </View>
             </View>
           </View>
@@ -413,8 +395,8 @@ const RentalCarScreen = ({ navigation }) => {
                       <Ionicons name="car-sport" size={24} color="white" />
                  </View>
                  <TouchableOpacity onPress={() => setLocationModalVisible(true)}>
-                     <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 10}}>
-                         <Ionicons name="location-sharp" size={12} color="#666" style={{marginRight: 2}} />
+                     <View style={{flexDirection: 'row', alignItems: 'center', marginBottom:5}}>
+                         <Ionicons name="location-sharp" size={20} color="#666" style={{marginRight: 2}} />
                          <Text style={{fontSize: 12, color: '#666', fontWeight: 'bold'}}>{selectedCity === 'All Cities' ? locationName : selectedCity}</Text>
                          <Ionicons name="chevron-down" size={14} color="#666" style={{marginLeft: 2}} />
                      </View>
@@ -460,7 +442,9 @@ const RentalCarScreen = ({ navigation }) => {
         {isSearching ? (
              <View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 15 }}>
-                    <Text style={styles.sectionTitle}>Recommendations</Text>
+                    <Text style={styles.sectionTitle}>
+                        {selectedBrand === 'all' ? 'All Vehicles' : ` All ${selectedBrand}`}
+                    </Text>
                 </View>
                 <View style={styles.gridContainer}>
                     {filteredCars.map((item, index) => (
@@ -472,19 +456,23 @@ const RentalCarScreen = ({ navigation }) => {
             </View>
         ) : (
             <View>
+                {cars.filter(c => c.is_best).length > 0 && (
+                    <>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Nearby Vehicles</Text>
+                        </View>
+                        <FlatList
+                            data={cars.filter(c => c.is_best)} 
+                            renderItem={renderCarCard}
+                            keyExtractor={item => item.id}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.carsList}
+                        />
+                    </>
+                )}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Nearby Cars</Text>
-                </View>
-                <FlatList
-                    data={cars.filter(c => c.is_best)} 
-                    renderItem={renderCarCard}
-                    keyExtractor={item => item.id}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.carsList}
-                />
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>All Cars</Text>
+                    <Text style={styles.sectionTitle}>All Vehicles</Text>
                 </View>
                 <View style={styles.gridContainer}>
                     {nearbyCars.map((item, index) => (
@@ -529,24 +517,26 @@ const styles = StyleSheet.create({
   brandTickBadge: { position: 'absolute', top: -2, right: -2, backgroundColor: 'black', width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white' },
   brandName: { fontSize: 12, color: '#666' },
   brandNameSelected: { fontWeight: 'bold', color: 'black' },
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 20 },
-  gridCard: { backgroundColor: 'white', borderRadius: 16, padding: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 3, height: 240 },
-  gridFavorite: { position: 'absolute', top: 10, right: 10, zIndex: 1, backgroundColor: 'white', width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 10, marginTop: 10 },
+  gridCard: { width: '100%', backgroundColor: 'white', borderRadius: 20, padding: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 4 },
+  gridFavorite: { position: 'absolute', top: 12, right: 12, zIndex: 1 },
   gridImageContainer: { height: 100, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  gridImage: { width: '100%', height: '100%', borderRadius: 10 },
+  gridImage: { width: '100%', height: '100%' },
   gridContent: { flex: 1 },
-  gridTitle: { fontSize: 14, fontWeight: 'bold', color: '#111', marginBottom: 4 },
-  gridRatingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  gridRatingText: { fontSize: 10, color: '#666', fontWeight: '600' },
-  gridLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  gridLocationText: { fontSize: 10, color: '#888', marginLeft: 2 },
-  gridFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' },
-  gridPrice: { fontSize: 12, fontWeight: 'bold', color: '#111' },
-  gridPeriod: { fontSize: 10, color: '#888' },
-  bookBtn: { backgroundColor: '#1a1a1a', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 },
-  bookBtnText: { color: 'white', fontSize: 10, fontWeight: '600' },
+  gridTitle: { fontSize: 16, fontWeight: 'bold', color: '#111', marginBottom: 4 },
+  gridLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  gridLocationText: { fontSize: 12, color: '#888', marginLeft: 4 },
+  gridStatsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  gridStatItem: { flexDirection: 'row', alignItems: 'center', marginRight: 10 },
+  gridStatText: { fontSize: 12, color: '#888', marginLeft: 4 },
+  gridFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  gridPriceContainer: { flex: 1 },
+  gridPriceText: { fontSize: 16, fontWeight: 'bold', color: '#111' },
+  gridPeriodText: { fontSize: 12, color: '#888' },
+  bookBtn: { backgroundColor: '#1a1a1a', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, minWidth: 80, alignItems: 'center' },
+  bookBtnText: { color: 'white', fontSize: 11, fontWeight: 'bold' },
   sectionHeader: { paddingHorizontal: 20, marginTop: 25, marginBottom: 15 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: 'black' },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: 'black',marginTop:10 },
   carsList: { paddingHorizontal: 15 },
   card: { width: width * 0.45, backgroundColor: 'white', borderRadius: 16, padding: 10, marginHorizontal: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 3 },
   favoriteIcon: { position: 'absolute', top: 10, right: 10, zIndex: 1, backgroundColor: 'white', width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

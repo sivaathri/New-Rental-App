@@ -177,4 +177,31 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 });
 
+// Get all approved vehicles for public listing
+router.get('/public/approved', async (req, res) => {
+    try {
+        const [vehicles] = await db.query(`
+            SELECT v.*, u.full_name as owner_name, vm.name as brand_name
+            FROM vehicles v
+            LEFT JOIN users u ON v.user_id = u.id
+            LEFT JOIN vehicle_master vm ON v.type = vm.name
+            WHERE v.status = "Approved"
+        `);
+
+        const vehiclesWithMedia = await Promise.all(vehicles.map(async (v) => {
+            const [media] = await db.query('SELECT * FROM vehicle_media WHERE vehicle_id = ? ORDER BY sort_order ASC, id ASC', [v.id]);
+            return { 
+                ...v, 
+                image: media.length > 0 ? media[0].media_url : 'https://via.placeholder.com/300',
+                images: media.map(m => m.media_url)
+            };
+        }));
+
+        res.json({ success: true, data: vehiclesWithMedia });
+    } catch (err) {
+        console.error('Error fetching approved vehicles:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;
