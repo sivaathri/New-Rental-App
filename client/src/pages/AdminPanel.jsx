@@ -41,6 +41,7 @@ export default function AdminPanel() {
   const [selectedImg, setSelectedImg] = useState(null);
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('All');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const navigate = useNavigate();
@@ -375,9 +376,15 @@ export default function AdminPanel() {
           )}
  
           {activeTab === 'approved' && (() => {
-            const filteredApproved = approvedVehicles.filter(v => {
+            const sortedByMaster = [...approvedVehicles].sort((a, b) => {
+              const orderA = masterVehicles.find(mv => mv.name === a.type)?.sort_order || 999;
+              const orderB = masterVehicles.find(mv => mv.name === b.type)?.sort_order || 999;
+              return orderA - orderB;
+            });
+
+            const filteredApproved = sortedByMaster.filter(v => {
               const query = searchQuery.toLowerCase();
-              return (
+              const matchesSearch = (
                 v.name?.toLowerCase().includes(query) ||
                 v.owner_name?.toLowerCase().includes(query) ||
                 v.owner_email?.toLowerCase().includes(query) ||
@@ -387,7 +394,11 @@ export default function AdminPanel() {
                 v.owner_city?.toLowerCase().includes(query) ||
                 v.owner_unique_id?.includes(query)
               );
+              const matchesType = typeFilter === 'All' || v.type === typeFilter;
+              return matchesSearch && matchesType;
             });
+
+            const vehicleTypes = ['All', 'Bike', 'Car', 'Van', 'Bus', 'Mini Bus', 'Mini Van', 'TempoTraveller', 'Traveller'];
 
             return (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -418,6 +429,22 @@ export default function AdminPanel() {
                         <span className="text-[12px] font-bold text-[#252f40]">{approvedVehicles.length} LIVE</span>
                       </div>
                     </div>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-2 pb-2">
+                  {vehicleTypes.map(t => (
+                    <button 
+                      key={t}
+                      onClick={() => setTypeFilter(t)}
+                      className={`px-5 py-2 rounded-xl text-[12px] font-bold transition-all border ${
+                        typeFilter === t 
+                        ? 'bg-black text-white border-black shadow-md' 
+                        : 'bg-white text-[#67748e] border-gray-100 hover:border-black hover:text-black'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
