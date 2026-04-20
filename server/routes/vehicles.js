@@ -235,4 +235,29 @@ router.post('/log-call', async (req, res) => {
     }
 });
 
+// Get call history for a user
+router.get('/call-history/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const [history] = await db.query(`
+            SELECT DISTINCT 
+                vc.created_at as called_at,
+                v.*, 
+                u.full_name as owner_name, 
+                u.mobile_number,
+                (SELECT media_url FROM vehicle_media WHERE vehicle_id = v.id ORDER BY sort_order ASC, id ASC LIMIT 1) as image
+            FROM vehicle_calls vc
+            JOIN vehicles v ON vc.vehicle_id = v.id
+            LEFT JOIN users u ON v.user_id = u.id
+            WHERE vc.user_id = ?
+            ORDER BY vc.created_at DESC
+        `, [userId]);
+
+        res.json({ success: true, history });
+    } catch (err) {
+        console.error('Error fetching call history:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

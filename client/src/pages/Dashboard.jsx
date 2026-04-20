@@ -45,6 +45,8 @@ import {
   CheckCircle,
   Hash,
   Flag,
+  PhoneCall,
+  History,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -554,7 +556,9 @@ function AddVehicleModal({ onClose, onVehicleAdded, vehicles, subscriptions }) {
                     label="Mileage"
                     type="number"
                     value={vehicle.mileage}
-                    onChange={(v) => setVehicle({ ...vehicle, mileage: v })}
+                    onChange={(v) =>
+                      setVehicle({ ...vehicle, mileage: v })
+                    }
                     icon={Sparkles}
                   />
                 </div>
@@ -752,6 +756,8 @@ export default function Dashboard() {
   const [vehicles, setVehicles] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState("Dashboard");
+  const [detailedEnquiries, setDetailedEnquiries] = useState([]);
+  const [enquirySearch, setEnquirySearch] = useState("");
   const [showMap, setShowMap] = useState(false);
   const [updatingVehicle, setUpdatingVehicle] = useState(null);
   const [editingLandmark, setEditingLandmark] = useState("");
@@ -986,10 +992,15 @@ export default function Dashboard() {
       const subRes = await subscriptionAPI.getStatus();
       setUserSubscriptions(subRes.data.subscriptions);
 
+      const enquiryRes = await profileAPI.getEnquiryCount();
+
+      const detailedRes = await profileAPI.getDetailedEnquiries();
+      setDetailedEnquiries(detailedRes.data.enquiries);
+
       setStats({
         total: res.data.vehicles.length,
         ...counts,
-        callbackClicks: 124,
+        callbackClicks: enquiryRes.data.count,
       });
     } catch (err) {
       console.error(err);
@@ -1046,6 +1057,12 @@ export default function Dashboard() {
             label="Subscription"
             active={activeTab === "Subscription"}
             onClick={() => setActiveTab("Subscription")}
+          />
+          <SidebarNavItem
+            icon={<PhoneCall />}
+            label="Call Enquiry"
+            active={activeTab === "Call Enquiry"}
+            onClick={() => setActiveTab("Call Enquiry")}
           />
           <SidebarNavItem
             icon={<FileText />}
@@ -1217,7 +1234,7 @@ export default function Dashboard() {
               />
               <StatCard
                 title="Total Enquiry"
-                value="124"
+                value={stats.callbackClicks}
                 icon={<TrendingUp />}
                 color="#f2e6ff"
                 iconColor="#985eff"
@@ -1326,6 +1343,125 @@ export default function Dashboard() {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "Call Enquiry" && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex justify-between items-center bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm mb-10">
+              <div>
+                <h2 className="text-[20px] font-bold text-[#252f40]">
+                  Call Enquiry Logs
+                </h2>
+                <p className="text-[#67748e] text-[14px] mt-1">
+                  List of potential buyers who engaged with your fleet listings.
+                </p>
+              </div>
+              <div className="relative">
+                <Search
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder="Search enquiry..."
+                  className="pl-12 pr-6 py-3 bg-gray-50 border-none rounded-2xl w-[300px] text-sm focus:ring-2 focus:ring-[#82d616]/20 transition-all outline-none"
+                  value={enquirySearch}
+                  onChange={(e) => setEnquirySearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-50">
+                    <th className="px-8 py-5 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">
+                      Buyer Name
+                    </th>
+                    <th className="px-8 py-5 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">
+                      Mobile Number
+                    </th>
+                    <th className="px-8 py-5 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">
+                      Vehicle Interested
+                    </th>
+                    <th className="px-8 py-5 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">
+                      Enquiry Date
+                    </th>
+                    <th className="px-8 py-5 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {detailedEnquiries
+                    .filter(
+                      (e) =>
+                        e.user_name
+                          ?.toLowerCase()
+                          .includes(enquirySearch.toLowerCase()) ||
+                        e.vehicle_name
+                          ?.toLowerCase()
+                          .includes(enquirySearch.toLowerCase()) ||
+                        e.user_mobile?.includes(enquirySearch)
+                    )
+                    .map((enq) => (
+                      <tr
+                        key={enq.id}
+                        className="hover:bg-gray-50/50 transition-colors"
+                      >
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-[#f8f9fa] flex items-center justify-center text-[11px] font-bold text-[#252f40] border border-gray-100">
+                              {enq.user_name?.charAt(0)}
+                            </div>
+                            <span className="font-bold text-[#252f40] text-[14px]">
+                              {enq.user_name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <span className="text-[13px] font-medium text-[#67748e]">
+                            {enq.user_mobile}
+                          </span>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div>
+                            <p className="font-bold text-[#252f40] text-[14px]">
+                              {enq.vehicle_name}
+                            </p>
+                            <p className="text-[11px] text-[#67748e]">
+                              {enq.registration_number}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 text-[13px] text-[#67748e]">
+                          {new Date(enq.created_at).toLocaleDateString()} at{" "}
+                          {new Date(enq.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="px-8 py-5">
+                          <span className="px-3 py-1 bg-[#e6ffed] text-[#82d616] text-[10px] font-bold rounded-lg uppercase tracking-tight">
+                            Live Contact
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  {detailedEnquiries.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan="5"
+                        className="px-8 py-20 text-center text-gray-400"
+                      >
+                        No enquiries received yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

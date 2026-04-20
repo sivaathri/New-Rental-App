@@ -179,4 +179,28 @@ router.get('/enquiry-count', authMiddleware, async (req, res) => {
     }
 });
 
+// Get detailed enquiries for an owner
+router.get('/enquiries', authMiddleware, async (req, res) => {
+    try {
+        const [enquiries] = await db.query(`
+            SELECT 
+                vc.id,
+                vc.created_at,
+                u.full_name as user_name,
+                u.mobile_number as user_mobile,
+                v.name as vehicle_name,
+                v.registration_number
+            FROM vehicle_calls vc
+            JOIN users u ON vc.user_id = u.id
+            JOIN vehicles v ON vc.vehicle_id = v.id
+            WHERE v.user_id = ?
+            ORDER BY vc.created_at DESC
+        `, [req.user.id]);
+        res.json({ enquiries });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

@@ -29,6 +29,7 @@ export const profileAPI = {
   requestEmailChange: (newEmail) => api.post('/profile/request-email-change', { newEmail }),
   verifyEmailChange: (data) => api.post('/profile/verify-email-change', data),
   getEnquiryCount: () => api.get('/profile/enquiry-count'),
+  getDetailedEnquiries: () => api.get('/profile/enquiries'),
 };
 
 export const vehicleAPI = {

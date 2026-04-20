@@ -1,46 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import {
-    StyleSheet,
-    Text,
-    View,
-    FlatList,
-    Image,
-    TouchableOpacity,
     ActivityIndicator,
-    Dimensions
+    Dimensions,
+    TouchableOpacity,
+    View,
+    Text,
+    Image,
+    FlatList,
+    StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRentalFavorites } from '../context/RentalFavoritesContext';
 import { API_URL } from '../constants/api';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
-const RentalFavoritesScreen = ({ navigation }) => {
+const RentalHistoryScreen = ({ navigation }) => {
     const { user } = useAuth();
-    const { favorites, toggleFavorite } = useRentalFavorites();
-    const [favoriteCars, setFavoriteCars] = useState([]);
+    const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchFavoriteCars();
-    }, [favorites]);
+        fetchHistory();
+    }, []);
 
-    const fetchFavoriteCars = async () => {
+    const fetchHistory = async () => {
         if (!user) return;
         try {
-            const response = await axios.get(`${API_URL}/favorites/${user.id}`);
-            const formatted = response.data.map(car => ({
+            const response = await axios.get(`${API_URL}/vehicles/call-history/${user.id}`);
+            const formatted = response.data.history.map(car => ({
                 ...car,
                 image: (car.image && car.image.startsWith('http')) 
                     ? car.image 
                     : (car.image ? `http://192.168.0.157:5000${car.image}` : 'https://via.placeholder.com/300'),
             }));
-            setFavoriteCars(formatted);
+            setHistory(formatted);
         } catch (error) {
-            console.error('Failed to fetch favorite cars', error);
+            console.error('Failed to fetch call history', error);
         } finally {
             setLoading(false);
         }
@@ -52,19 +50,18 @@ const RentalFavoritesScreen = ({ navigation }) => {
             activeOpacity={0.9}
             onPress={() => navigation.navigate('VehicleDetails', { car: item })}
         >
-            <Image source={{ uri: item.image }} style={styles.carImage} resizeMode="contain" />
-            <TouchableOpacity 
-                style={styles.favoriteBtn} 
-                onPress={() => toggleFavorite(item.id.toString())}
-            >
-                <Ionicons name="heart" size={24} color="#FF4D4D" />
-            </TouchableOpacity>
+            <View style={styles.imageContainer}>
+                <Image source={{ uri: item.image }} style={styles.carImage} resizeMode="cover" />
+                <View style={styles.timeTag}>
+                    <Text style={styles.timeTagText}>Called: {new Date(item.called_at).toLocaleDateString()}</Text>
+                </View>
+            </View>
             
             <View style={styles.cardContent}>
                 <Text style={styles.carName}>{item.name}</Text>
-                <View style={styles.locationRow}>
-                    <Ionicons name="location-outline" size={14} color="#888" />
-                    <Text style={styles.locationText}>{item.pickup_location || 'Unknown'}</Text>
+                <View style={styles.ownerRow}>
+                    <Ionicons name="person-outline" size={14} color="#888" />
+                    <Text style={styles.ownerText}>Owner: {item.owner_name}</Text>
                 </View>
                 
                 <View style={styles.detailsRow}>
@@ -73,18 +70,21 @@ const RentalFavoritesScreen = ({ navigation }) => {
                         <Text style={styles.detailText}>{item.fuel_type}</Text>
                     </View>
                     <View style={styles.detailItem}>
-                        <MaterialCommunityIcons name="seat-passenger" size={16} color="#888" />
-                        <Text style={styles.detailText}>{item.seating_capacity}</Text>
+                        <MaterialCommunityIcons name="car-outline" size={16} color="#888" />
+                        <Text style={styles.detailText}>{item.type}</Text>
                     </View>
                 </View>
                 
                 <View style={styles.footer}>
-                    <Text style={styles.priceText}>
-                        ₹{Math.floor(item.price_per_day)}
-                        <Text style={styles.periodText}>/Day</Text>
-                    </Text>
-                    <TouchableOpacity style={styles.bookBtn}>
-                        <Text style={styles.bookBtnText}>Call Now</Text>
+                    <View>
+                        <Text style={styles.priceLabel}>Last Price Checked</Text>
+                        <Text style={styles.priceText}>₹{Math.floor(item.price_per_day)}<Text style={styles.periodText}>/Day</Text></Text>
+                    </View>
+                    <TouchableOpacity 
+                        style={styles.reconnectBtn}
+                        onPress={() => navigation.navigate('VehicleDetails', { car: item })}
+                    >
+                        <Text style={styles.reconnectBtnText}>View Details</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -97,7 +97,7 @@ const RentalFavoritesScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <Ionicons name="chevron-back" size={24} color="#000" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>My Favorites</Text>
+                <Text style={styles.headerTitle}>Engagement History</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -105,22 +105,22 @@ const RentalFavoritesScreen = ({ navigation }) => {
                 <View style={styles.center}>
                     <ActivityIndicator size="large" color="#000" />
                 </View>
-            ) : favoriteCars.length === 0 ? (
+            ) : history.length === 0 ? (
                 <View style={styles.center}>
-                    <Ionicons name="heart-dislike-outline" size={80} color="#DDD" />
-                    <Text style={styles.emptyText}>No favorites yet</Text>
+                    <MaterialCommunityIcons name="phone-clock" size={80} color="#DDD" />
+                    <Text style={styles.emptyText}>No enquiries made yet</Text>
                     <TouchableOpacity 
                         style={styles.browseBtn}
                         onPress={() => navigation.navigate('RentalCar')}
                     >
-                        <Text style={styles.browseBtnText}>Browse Vehicles</Text>
+                        <Text style={styles.browseBtnText}>Explore Vehicles</Text>
                     </TouchableOpacity>
                 </View>
             ) : (
                 <FlatList
-                    data={favoriteCars}
+                    data={history}
                     renderItem={renderCarItem}
-                    keyExtractor={item => item.id.toString()}
+                    keyExtractor={item => item.id.toString() + item.called_at}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                 />
@@ -176,22 +176,27 @@ const styles = StyleSheet.create({
         elevation: 4,
         overflow: 'hidden',
     },
+    imageContainer: {
+        position: 'relative',
+    },
     carImage: {
         width: '100%',
         height: 180,
         backgroundColor: '#F5F5F5',
     },
-    favoriteBtn: {
+    timeTag: {
         position: 'absolute',
-        top: 15,
-        right: 15,
-        backgroundColor: '#FFF',
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 3,
+        bottom: 10,
+        left: 10,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 8,
+    },
+    timeTagText: {
+        color: '#FFF',
+        fontSize: 10,
+        fontWeight: 'bold',
     },
     cardContent: {
         padding: 15,
@@ -200,15 +205,15 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: '#333',
-        marginBottom: 5,
+        marginBottom: 2,
     },
-    locationRow: {
+    ownerRow: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
     },
-    locationText: {
-        fontSize: 14,
+    ownerText: {
+        fontSize: 12,
         color: '#888',
         marginLeft: 5,
     },
@@ -222,7 +227,7 @@ const styles = StyleSheet.create({
         marginRight: 20,
     },
     detailText: {
-        fontSize: 14,
+        fontSize: 13,
         color: '#666',
         marginLeft: 6,
     },
@@ -234,29 +239,34 @@ const styles = StyleSheet.create({
         borderTopColor: '#EEE',
         paddingTop: 15,
     },
+    priceLabel: {
+        fontSize: 10,
+        color: '#888',
+        marginBottom: 2,
+    },
     priceText: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
         color: '#000',
     },
     periodText: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#888',
         fontWeight: 'normal',
     },
-    bookBtn: {
+    reconnectBtn: {
         backgroundColor: '#000',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 12,
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 10,
     },
-    bookBtnText: {
+    reconnectBtnText: {
         color: '#FFF',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: 'bold',
     },
     emptyText: {
-        fontSize: 18,
+        fontSize: 16,
         color: '#888',
         marginTop: 20,
         marginBottom: 30,
@@ -274,4 +284,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default RentalFavoritesScreen;
+export default RentalHistoryScreen;

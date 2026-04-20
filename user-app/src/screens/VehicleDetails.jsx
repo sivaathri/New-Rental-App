@@ -7,10 +7,10 @@ import {
     Image,
     TouchableOpacity,
     Dimensions,
-    SafeAreaView,
     Platform,
     Linking
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useRentalFavorites } from '../context/RentalFavoritesContext';
 import { useAuth } from '../context/AuthContext';
@@ -159,7 +159,7 @@ const VehicleDetails = ({ route, navigation }) => {
                     <Text style={styles.sectionTitle}>Specifications</Text>
                     <View style={styles.specsGrid}>
                         <SpecItem icon="gas-station" label="Fuel" value={car.fuel_type} />
-                        <SpecItem icon="car-shift-lever" label="Transmission" value={car.transmission_type} />
+                        <SpecItem icon="cog" label="Transmission" value={car.transmission_type} />
                         <SpecItem icon="seat-passenger" label="Seats" value={`${car.seating_capacity} Seater`} />
                         <SpecItem icon="speedometer" label="Mileage" value={`${car.mileage} kmpl`} />
                     </View>
