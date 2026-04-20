@@ -50,8 +50,8 @@ const RentalProfileScreen = ({ navigation }) => {
                         )}
                         
                     </View>
-                    <Text style={styles.userName}>{user?.name || 'Benjamin Jack'}</Text>
-                    <Text style={styles.userEmail}>{user?.email || 'benjaminJack@gmail.com'}</Text>
+                    <Text style={styles.userName}>{user?.full_name || 'User'}</Text>
+                    <Text style={styles.userEmail}>{user?.mobile || ''}</Text>
                     
                     <TouchableOpacity 
                         style={styles.editProfileBtn}

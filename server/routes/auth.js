@@ -25,17 +25,12 @@ router.post('/send-otp', async (req, res) => {
         
         if (rows.length === 0) {
             const unique_id = await generateUniqueId();
-            const role = mobile === '1234567890' ? 'master' : 'vehicle-owners';
+            // Default to 'user' for all mobile logins from this app
+            const role = 'user';
             await db.query('INSERT INTO users (mobile_number, otp, unique_id, role) VALUES (?, ?, ?, ?)', [mobile, otp, unique_id, role]);
         } else {
-            const user = rows[0];
-            let unique_id = user.unique_id;
-            if (!unique_id) {
-                unique_id = await generateUniqueId();
-                await db.query('UPDATE users SET otp = ?, unique_id = ? WHERE mobile_number = ?', [otp, unique_id, mobile]);
-            } else {
-                await db.query('UPDATE users SET otp = ? WHERE mobile_number = ?', [otp, mobile]);
-            }
+            // Ensure the role is set to 'user' even for existing users logging into this app
+            await db.query('UPDATE users SET otp = ?, role = ? WHERE mobile_number = ?', [otp, 'user', mobile]);
         }
         res.json({ message: 'OTP sent (use 123456)' });
     } catch (err) {
@@ -56,9 +51,39 @@ router.post('/verify-otp', async (req, res) => {
                 process.env.JWT_SECRET || 'secret', 
                 { expiresIn: '7d' }
             );
-            res.json({ message: 'Login successful', token, user });
+            res.json({ 
+                message: 'Login successful', 
+                token, 
+                user: {
+                    id: user.id,
+                    mobile: user.mobile_number,
+                    full_name: user.full_name,
+                    role: user.role,
+                    unique_id: user.unique_id,
+                    isComplete: !!user.full_name // Check if profile is complete
+                }
+            });
         } else {
             res.status(400).json({ error: 'Invalid OTP' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Update Profile (Name)
+router.post('/update-name', async (req, res) => {
+    const { mobile, full_name } = req.body;
+    if (!mobile || !full_name) return res.status(400).json({ error: 'Mobile and Name required' });
+
+    try {
+        await db.query('UPDATE users SET full_name = ? WHERE mobile_number = ?', [full_name, mobile]);
+        const [rows] = await db.query('SELECT * FROM users WHERE mobile_number = ?', [mobile]);
+        if (rows.length > 0) {
+            const user = rows[0];
+            res.json({ message: 'Profile updated', user });
+        } else {
+            res.status(404).json({ error: 'User not found' });
         }
     } catch (err) {
         res.status(500).json({ error: 'Server error' });

@@ -18,6 +18,9 @@
     },
     "experiments": {
       "newArchEnabled": false
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }
