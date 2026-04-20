@@ -124,8 +124,71 @@ router.get('/vehicles/approved', async (req, res) => {
 router.post('/vehicles/:id/status', async (req, res) => {
     const { status, reason } = req.body; // status: Approved or Rejected
     try {
-        await db.query('UPDATE vehicles SET status = ?, rejection_reason = ? WHERE id = ?', [status, reason || null, req.params.id]);
+        if (status === 'Approved') {
+            await db.query('UPDATE vehicles SET status = ?, approved_at = NOW() WHERE id = ?', [status, req.params.id]);
+        } else {
+            await db.query('UPDATE vehicles SET status = ?, rejection_reason = ?, approved_at = NULL WHERE id = ?', [status, reason || null, req.params.id]);
+        }
         res.json({ message: `Vehicle ${status}` });
+    } catch(err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+const upload = require('../utils/upload');
+
+// Get all master vehicles
+router.get('/vehicles/master', async (req, res) => {
+    try {
+        const [vehicles] = await db.query('SELECT * FROM vehicle_master ORDER BY sort_order ASC, id DESC');
+        res.json({ vehicles });
+    } catch(err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Add new master vehicle
+router.post('/vehicles/master', upload.single('image'), async (req, res) => {
+    const { name } = req.body;
+    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+    try {
+        await db.query('INSERT INTO vehicle_master (name, image_url) VALUES (?, ?)', [name, image_url]);
+        res.json({ message: 'Vehicle added to master list' });
+    } catch(err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Update master vehicle
+router.post('/vehicles/master/:id', upload.single('image'), async (req, res) => {
+    const { id } = req.params;
+    const { name } = req.body;
+    let query = 'UPDATE vehicle_master SET name = ?';
+    let params = [name];
+    
+    if (req.file) {
+        query += ', image_url = ?';
+        params.push(`/uploads/${req.file.filename}`);
+    }
+    
+    query += ' WHERE id = ?';
+    params.push(id);
+
+    try {
+        await db.query(query, params);
+        res.json({ message: 'Vehicle updated successfully' });
+    } catch(err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Update master vehicle order
+router.post('/vehicles/master/:id/order', async (req, res) => {
+    const { id } = req.params;
+    const { sort_order } = req.body;
+    try {
+        await db.query('UPDATE vehicle_master SET sort_order = ? WHERE id = ?', [sort_order, id]);
+        res.json({ message: 'Order updated' });
     } catch(err) {
         res.status(500).json({ error: 'Server error' });
     }

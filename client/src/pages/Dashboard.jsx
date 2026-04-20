@@ -1320,6 +1320,16 @@ export default function Dashboard() {
                     >
                       {selectedVehicle.status}
                     </span>
+                    {selectedVehicle.status === 'Approved' && selectedVehicle.approved_at && (
+                      <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#82d616] bg-[#82d616]/5 px-3 py-1.5 rounded-lg border border-[#82d616]/10">
+                        <Clock size={12} />
+                        Approved on {new Date(selectedVehicle.approved_at).toLocaleDateString('en-IN', {
+                          day: '2-digit', month: 'short', year: 'numeric'
+                        })} at {new Date(selectedVehicle.approved_at).toLocaleTimeString('en-IN', {
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </span>
+                    )}
                   </div>
                   {selectedVehicle.status === 'Rejected' && selectedVehicle.rejection_reason && (
                     <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-xl">

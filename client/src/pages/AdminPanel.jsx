@@ -5,7 +5,7 @@ import {
   BarChart as BarChartIcon, Users, Car, CheckSquare, MessageSquare, 
   Star, Tag, Landmark, Settings, LogOut, LayoutDashboard, 
   Smartphone, Search, Bell, UserCheck, TrendingUp, Clock, 
-  FileText, CreditCard, ChevronDown, MoreHorizontal, Check, X, ShieldCheck, Zap
+  FileText, CreditCard, ChevronDown, ChevronUp, MoreHorizontal, Check, X, ShieldCheck, Zap, Edit, Plus
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
@@ -18,8 +18,12 @@ export default function AdminPanel() {
   const [rejectedVehicles, setRejectedVehicles] = useState([]);
   const [approvedVehicles, setApprovedVehicles] = useState([]);
   const [usersList, setUsersList] = useState([]);
+  const [masterVehicles, setMasterVehicles] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(false);
+  const [masterFormData, setMasterFormData] = useState({ name: '', image: null });
+  const [uploadingMaster, setUploadingMaster] = useState(false);
+  const [editingMaster, setEditingMaster] = useState(null);
   const [selectedImg, setSelectedImg] = useState(null);
   const navigate = useNavigate();
 
@@ -36,6 +40,8 @@ export default function AdminPanel() {
       setRejectedVehicles(rejectedRes.data.vehicles);
       const approvedRes = await adminAPI.getApprovedVehicles();
       setApprovedVehicles(approvedRes.data.vehicles);
+      const masterRes = await adminAPI.getMasterVehicles();
+      setMasterVehicles(masterRes.data.vehicles);
     } catch(err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -45,6 +51,16 @@ export default function AdminPanel() {
       const res = await adminAPI.getUsers();
       setUsersList(res.data.users);
     } catch(err) { console.error(err); }
+  };
+
+  const handleOrderChange = async (id, currentOrder, direction) => {
+    const newOrder = direction === 'up' ? currentOrder - 1 : currentOrder + 1;
+    try {
+      await adminAPI.updateMasterVehicleOrder(id, newOrder);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleAction = async (type, id, status) => {
@@ -98,6 +114,7 @@ export default function AdminPanel() {
           <SidebarItem icon={<CheckSquare/>} label="New Requests" count={vehicles.length} active={activeTab === 'requests'} onClick={() => setActiveTab('requests')} />
           <SidebarItem icon={<CheckSquare/>} label="Approved" count={approvedVehicles.length} active={activeTab === 'approved'} onClick={() => setActiveTab('approved')} />
           <SidebarItem icon={<X/>} label="Rejected" count={rejectedVehicles.length} active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')} />
+          <SidebarItem icon={<Car/>} label="List Vehicles" count={masterVehicles.length} active={activeTab === 'list-vehicles'} onClick={() => setActiveTab('list-vehicles')} />
           <SidebarItem icon={<Users/>} label="All Users" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
         </div>
 
@@ -278,71 +295,152 @@ export default function AdminPanel() {
               )}
             </div>
           )}
-
+ 
           {activeTab === 'approved' && (
-            <div className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="flex items-center justify-between mb-8">
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <div className="flex items-center justify-between mb-2">
                   <div>
-                    <h3 className="text-[20px] font-bold text-[#252f40]">Approved Assets</h3>
-                    <p className="text-[13px] text-[#67748e] mt-0.5">Live fleet currently active in the ecosystem.</p>
+                    <h2 className="text-[20px] font-bold text-[#252f40]">Approved Assets</h2>
+                    <p className="text-[13px] text-[#67748e] mt-0.5">Comprehensive view of live fleet in the ecosystem.</p>
                   </div>
                   <span className="px-4 py-1.5 bg-green-50 text-green-600 text-[11px] font-bold rounded-lg border border-green-100">{approvedVehicles.length} LIVE</span>
                </div>
- 
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left border-collapse">
-                   <thead>
-                     <tr className="bg-gray-50/50">
-                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Vehicle Info</th>
-                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Technical Specs</th>
-                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Owner Identity</th>
-                       <th className="p-4 text-[11px] font-bold text-[#67748e] uppercase tracking-wider border-b border-gray-100">Status</th>
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y divide-gray-50">
-                     {approvedVehicles.map(v => (
-                       <tr key={v.id} className="group hover:bg-gray-50/50 transition-all">
-                         <td className="p-4">
-                           <div className="flex items-center gap-4">
-                             <div className="w-14 h-14 rounded-xl bg-gray-50 overflow-hidden border border-gray-100 cursor-pointer" onClick={() => v.media?.[0] && setSelectedImg(`http://localhost:5000${v.media[0].media_url}`)}>
-                                {v.media?.[0] ? <img src={`http://localhost:5000${v.media[0].media_url}`} className="w-full h-full object-cover" /> : <Car className="m-auto mt-4 text-gray-300"/>}
-                             </div>
-                             <div>
-                               <p className="text-[14px] font-bold text-[#252f40]">{v.name}</p>
-                               <p className="text-[11px] text-[#67748e] uppercase tracking-tight font-bold">{v.registration_number}</p>
-                             </div>
+
+               {approvedVehicles.map((v) => (
+                 <div key={v.id} className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm flex flex-col gap-8 group">
+                   <div className="flex flex-col lg:flex-row gap-8">
+                     {/* Left Column: Vehicle & Owner Info */}
+                     <div className="flex-1 space-y-8">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                         {/* Vehicle Specs */}
+                         <div>
+                           <h3 className="text-[15px] font-bold text-[#252f40] border-b border-gray-50 pb-2 mb-4 flex items-center gap-2">
+                             <Car size={16} className="text-[#82d616]" /> Vehicle Information
+                           </h3>
+                           <div className="grid grid-cols-2 gap-y-3 text-[13px]">
+                             <div><span className="text-[#67748e]">Name:</span> <strong className="text-[#252f40] ml-1">{v.name}</strong></div>
+                             <div><span className="text-[#67748e]">Brand:</span> <strong className="text-[#252f40] ml-1">{v.type}</strong></div>
+                             <div><span className="text-[#67748e]">Year:</span> <strong className="text-[#252f40] ml-1">{v.model_year}</strong></div>
+                             <div><span className="text-[#67748e]">Reg No:</span> <strong className="text-[#252f40] ml-1">{v.registration_number}</strong></div>
+                             <div><span className="text-[#67748e]">Fuel:</span> <strong className="text-[#252f40] ml-1">{v.fuel_type}</strong></div>
+                             <div><span className="text-[#67748e]">Trans:</span> <strong className="text-[#252f40] ml-1">{v.transmission_type || 'Manual'}</strong></div>
+                             <div><span className="text-[#67748e]">Seating:</span> <strong className="text-[#252f40] ml-1">{v.seating_capacity}</strong></div>
+                             <div><span className="text-[#67748e]">Mileage:</span> <strong className="text-[#252f40] ml-1">{v.mileage} km/l</strong></div>
                            </div>
-                         </td>
-                         <td className="p-4">
-                           <div className="space-y-1">
-                             <div className="flex items-center gap-2 text-[12px] text-[#252f40] font-bold">
-                               <Zap size={12} className="text-[#82d616]" /> {v.type} • {v.fuel_type}
-                             </div>
-                             <div className="flex items-center gap-2 text-[11px] text-[#67748e] font-medium">
-                               <Settings size={12} /> {v.transmission_type || 'Manual'} • {v.seating_capacity} Seater
-                             </div>
+                         </div>
+                         
+                         {/* Owner Info */}
+                         <div>
+                           <h3 className="text-[15px] font-bold text-[#252f40] border-b border-gray-50 pb-2 mb-4 flex items-center gap-2">
+                             <Users size={16} className="text-[#2167f2]" /> Owner Details
+                           </h3>
+                           <div className="space-y-3 text-[13px]">
+                             <div className="flex justify-between"><span className="text-[#67748e]">Full Name:</span> <strong className="text-[#252f40]">{v.owner_name || 'N/A'}</strong></div>
+                             <div className="flex justify-between"><span className="text-[#67748e]">Mobile:</span> <strong className="text-[#252f40]">{v.owner_mobile}</strong></div>
+                             <div className="flex justify-between"><span className="text-[#67748e]">Email:</span> <strong className="text-[#252f40]">{v.owner_email || 'N/A'}</strong></div>
+                             <div className="flex justify-between"><span className="text-[#67748e]">City:</span> <strong className="text-[#252f40]">{v.owner_city || 'N/A'}</strong></div>
+                             <div><span className="text-[#67748e]">Address:</span> <p className="mt-1 font-medium text-[#252f40] leading-relaxed">{v.owner_address || 'N/A'}</p></div>
                            </div>
-                         </td>
-                         <td className="p-4">
-                            <div className="space-y-1">
-                              <p className="text-[13px] font-bold text-[#252f40]">{v.owner_name}</p>
-                              <p className="text-[11px] text-[#67748e]">{v.owner_mobile}</p>
+                         </div>
+                       </div>
+
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          {/* Pricing & Performance */}
+                          <div>
+                            <h3 className="text-[15px] font-bold text-[#252f40] border-b border-gray-50 pb-2 mb-4 flex items-center gap-2">
+                              <Tag size={16} className="text-[#fbcf33]" /> Pricing & Strategy
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="bg-gray-50 p-3 rounded-xl">
+                                <p className="text-[10px] font-bold text-[#67748e] uppercase">Per Day</p>
+                                <p className="text-[16px] font-bold text-[#252f40]">₹{Math.floor(v.price_per_day)}</p>
+                              </div>
+                              <div className="bg-gray-50 p-3 rounded-xl">
+                                <p className="text-[10px] font-bold text-[#67748e] uppercase">Per Hour</p>
+                                <p className="text-[16px] font-bold text-[#252f40]">₹{Math.floor(v.price_per_hour)}</p>
+                              </div>
+                              <div className="bg-gray-50 p-3 rounded-xl">
+                                <p className="text-[10px] font-bold text-[#67748e] uppercase">Per KM</p>
+                                <p className="text-[16px] font-bold text-[#252f40]">₹{Math.floor(v.price_per_km)}</p>
+                              </div>
+                              <div className="bg-gray-50 p-3 rounded-xl">
+                                <p className="text-[10px] font-bold text-[#67748e] uppercase">KM Limit</p>
+                                <p className="text-[16px] font-bold text-[#252f40]">{v.max_km_per_day} km</p>
+                              </div>
                             </div>
-                         </td>
-                         <td className="p-4">
-                           <div className="flex flex-col gap-2">
-                             <span className="px-3 py-1 bg-[#e6ffed] text-[#82d616] text-[10px] font-bold rounded-lg border border-[#82d616]/20 text-center">ACTIVE</span>
-                             <div className="flex gap-2">
-                               <button onClick={() => setSelectedImg(`http://localhost:5000${v.rc_book_url}`)} className="p-1.5 bg-gray-100 text-gray-400 rounded-md hover:bg-black hover:text-white transition-all"><FileText size={14}/></button>
-                               <button onClick={() => handleAction('vehicles', v.id, 'Rejected')} className="p-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-600 hover:text-white transition-all"><X size={14}/></button>
-                             </div>
+                          </div>
+
+                          {/* Deployment & Location */}
+                          <div>
+                            <h3 className="text-[15px] font-bold text-[#252f40] border-b border-gray-50 pb-2 mb-4 flex items-center gap-2">
+                              <Landmark size={16} className="text-[#ea0606]" /> Deployment Point
+                            </h3>
+                            <div className="space-y-4">
+                              <div>
+                                <p className="text-[10px] font-bold text-[#67748e] uppercase">Primary Location</p>
+                                <p className="text-[13px] font-medium text-[#252f40] mt-1 leading-relaxed">{v.pickup_location || 'Not set'}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-bold text-[#67748e] uppercase">Landmark</p>
+                                <p className="text-[13px] font-medium text-[#252f40] mt-1 leading-relaxed">{v.landmark || 'None specified'}</p>
+                              </div>
+                            </div>
+                          </div>
+                       </div>
+                     </div>
+
+                     {/* Right Column: Visuals & Actions */}
+                     <div className="w-full lg:w-[320px] space-y-6">
+                        <div className="bg-gray-50 rounded-[20px] p-6 space-y-4 border border-gray-100 flex flex-col items-center">
+                           <div className="flex items-center gap-2 text-[11px] font-bold text-[#82d616] bg-white border border-[#82d616]/20 px-4 py-2 rounded-full shadow-sm">
+                              <Clock size={12} />
+                              APPROVED ON {v.approved_at ? new Date(v.approved_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
                            </div>
-                         </td>
-                       </tr>
-                     ))}
-                   </tbody>
-                 </table>
-               </div>
+                           
+                           <div className="flex flex-wrap justify-center gap-3 w-full">
+                              <button 
+                                onClick={() => handleAction('vehicles', v.id, 'Rejected')}
+                                className="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl text-[12px] hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
+                              >
+                                <X size={14} /> Revoke Approval
+                              </button>
+                           </div>
+                        </div>
+
+                        <div>
+                          <p className="text-[11px] font-bold text-[#67748e] uppercase tracking-wider mb-3">Vehicle Gallery</p>
+                          <div className="flex flex-wrap gap-2">
+                            {v.media && v.media.slice(0, 4).map((img, idx) => (
+                              <div key={idx} className="w-[70px] h-[70px] rounded-xl overflow-hidden border border-gray-100 cursor-pointer hover:border-[#82d616] transition-all shadow-sm" onClick={() => setSelectedImg(`http://localhost:5000${img.media_url}`)}>
+                                <img src={`http://localhost:5000${img.media_url}`} className="w-full h-full object-cover" alt="Media" />
+                              </div>
+                            ))}
+                            {(!v.media || v.media.length === 0) && <p className="text-[11px] text-gray-400 italic">No media uploaded</p>}
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-[11px] font-bold text-[#67748e] uppercase tracking-wider mb-3">Owner Verification Docs</p>
+                          <div className="flex gap-4">
+                            <DocThumbnail label="RC Book" url={v.rc_book_url} icon={<FileText size={14}/>} onClick={() => setSelectedImg(`http://localhost:5000${v.rc_book_url}`)} />
+                            <DocThumbnail label="Driving License" url={v.driving_license_url} icon={<ShieldCheck size={14}/>} onClick={() => setSelectedImg(`http://localhost:5000${v.driving_license_url}`)} />
+                            <DocThumbnail label="Aadhar Card" url={v.aadhar_card_url} icon={<UserCheck size={14}/>} onClick={() => setSelectedImg(`http://localhost:5000${v.aadhar_card_url}`)} />
+                          </div>
+                        </div>
+                     </div>
+                   </div>
+                 </div>
+               ))}
+
+               {approvedVehicles.length === 0 && (
+                 <div className="bg-white p-20 text-center rounded-[32px] border border-gray-100 shadow-sm">
+                   <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">
+                     <Car size={40} />
+                   </div>
+                   <h3 className="text-xl font-bold text-[#252f40]">No Approved Assets</h3>
+                   <p className="text-[#67748e] text-sm mt-1">When vehicles are validated, they will appear here.</p>
+                 </div>
+               )}
             </div>
           )}
 
@@ -437,6 +535,151 @@ export default function AdminPanel() {
                </div>
             </div>
           )}
+
+          {activeTab === 'list-vehicles' && (
+            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                  <h2 className="text-[24px] font-bold text-[#252f40]">Vehicle Master Management</h2>
+                  <p className="text-[14px] text-[#67748e]">Establish and arrange the official ecosystem fleet for branding.</p>
+                </div>
+                {editingMaster && (
+                   <button 
+                    onClick={() => { setEditingMaster(null); setMasterFormData({ name: '', image: null }); }}
+                    className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-black hover:text-white transition-all"
+                   >
+                     CANCEL EDITING
+                   </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <div className="lg:col-span-1">
+                   <div className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm sticky top-10">
+                      <h3 className="text-[18px] font-bold text-[#252f40] mb-6 flex items-center gap-2">
+                        {editingMaster ? <Edit size={18} className="text-[#2167f2]" /> : <Plus size={18} className="text-[#fbcf33]" />}
+                        {editingMaster ? 'Update Model' : 'Add New Model'}
+                      </h3>
+                      <form onSubmit={async (e) => {
+                        e.preventDefault();
+                        if(!masterFormData.name) return;
+                        setUploadingMaster(true);
+                        const fd = new FormData();
+                        fd.append('name', masterFormData.name);
+                        if(masterFormData.image) fd.append('image', masterFormData.image);
+                        
+                        try {
+                          if (editingMaster) {
+                            await adminAPI.updateMasterVehicle(editingMaster, fd);
+                          } else {
+                            await adminAPI.addMasterVehicle(fd);
+                          }
+                          setMasterFormData({ name: '', image: null });
+                          setEditingMaster(null);
+                          fetchData();
+                        } catch(err) {
+                           console.error(err);
+                        } finally {
+                          setUploadingMaster(false);
+                        }
+                      }} className="space-y-6">
+                        <div>
+                          <label className="text-[11px] font-bold text-[#67748e] uppercase mb-2 block">Vehicle Name</label>
+                          <input 
+                            type="text" 
+                            className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-black outline-none transition-all text-sm" 
+                            placeholder="e.g. Toyota Camry"
+                            value={masterFormData.name}
+                            onChange={e => setMasterFormData({...masterFormData, name: e.target.value})}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-[#67748e] uppercase mb-2 block">
+                            {editingMaster ? 'Update Graphic (Optional)' : 'Master Graphic'}
+                          </label>
+                          <div className="relative group">
+                            <input 
+                              key={masterFormData.image ? 'has-image' : 'no-image'}
+                              type="file" 
+                              id="master-graphic" 
+                              className="hidden" 
+                              onChange={e => setMasterFormData({...masterFormData, image: e.target.files[0]})} 
+                            />
+                            <label htmlFor="master-graphic" className="cursor-pointer block">
+                               {masterFormData.image ? (
+                                 <div className="h-40 w-full rounded-xl overflow-hidden border-2 border-black relative">
+                                    <img src={URL.createObjectURL(masterFormData.image)} className="w-full h-full object-cover" />
+                                 </div>
+                               ) : editingMaster && masterVehicles.find(v => v.id === editingMaster)?.image_url ? (
+                                 <div className="h-40 w-full rounded-xl overflow-hidden border border-gray-100 relative">
+                                    <img src={`http://localhost:5000${masterVehicles.find(v => v.id === editingMaster).image_url}`} className="w-full h-full object-cover opacity-50" />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                       <span className="text-[10px] font-bold text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm">CHANGE CURRENT GRAPHIC</span>
+                                    </div>
+                                 </div>
+                               ) : (
+                                 <div className="h-40 w-full rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center gap-2 hover:border-black transition-all">
+                                    <Car size={24} className="text-gray-300" />
+                                    <p className="text-[11px] font-medium text-gray-400">Click to upload image</p>
+                                 </div>
+                               )}
+                            </label>
+                          </div>
+                        </div>
+                        <button disabled={uploadingMaster} className={`w-full py-4 text-white rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:bg-gray-400 ${editingMaster ? 'bg-[#2167f2]' : 'bg-black'}`}>
+                          {uploadingMaster ? 'Processing...' : <>{editingMaster ? <Edit size={18} /> : <Check size={18} />} {editingMaster ? 'Save Changes' : 'Publish Model'}</>}
+                        </button>
+                      </form>
+                   </div>
+                </div>
+
+                <div className="lg:col-span-2">
+                   <div className="grid grid-cols-1 gap-4">
+                      {masterVehicles.map((mv, index) => (
+                        <div key={mv.id} className={`bg-white p-6 rounded-[24px] border shadow-sm flex items-center gap-6 transition-all ${editingMaster === mv.id ? 'border-[#2167f2] scale-[1.02] shadow-xl' : 'border-gray-100'}`}>
+                           <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-[14px] font-bold text-[#67748e] shrink-0 border border-gray-100">
+                             #{index + 1}
+                           </div>
+                           <div className="w-20 h-20 rounded-2xl bg-gray-50 overflow-hidden border border-gray-100 shrink-0">
+                              <img src={`http://localhost:5000${mv.image_url}`} className="w-full h-full object-cover" />
+                           </div>
+                           <div className="flex-1">
+                              <h4 className="text-[18px] font-bold text-[#252f40]">{mv.name}</h4>
+                              <p className="text-[11px] text-[#67748e]">Rank Influence: {mv.sort_order}</p>
+                           </div>
+                           <div className="flex gap-2">
+                              <div className="flex flex-col gap-1">
+                                 <button 
+                                  onClick={() => handleOrderChange(mv.id, mv.sort_order, 'up')}
+                                  className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-black transition-all"
+                                 >
+                                    <ChevronUp size={16} />
+                                 </button>
+                                 <button 
+                                  onClick={() => handleOrderChange(mv.id, mv.sort_order, 'down')}
+                                  className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-black transition-all"
+                                 >
+                                    <ChevronDown size={16} />
+                                 </button>
+                              </div>
+                              <button 
+                                onClick={() => {
+                                  setEditingMaster(mv.id);
+                                  setMasterFormData({ name: mv.name, image: null });
+                                }}
+                                className="p-3 bg-blue-50 text-[#2167f2] rounded-xl hover:bg-[#2167f2] hover:text-white transition-all"
+                              >
+                                <Edit size={18} />
+                              </button>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
 
           {activeTab === 'users' && (
             <div className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden pb-6">

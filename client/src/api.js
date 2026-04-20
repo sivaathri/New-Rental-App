@@ -52,6 +52,14 @@ export const adminAPI = {
   getRejectedVehicles: () => api.get('/admin/vehicles/rejected'),
   getApprovedVehicles: () => api.get('/admin/vehicles/approved'),
   updateVehicleStatus: (id, data) => api.post(`/admin/vehicles/${id}/status`, data),
+  getMasterVehicles: () => api.get('/admin/vehicles/master'),
+  addMasterVehicle: (formData) => api.post('/admin/vehicles/master', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  updateMasterVehicle: (id, formData) => api.post(`/admin/vehicles/master/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  updateMasterVehicleOrder: (id, sort_order) => api.post(`/admin/vehicles/master/${id}/order`, { sort_order }),
 };
 
 export const subscriptionAPI = {

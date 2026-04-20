@@ -57,8 +57,17 @@ async function initializeDB() {
             transmission_type VARCHAR(50),
             status ENUM('Waiting for Approval', 'Approved', 'Rejected') DEFAULT 'Waiting for Approval',
             rejection_reason TEXT,
+            approved_at DATETIME,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )`);
+        
+        // Migration for existing tables
+        try {
+            await db.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS approved_at DATETIME`);
+        } catch (e) {
+            // IF NOT EXISTS might not be supported in all MySQL versions for ADD COLUMN, but this is a safe way to try
+        }
+
 
         await db.query(`CREATE TABLE IF NOT EXISTS vehicle_media (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -80,6 +89,19 @@ async function initializeDB() {
             end_date DATETIME,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )`);
+
+        await db.query(`CREATE TABLE IF NOT EXISTS vehicle_master (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            image_url VARCHAR(255),
+            type VARCHAR(50),
+            sort_order INT DEFAULT 0
+        )`);
+
+        try {
+            await db.query(`ALTER TABLE vehicle_master ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0`);
+        } catch (e) {}
+
 
         console.log("Database tables checked/created.");
     } catch (error) {
