@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const authMiddleware = require('../utils/authMiddleware');
 
 // Simple admin middleware might be needed. Skipping for MVP scope where we just expose endpoints.
 

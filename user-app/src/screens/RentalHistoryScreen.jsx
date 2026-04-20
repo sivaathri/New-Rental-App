@@ -9,7 +9,11 @@ import {
     FlatList,
     StyleSheet,
     Modal,
-    TextInput
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -168,56 +172,67 @@ const RentalHistoryScreen = ({ navigation }) => {
                 animationType="slide"
                 onRequestClose={() => setSelectedCarForReview(null)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Share Your Experience</Text>
-                            <TouchableOpacity onPress={() => setSelectedCarForReview(null)}>
-                                <Ionicons name="close" size={24} color="#000" />
-                            </TouchableOpacity>
-                        </View>
+                <KeyboardAvoidingView 
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={{ flex: 1 }}
+                >
+                    <TouchableOpacity 
+                        style={styles.modalOverlay} 
+                        activeOpacity={1} 
+                        onPress={() => setSelectedCarForReview(null)}
+                    >
+                        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                            <View style={styles.modalContainer} onStartShouldSetResponder={() => true}>
+                                <View style={styles.modalHeader}>
+                                    <Text style={styles.modalTitle}>Share Your Experience</Text>
+                                    <TouchableOpacity onPress={() => setSelectedCarForReview(null)}>
+                                        <Ionicons name="close" size={24} color="#000" />
+                                    </TouchableOpacity>
+                                </View>
 
-                        <Text style={styles.modalSubTitle}>How was your enquiry for {selectedCarForReview?.name}?</Text>
-                        
-                        <View style={styles.starsContainer}>
-                            {[1, 2, 3, 4, 5].map((star) => (
+                                <Text style={styles.modalSubTitle}>How was your enquiry for {selectedCarForReview?.name}?</Text>
+                                
+                                <View style={styles.starsContainer}>
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <TouchableOpacity 
+                                            key={star} 
+                                            onPress={() => setReviewRating(star)}
+                                        >
+                                            <Ionicons 
+                                                name={star <= reviewRating ? "star" : "star-outline"} 
+                                                size={40} 
+                                                color={star <= reviewRating ? "#FFD700" : "#CCC"} 
+                                                style={{ marginHorizontal: 5 }}
+                                            />
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <TextInput
+                                    style={styles.reviewInput}
+                                    placeholder="Write your experience with this owner/vehicle..."
+                                    placeholderTextColor="#999"
+                                    multiline
+                                    numberOfLines={4}
+                                    value={reviewComment}
+                                    onChangeText={setReviewComment}
+                                />
+
                                 <TouchableOpacity 
-                                    key={star} 
-                                    onPress={() => setReviewRating(star)}
+                                    style={[styles.submitReviewBtn, isSubmittingReview && { opacity: 0.7 }]}
+                                    onPress={handleSubmitReview}
+                                    disabled={isSubmittingReview}
                                 >
-                                    <Ionicons 
-                                        name={star <= reviewRating ? "star" : "star-outline"} 
-                                        size={40} 
-                                        color={star <= reviewRating ? "#FFD700" : "#CCC"} 
-                                        style={{ marginHorizontal: 5 }}
-                                    />
+                                    {isSubmittingReview ? (
+                                        <ActivityIndicator color="#FFF" size="small" />
+                                    ) : (
+                                        <Text style={styles.submitReviewText}>Submit Review</Text>
+                                    )}
                                 </TouchableOpacity>
-                            ))}
-                        </View>
-
-                        <TextInput
-                            style={styles.reviewInput}
-                            placeholder="Write your experience with this owner/vehicle..."
-                            placeholderTextColor="#999"
-                            multiline
-                            numberOfLines={4}
-                            value={reviewComment}
-                            onChangeText={setReviewComment}
-                        />
-
-                        <TouchableOpacity 
-                            style={[styles.submitReviewBtn, isSubmittingReview && { opacity: 0.7 }]}
-                            onPress={handleSubmitReview}
-                            disabled={isSubmittingReview}
-                        >
-                            {isSubmittingReview ? (
-                                <ActivityIndicator color="#FFF" size="small" />
-                            ) : (
-                                <Text style={styles.submitReviewText}>Submit Review</Text>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </TouchableOpacity>
+                </KeyboardAvoidingView>
             </Modal>
         </SafeAreaView>
     );
