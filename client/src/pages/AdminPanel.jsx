@@ -1061,71 +1061,97 @@ export default function AdminPanel() {
               </div>
             );
           })()}
-          {activeTab === 'reviews' && (
-            <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden pb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="p-8 border-b border-gray-50 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                  <h3 className="text-[20px] font-bold text-[#252f40]">Vehicle Reviews & Ratings</h3>
-                  <p className="text-[14px] text-[#67748e] mt-1">Monitor feedback and customer experiences across all vehicles.</p>
+
+          {activeTab === 'reviews' && (() => {
+            const filteredReviews = allReviews.filter(rev => {
+              const query = enquirySearchQuery.toLowerCase();
+              return (
+                rev.reviewer_name?.toLowerCase().includes(query) ||
+                rev.vehicle_name?.toLowerCase().includes(query) ||
+                rev.comment?.toLowerCase().includes(query) ||
+                rev.owner_name?.toLowerCase().includes(query)
+              );
+            });
+
+            return (
+              <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden pb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="p-8 border-b border-gray-50 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                  <div>
+                    <h3 className="text-[20px] font-bold text-[#252f40]">Vehicle Reviews & Ratings</h3>
+                    <p className="text-[14px] text-[#67748e] mt-1">Monitor feedback and customer experiences across all vehicles.</p>
+                  </div>
+                  <div className="relative group min-w-[320px] w-full md:w-auto">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#67748e] group-focus-within:text-black transition-colors" size={18} />
+                    <input 
+                      type="text" 
+                      placeholder="Search reviews, users or owners..." 
+                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all text-sm font-medium"
+                      value={enquirySearchQuery}
+                      onChange={(e) => setEnquirySearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto px-4">
+                  <table className="w-full text-left border-separate border-spacing-y-2">
+                    <thead>
+                      <tr>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Reviewer</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Vehicle Details</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Owner</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Rating</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Experience / Comment</th>
+                        <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredReviews.map((rev) => (
+                        <tr key={rev.id} className="group hover:bg-gray-50/50 transition-all rounded-xl shadow-sm">
+                          <td className="px-6 py-4 bg-white border-y border-l border-gray-50 rounded-l-2xl group-hover:border-gray-100">
+                            <span className="text-[14px] font-bold text-[#252f40]">{rev.reviewer_name}</span>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                             <div className="flex flex-col">
+                                <span className="text-[14px] font-bold text-black">{rev.vehicle_name}</span>
+                                <span className="text-[12px] text-[#67748e]">{rev.registration_number}</span>
+                             </div>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                             <span className="text-[13px] font-medium text-[#67748e]">{rev.owner_name}</span>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                            <div className="flex items-center gap-1.5 bg-[#fff5e6] px-2.5 py-1 rounded-lg w-fit border border-[#fbcf33]/20">
+                              <Star size={12} className="fill-[#fbcf33] text-[#fbcf33]" />
+                              <span className="text-[12px] font-bold text-[#252f40]">{rev.rating}/5</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
+                            <p className="text-[13px] text-[#252f40] font-medium max-w-[300px] leading-relaxed italic">
+                              "{rev.comment}"
+                            </p>
+                          </td>
+                          <td className="px-6 py-4 bg-white border-y border-r border-gray-50 rounded-r-2xl group-hover:border-gray-100">
+                            <span className="text-[12px] font-medium text-[#67748e]">{formatDate(rev.created_at)}</span>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredReviews.length === 0 && (
+                        <tr>
+                          <td colSpan="6" className="px-6 py-20 text-center">
+                            <div className="flex flex-col items-center gap-4 text-gray-400 font-bold">
+                              <Star size={32} />
+                              <span>No reviews matching your search found</span>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
+            );
+          })()}
 
-              <div className="overflow-x-auto px-4">
-                <table className="w-full text-left border-separate border-spacing-y-2">
-                  <thead>
-                    <tr>
-                      <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Reviewer</th>
-                      <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Vehicle Details</th>
-                      <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Owner</th>
-                      <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Rating</th>
-                      <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Comment</th>
-                      <th className="px-6 py-3 text-[11px] font-bold text-[#67748e] uppercase tracking-wider">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allReviews.map((rev) => (
-                      <tr key={rev.id} className="group hover:bg-gray-50/50 transition-all rounded-xl shadow-sm">
-                        <td className="px-6 py-4 bg-white border-y border-l border-gray-50 rounded-l-2xl group-hover:border-gray-100">
-                          <span className="text-[14px] font-bold text-[#252f40]">{rev.reviewer_name}</span>
-                        </td>
-                        <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
-                           <div className="flex flex-col">
-                              <span className="text-[14px] font-bold text-black">{rev.vehicle_name}</span>
-                              <span className="text-[12px] text-[#67748e]">{rev.registration_number}</span>
-                           </div>
-                        </td>
-                        <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
-                           <span className="text-[13px] font-medium text-[#67748e]">{rev.owner_name}</span>
-                        </td>
-                        <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
-                          <div className="flex items-center gap-1.5 bg-[#e6ffed] px-2.5 py-1 rounded-lg w-fit">
-                            <Star size={12} className="fill-[#82d616] text-[#82d616]" />
-                            <span className="text-[12px] font-bold text-[#82d616]">{rev.rating}/5</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 bg-white border-y border-gray-50 group-hover:border-gray-100">
-                          <p className="text-[13px] text-[#67748e] max-w-[200px] truncate" title={rev.comment}>{rev.comment}</p>
-                        </td>
-                        <td className="px-6 py-4 bg-white border-y border-r border-gray-50 rounded-r-2xl group-hover:border-gray-100">
-                          <span className="text-[12px] font-medium text-[#67748e]">{formatDate(rev.created_at)}</span>
-                        </td>
-                      </tr>
-                    ))}
-                    {allReviews.length === 0 && (
-                      <tr>
-                        <td colSpan="6" className="px-6 py-20 text-center">
-                          <div className="flex flex-col items-center gap-4 text-gray-400 font-bold">
-                            <Star size={32} />
-                            <span>No reviews found</span>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
           {activeTab === 'enquiries' && (() => {
             const filteredEnquiries = enquiries.filter(e => {
               const query = enquirySearchQuery.toLowerCase();
