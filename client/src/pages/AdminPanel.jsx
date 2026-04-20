@@ -469,7 +469,7 @@ export default function AdminPanel() {
                                 <Clock size={10} /> {formatDate(v.approved_at)}
                             </div>
                           </div>
-                         <div className="absolute top-4 left-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <div className="absolute top-4 left-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                             <div className="flex flex-col gap-1 bg-white/20 backdrop-blur-md p-1 rounded-lg border border-white/30">
                                <button 
                                 onClick={(e) => { e.stopPropagation(); handleApprovedVehicleOrderChange(v.id, v.sort_order, 'up'); }}

@@ -123,7 +123,7 @@ const RentalCarScreen = ({ navigation }) => {
         }));
         setCars(formattedCars);
         setFilteredCars(formattedCars);
-        console.log(formattedCars)
+        // console.log(formattedCars)
       }
     } catch (error) {
       console.log("Error fetching cars", error);
@@ -199,12 +199,13 @@ const RentalCarScreen = ({ navigation }) => {
     }
     
     const carsWithDistance = listToFilter
+      .filter(car => car.latitude && car.longitude)
       .map(car => {
         const distance = calculateDistance(
           userLocation.latitude,
           userLocation.longitude,
-          car.latitude,
-          car.longitude
+          parseFloat(car.latitude),
+          parseFloat(car.longitude)
         );
         return { ...car, distance };
       })
@@ -437,13 +438,18 @@ const RentalCarScreen = ({ navigation }) => {
             />
         </View>
 
-        {!isSearching && cars.filter(c => c.is_best).length > 0 && (
+        {!isSearching && nearbyCars.filter(c => c.distance <= 5).length > 0 && (
             <>
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Nearby Vehicles</Text>
+                    <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                        <Text style={styles.sectionTitle}>Nearby Vehicles</Text>
+                        <View style={{backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, marginTop:10}}>
+                             <Text style={{fontSize: 10, color: '#2E7D32', fontWeight: 'bold'}}>Within 5 km</Text>
+                        </View>
+                    </View>
                 </View>
                 <FlatList
-                    data={cars.filter(c => c.is_best)} 
+                    data={nearbyCars.filter(c => c.distance <= 5)} 
                     renderItem={renderCarCard}
                     keyExtractor={item => item.id}
                     horizontal
