@@ -12,6 +12,8 @@ import { useRentalFavorites } from '../context/RentalFavoritesContext';
 import colors from '../constants/colors';
 import RentalFilterModal from '../components/RentalFilterModal';
 import * as Location from 'expo-location';
+import axios from 'axios';
+import { API_URL } from '../constants/api';
 import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
@@ -19,15 +21,6 @@ const { width } = Dimensions.get('window');
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-
-// Mock Data
-const MOCK_BRANDS = [
-  { id: 'all', name: 'All', image_url: null },
-  { id: '1', name: 'BMW', image_url: 'https://www.carlogos.org/car-logos/bmw-logo.png' },
-  { id: '2', name: 'Audi', image_url: 'https://www.carlogos.org/car-logos/audi-logo.png' },
-  { id: '3', name: 'Mercedes', image_url: 'https://www.carlogos.org/car-logos/mercedes-benz-logo.png' },
-  { id: '4', name: 'Toyota', image_url: 'https://www.carlogos.org/car-logos/toyota-logo.png' },
-];
 
 const MOCK_CARS = [
   {
@@ -136,12 +129,12 @@ const FadeInView = ({ children, delay = 0, style }) => {
 const RentalCarScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { toggleFavorite, isFavorite } = useRentalFavorites();
-  const [brands, setBrands] = useState(MOCK_BRANDS);
+  const [brands, setBrands] = useState([]);
   const [cars, setCars] = useState(MOCK_CARS); 
   const [filteredCars, setFilteredCars] = useState(MOCK_CARS);
   const [nearbyCars, setNearbyCars] = useState([]); 
   const [selectedBrand, setSelectedBrand] = useState('all');
-  const [locationName, setLocationName] = useState('New York, USA');
+  const [locationName, setLocationName] = useState('Locating...');
   const [userLocation, setUserLocation] = useState(null); 
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -165,12 +158,30 @@ const RentalCarScreen = ({ navigation }) => {
   const geocodeTimeout = useRef(null);
 
   useEffect(() => {
+    fetchBrands();
     getUserLocation();
   }, []);
 
+  const fetchBrands = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/admin/vehicles/master`);
+      if (response.data.vehicles) {
+        const allOption = { id: 'all', name: 'All', image_url: null };
+        const fetchedBrands = response.data.vehicles.map(v => ({
+            id: v.id.toString(),
+            name: v.name,
+            image_url: v.image_url ? `http://192.168.0.157:5000${v.image_url}` : null
+        }));
+        setBrands([allOption, ...fetchedBrands]);
+      }
+    } catch (error) {
+      console.log("Error fetching brands", error);
+    }
+  };
+
   useEffect(() => {
     calculateNearbyCars();
-  }, [userLocation, cars]);
+  }, [userLocation, cars, selectedBrand]);
 
   const getUserLocation = async () => {
     try {
@@ -214,7 +225,12 @@ const RentalCarScreen = ({ navigation }) => {
   const calculateNearbyCars = () => {
     if (!userLocation || !cars.length) return;
     
-    const carsWithDistance = cars
+    let listToFilter = cars;
+    if (selectedBrand !== 'all') {
+      listToFilter = cars.filter(car => car.brand_id === selectedBrand);
+    }
+    
+    const carsWithDistance = listToFilter
       .map(car => {
         const distance = calculateDistance(
           userLocation.latitude,
@@ -457,7 +473,7 @@ const RentalCarScreen = ({ navigation }) => {
         ) : (
             <View>
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Featured Cars</Text>
+                    <Text style={styles.sectionTitle}>Nearby Cars</Text>
                 </View>
                 <FlatList
                     data={cars.filter(c => c.is_best)} 
