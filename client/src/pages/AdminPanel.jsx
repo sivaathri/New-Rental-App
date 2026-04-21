@@ -7,12 +7,32 @@ import {
   Star, Tag, Landmark, Settings, LogOut, LayoutDashboard, 
   Smartphone, Search, Bell, UserCheck, TrendingUp, Clock, 
   FileText, CreditCard, ChevronDown, ChevronUp, MoreHorizontal, Check, X, ShieldCheck, Zap, Edit, Plus,
-  Wrench, Hammer, MapPin, Phone
+  Wrench, Hammer, MapPin, Phone, Map
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
   CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area
 } from 'recharts';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix for Leaflet marker icon issues in React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+function LocationPicker({ lat, lng, onChange }) {
+  useMapEvents({
+    click(e) {
+      onChange(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return lat && lng ? <Marker position={[lat, lng]} /> : null;
+}
 
 export default function AdminPanel() {
   const formatDate = (dateStr) => {
@@ -55,7 +75,9 @@ export default function AdminPanel() {
     location: '',
     image: null,
     idProof: null,
-    type: 'Puncher'
+    type: 'Puncher',
+    latitude: 11.9416,
+    longitude: 79.8083
   });
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1280,26 +1302,27 @@ export default function AdminPanel() {
             );
           })()}
 
-          {(activeTab === 'mechanic' || activeTab === 'puncher') && (
+          {(activeTab === 'mechanic' || activeTab === 'puncher' || activeTab === 'driver') && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                <div className="flex justify-between items-center bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm">
                   <div>
-                    <h2 className="text-[24px] font-bold text-[#252f40] capitalize">{activeTab} Directory</h2>
+                    <h2 className="text-[24px] font-bold text-[#252f40] capitalize">{activeTab === 'driver' ? 'Acting Driver' : activeTab} Directory</h2>
                     <p className="text-[14px] text-[#67748e] mt-1">Manage verified local service providers in the ecosystem.</p>
                   </div>
-                  <button 
-                    onClick={() => {
-                      setServiceForm({ ...serviceForm, type: activeTab === 'mechanic' ? 'Mechanic' : 'Puncher' });
-                      setShowServiceModal(true);
-                    }}
-                    className="px-6 py-3 bg-black text-white rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all"
-                  >
-                    <Plus size={18} /> Add {activeTab === 'mechanic' ? 'Mechanic' : 'Puncher'}
-                  </button>
+                    <button 
+                      onClick={() => {
+                        const typeMap = { mechanic: 'Mechanic', puncher: 'Puncher', driver: 'Acting Driver' };
+                        setServiceForm({ ...serviceForm, type: typeMap[activeTab] });
+                        setShowServiceModal(true);
+                      }}
+                      className="px-6 py-3 bg-black text-white rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all"
+                    >
+                      <Plus size={18} /> Add {activeTab === 'driver' ? 'Acting Driver' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                    </button>
                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {(activeTab === 'mechanic' ? mechanics : punchers).map((item) => (
+                  {(activeTab === 'mechanic' ? mechanics : activeTab === 'puncher' ? punchers : drivers).map((item) => (
                     <div key={item.id} className="bg-white rounded-[24px] border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all">
                        <div className="flex items-center gap-4 mb-6">
                           <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden shrink-0">
@@ -1327,7 +1350,18 @@ export default function AdminPanel() {
                           </div>
                           <div className="flex items-start gap-3 text-[#67748e]">
                              <MapPin size={14} className="mt-1 shrink-0 text-[#82d616]" />
-                             <span className="text-[13px] font-medium leading-relaxed">{item.location}</span>
+                             <div className="flex flex-col">
+                               <span className="text-[13px] font-medium leading-relaxed">{item.location}</span>
+                               {item.latitude && (
+                                 <button 
+                                   onClick={() => window.open(`https://www.google.com/maps?q=${item.latitude},${item.longitude}`, '_blank')}
+                                   className="text-[10px] text-[#82d616] font-bold mt-1.5 flex items-center gap-1 hover:underline group/map"
+                                 >
+                                   <Map size={12} className="group-hover/map:scale-110 transition-transform" /> 
+                                   View Map Location
+                                 </button>
+                               )}
+                             </div>
                           </div>
                        </div>
                        
@@ -1344,12 +1378,12 @@ export default function AdminPanel() {
                        </div>
                     </div>
                   ))}
-                  {(activeTab === 'mechanic' ? mechanics : punchers).length === 0 && (
+                  {(activeTab === 'mechanic' ? mechanics : activeTab === 'puncher' ? punchers : drivers).length === 0 && (
                     <div className="col-span-full py-20 bg-white rounded-[32px] border border-dashed border-gray-100 flex flex-col items-center justify-center text-gray-400">
                        <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mb-4">
-                          {activeTab === 'mechanic' ? <Wrench size={40} className="opacity-20" /> : <Hammer size={40} className="opacity-20" />}
+                          {activeTab === 'mechanic' ? <Wrench size={40} className="opacity-20" /> : activeTab === 'puncher' ? <Hammer size={40} className="opacity-20" /> : <UserCheck size={40} className="opacity-20" />}
                        </div>
-                       <p className="font-bold text-gray-500">No {activeTab} profiles added yet.</p>
+                       <p className="font-bold text-gray-500">No {activeTab === 'driver' ? 'acting driver' : activeTab} profiles added yet.</p>
                        <p className="text-sm font-medium opacity-60">Expand your ecosystem by adding verified service nodes.</p>
                     </div>
                   )}
@@ -1806,19 +1840,39 @@ export default function AdminPanel() {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-bold text-[#252f40]">Shop Location / Address</label>
+                <label className="text-sm font-bold text-[#252f40]">{serviceForm.type === 'Acting Driver' ? 'Home Town Location' : 'Shop Location / Address'}</label>
                 <textarea 
                   className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all font-medium"
-                  placeholder="Enter full address of the shop"
+                  placeholder={serviceForm.type === 'Acting Driver' ? "Enter home town city/village name" : "Enter full address of the shop"}
                   rows="3"
                   value={serviceForm.location}
                   onChange={(e) => setServiceForm({ ...serviceForm, location: e.target.value })}
                 />
               </div>
 
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-[#252f40]">Pin on Map</label>
+                <div className="h-44 w-full rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                  <MapContainer center={[11.9416, 79.8083]} zoom={13} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <LocationPicker 
+                      lat={serviceForm.latitude} 
+                      lng={serviceForm.longitude} 
+                      onChange={(lat, lng) => setServiceForm({ ...serviceForm, latitude: lat, longitude: lng })} 
+                    />
+                  </MapContainer>
+                </div>
+                <div className="flex justify-between items-center px-1">
+                   <p className="text-[10px] text-[#67748e] font-medium italic">Click map to set precise coordinates</p>
+                   {serviceForm.latitude && (
+                      <p className="text-[9px] font-bold text-[#82d616] uppercase tracking-wider">{serviceForm.latitude.toFixed(4)}, {serviceForm.longitude.toFixed(4)}</p>
+                   )}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-[#252f40]">Shop Image</label>
+                  <label className="text-sm font-bold text-[#252f40]">{serviceForm.type === 'Acting Driver' ? 'Driver Photo' : 'Shop Image'}</label>
                   <label className="flex flex-col items-center justify-center w-full h-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all overflow-hidden text-center">
                     {serviceForm.image ? (
                         <img src={URL.createObjectURL(serviceForm.image)} className="w-full h-full object-cover" alt="" />
@@ -1859,13 +1913,15 @@ export default function AdminPanel() {
                     fd.append('name', serviceForm.name);
                     fd.append('mobile', serviceForm.mobile);
                     fd.append('location', serviceForm.location);
+                    fd.append('latitude', serviceForm.latitude);
+                    fd.append('longitude', serviceForm.longitude);
                     if(serviceForm.image) fd.append('image', serviceForm.image);
                     if(serviceForm.idProof) fd.append('idProof', serviceForm.idProof);
                     
                     await adminAPI.addService(fd);
                     alert(`${serviceForm.type} added successfully!`);
                     setShowServiceModal(false);
-                    setServiceForm({ name: '', mobile: '', location: '', image: null, idProof: null, type: serviceForm.type });
+                    setServiceForm({ name: '', mobile: '', location: '', image: null, idProof: null, type: serviceForm.type, latitude: 11.9416, longitude: 79.8083 });
                     fetchData();
                   } catch(e) {
                     console.error(e);

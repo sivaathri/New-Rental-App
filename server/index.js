@@ -150,12 +150,17 @@ async function initializeDB() {
             location TEXT,
             image_url VARCHAR(255),
             id_proof_url VARCHAR(255),
+            latitude DECIMAL(10,8),
+            longitude DECIMAL(11,8),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
         try {
             await db.query(`ALTER TABLE services MODIFY COLUMN type ENUM('Puncher', 'Mechanic', 'Acting Driver') NOT NULL`);
         } catch (e) {}
+
+        try { await db.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,8)`); } catch (e) {}
+        try { await db.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS longitude DECIMAL(11,8)`); } catch (e) {}
 
         console.log("Database tables checked/created.");
     } catch (error) {

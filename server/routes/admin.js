@@ -292,14 +292,14 @@ router.get('/services', async (req, res) => {
 
 // Add new service
 router.post('/services', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'idProof', maxCount: 1 }]), async (req, res) => {
-    const { type, name, mobile, location } = req.body;
+    const { type, name, mobile, location, latitude, longitude } = req.body;
     const image_url = req.files['image'] ? `/uploads/${req.files['image'][0].filename}` : null;
     const id_proof_url = req.files['idProof'] ? `/uploads/${req.files['idProof'][0].filename}` : null;
     
     try {
         await db.query(
-            'INSERT INTO services (type, name, mobile, location, image_url, id_proof_url) VALUES (?, ?, ?, ?, ?, ?)',
-            [type, name, mobile, location, image_url, id_proof_url]
+            'INSERT INTO services (type, name, mobile, location, image_url, id_proof_url, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [type, name, mobile, location, image_url, id_proof_url, latitude || null, longitude || null]
         );
         res.json({ message: `${type} added successfully` });
     } catch(err) {
