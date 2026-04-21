@@ -9,8 +9,34 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import axios from 'axios';
 import { API_URL } from '../constants/api';
 import { useAuth } from '../context/AuthContext';
+import * as Location from 'expo-location';
 
 const { width } = Dimensions.get('window');
+
+const LocationText = ({ lat, lng }) => {
+  const [address, setAddress] = useState('Detecting location...');
+
+  useEffect(() => {
+    if (!lat || !lng) return;
+    (async () => {
+      try {
+        let result = await Location.reverseGeocodeAsync({
+          latitude: parseFloat(lat),
+          longitude: parseFloat(lng)
+        });
+        if (result.length > 0) {
+          let item = result[0];
+          const parts = [item.district, item.city, item.region].filter(Boolean);
+          setAddress(parts.join(', ') || 'Address pinned');
+        }
+      } catch (e) {
+        setAddress('Address pinned');
+      }
+    })();
+  }, [lat, lng]);
+
+  return <Text style={styles.infoText} numberOfLines={1}>{address}</Text>;
+};
 
 const ServiceDirectoryScreen = ({ navigation }) => {
   const { user } = useAuth();
@@ -22,7 +48,8 @@ const ServiceDirectoryScreen = ({ navigation }) => {
   const tabs = [
     { id: 'Mechanic', name: 'Mechanic', icon: 'wrench' },
     { id: 'Puncher', name: 'Puncher', icon: 'hammer' },
-    { id: 'Acting Driver', name: 'Drivers', icon: 'account-check' },
+    { id: 'Acting Driver', name: 'Acting Driver', icon: 'account-check' },
+    { id: 'Tour Packages', name: 'Tour', icon: 'map-marker-radius' },
   ];
 
   useEffect(() => {
@@ -97,12 +124,9 @@ const ServiceDirectoryScreen = ({ navigation }) => {
       <View style={styles.cardBody}>
         <View style={styles.infoRow}>
           <Ionicons name="location-outline" size={16} color="#666" />
-          <Text style={styles.infoText} numberOfLines={2}>{item.location}</Text>
+          <LocationText lat={item.latitude} lng={item.longitude} />
         </View>
-        <View style={styles.infoRow}>
-          <Ionicons name="call-outline" size={16} color="#666" />
-          <Text style={styles.infoText}>{item.mobile}</Text>
-        </View>
+        
       </View>
 
       <View style={styles.cardFooter}>

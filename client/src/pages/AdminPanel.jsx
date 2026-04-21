@@ -79,6 +79,7 @@ export default function AdminPanel() {
   const [punchers, setPunchers] = useState([]);
   const [mechanics, setMechanics] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [tours, setTours] = useState([]);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [serviceForm, setServiceForm] = useState({
     name: '',
@@ -1363,13 +1364,38 @@ export default function AdminPanel() {
             );
           })()}
 
-          {(activeTab === 'mechanic' || activeTab === 'puncher' || activeTab === 'driver') && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="flex justify-between items-center bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm">
-                  <div>
-                    <h2 className="text-[24px] font-bold text-[#252f40] capitalize">{activeTab === 'driver' ? 'Acting Driver' : activeTab} Directory</h2>
-                    <p className="text-[14px] text-[#67748e] mt-1">Manage verified local service providers in the ecosystem.</p>
-                  </div>
+          {(activeTab === 'mechanic' || activeTab === 'puncher' || activeTab === 'driver') && (() => {
+            const currentList = activeTab === 'mechanic' ? mechanics : activeTab === 'puncher' ? punchers : drivers;
+            const totalCalls = currentList.reduce((acc, item) => acc + (item.call_clicks || 0), 0);
+            const totalMaps = currentList.reduce((acc, item) => acc + (item.map_clicks || 0), 0);
+            
+            return (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                 <div className="flex justify-between items-center bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm overflow-hidden relative">
+                    <div className="flex items-center gap-6">
+                      <div>
+                        <h2 className="text-[24px] font-bold text-[#252f40] capitalize">{activeTab === 'driver' ? 'Acting Driver' : activeTab} Directory</h2>
+                        <p className="text-[14px] text-[#67748e] mt-1">Manage verified local service providers in the ecosystem.</p>
+                      </div>
+
+                      <div className="flex items-center gap-10 ml-10 pl-10 border-l border-gray-100">
+                         <div className="flex flex-col">
+                           <div className="flex items-center gap-2">
+                             <Phone size={14} className="text-[#82d616]" />
+                             <span className="text-[22px] font-black text-[#252f40]">{totalCalls}</span>
+                           </div>
+                           <span className="text-[10px] font-bold text-[#67748e] uppercase tracking-widest mt-1">Total Calls</span>
+                         </div>
+                         <div className="flex flex-col">
+                           <div className="flex items-center gap-2">
+                             <MapPin size={14} className="text-[#82d616]" />
+                             <span className="text-[22px] font-black text-[#252f40]">{totalMaps}</span>
+                           </div>
+                           <span className="text-[10px] font-bold text-[#67748e] uppercase tracking-widest mt-1">Total Maps</span>
+                         </div>
+                      </div>
+                    </div>
+
                     <button 
                       onClick={() => {
                         const typeMap = { mechanic: 'Mechanic', puncher: 'Puncher', driver: 'Acting Driver' };
@@ -1414,11 +1440,10 @@ export default function AdminPanel() {
                           <div className="flex items-start gap-3 text-[#67748e]">
                              <MapPin size={14} className="mt-1 shrink-0 text-[#82d616]" />
                              <div className="flex flex-col">
-                               <span className="text-[13px] font-medium leading-relaxed">{item.location}</span>
                                {item.latitude && (
                                  <button 
                                    onClick={() => window.open(`https://www.google.com/maps?q=${item.latitude},${item.longitude}`, '_blank')}
-                                   className="text-[10px] text-[#82d616] font-bold mt-1.5 flex items-center gap-1 hover:underline group/map"
+                                   className="text-[10px] text-[#82d616] font-bold flex items-center gap-1 hover:underline group/map"
                                  >
                                    <MapIcon size={12} className="group-hover/map:scale-110 transition-transform" /> 
                                    View Map Location
@@ -1482,7 +1507,8 @@ export default function AdminPanel() {
                   )}
                </div>
             </div>
-          )}
+          );
+        })()}
 
           {activeTab === 'enquiries' && (() => {
             const filteredEnquiries = enquiries.filter(e => {
@@ -1935,17 +1961,6 @@ export default function AdminPanel() {
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-[#252f40]">{serviceForm.type === 'Acting Driver' ? 'Home Town Location' : 'Shop Location / Address'}</label>
-                    <textarea 
-                      className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all font-medium"
-                      placeholder={serviceForm.type === 'Acting Driver' ? "Enter home town city/village name" : "Enter full address of the shop"}
-                      rows="3"
-                      value={serviceForm.location}
-                      onChange={(e) => setServiceForm({ ...serviceForm, location: e.target.value })}
-                    />
-                  </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-[#252f40]">{serviceForm.type === 'Acting Driver' ? 'Driver Photo' : 'Shop Image'}</label>

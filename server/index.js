@@ -156,7 +156,7 @@ async function initializeDB() {
         )`);
 
         try {
-            await db.query(`ALTER TABLE services MODIFY COLUMN type ENUM('Puncher', 'Mechanic', 'Acting Driver') NOT NULL`);
+            await db.query(`ALTER TABLE services MODIFY COLUMN type ENUM('Puncher', 'Mechanic', 'Acting Driver', 'Tour Packages') NOT NULL`);
         } catch (e) {}
 
         try { await db.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,8)`); } catch (e) {}
