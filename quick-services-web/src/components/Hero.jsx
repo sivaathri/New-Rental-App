@@ -4,16 +4,16 @@ import bgImage from '../assets/bg.png';
 
 const Hero = () => {
   return (
-    <section className="relative min-h-[650px] flex items-center pt-[100px] overflow-hidden bg-white">
-      {/* Background Image - Anchored to the right */}
+    <section className="relative min-h-[550px] flex items-center pt-[100px] overflow-hidden bg-white">
+      {/* Background Image - Width decreased further to 75% as requested */}
       <div 
-        className="absolute inset-0 z-0 bg-[length:90%_auto] bg-[position:right_center] bg-no-repeat opacity-100 pointer-events-none"
+        className="absolute inset-0 z-0 bg-[length:65%_auto] bg-[position:right_center] bg-no-repeat opacity-100 pointer-events-none"
         style={{ backgroundImage: `url(${bgImage})` }}
       />
 
-      <div className="container relative z-10 flex flex-col justify-end min-h-[450px] pb-10 items-start">
+      <div className="container relative z-10 flex flex-col justify-end min-h-[400px] pb-10 items-start">
         
-        {/* Search Section - Moved further to the left side */}
+        {/* Search Section */}
         <div className="flex items-center gap-5 w-full max-w-[550px] -ml-30">
           <div className="flex-1 flex items-center bg-white border border-gray-100 rounded-full h-[64px] px-8 shadow-[0_30px_60px_rgba(0,0,0,0.08)]">
             <Search size={28} className="text-gray-500" />
