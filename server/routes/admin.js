@@ -308,4 +308,40 @@ router.post('/services', upload.fields([{ name: 'image', maxCount: 1 }, { name: 
     }
 });
 
+// Update service
+router.put('/services/:id', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'idProof', maxCount: 1 }]), async (req, res) => {
+    const { id } = req.params;
+    const { type, name, mobile, location, latitude, longitude } = req.body;
+    let image_url = req.body.image_url;
+    let id_proof_url = req.body.id_proof_url;
+
+    if (req.files['image']) {
+        image_url = `/uploads/${req.files['image'][0].filename}`;
+    }
+    if (req.files['idProof']) {
+        id_proof_url = `/uploads/${req.files['idProof'][0].filename}`;
+    }
+
+    try {
+        await db.query(
+            'UPDATE services SET type = ?, name = ?, mobile = ?, location = ?, image_url = ?, id_proof_url = ?, latitude = ?, longitude = ? WHERE id = ?',
+            [type, name, mobile, location, image_url, id_proof_url, latitude || null, longitude || null, id]
+        );
+        res.json({ message: `${type} updated successfully` });
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Delete service
+router.delete('/services/:id', async (req, res) => {
+    try {
+        await db.query('DELETE FROM services WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Service deleted successfully' });
+    } catch(err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

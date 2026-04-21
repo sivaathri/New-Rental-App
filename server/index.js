@@ -161,6 +161,8 @@ async function initializeDB() {
 
         try { await db.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,8)`); } catch (e) {}
         try { await db.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS longitude DECIMAL(11,8)`); } catch (e) {}
+        try { await db.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS call_clicks INT DEFAULT 0`); } catch (e) {}
+        try { await db.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS map_clicks INT DEFAULT 0`); } catch (e) {}
 
         console.log("Database tables checked/created.");
     } catch (error) {

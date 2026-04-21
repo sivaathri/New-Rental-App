@@ -79,6 +79,8 @@ export default function AdminPanel() {
     latitude: 11.9416,
     longitude: 79.8083
   });
+  const [isEditingService, setIsEditingService] = useState(false);
+  const [editingServiceId, setEditingServiceId] = useState(null);
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
@@ -147,10 +149,43 @@ export default function AdminPanel() {
       setMechanics(mechRes.data.services);
       const punchRes = await adminAPI.getServices('Puncher');
       setPunchers(punchRes.data.services);
-      const driverRes = await adminAPI.getServices('Acting Driver');
-      setDrivers(driverRes.data.services);
-    } catch(err) { console.error(err); }
-    finally { setLoading(false); }
+      const driversRes = await adminAPI.getServices('Acting Driver');
+      setDrivers(driversRes.data.services);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditService = (service) => {
+    setServiceForm({
+      name: service.name,
+      mobile: service.mobile,
+      location: service.location,
+      latitude: Number(service.latitude) || 11.9416,
+      longitude: Number(service.longitude) || 79.8083,
+      type: service.type,
+      image: null,
+      idProof: null,
+      image_url: service.image_url,
+      id_proof_url: service.id_proof_url
+    });
+    setIsEditingService(true);
+    setEditingServiceId(service.id);
+    setShowServiceModal(true);
+  };
+
+  const handleDeleteService = async (id) => {
+    if (window.confirm('Are you sure you want to delete this service provider?')) {
+      try {
+        await adminAPI.deleteService(id);
+        fetchData();
+      } catch (e) {
+        console.error(e);
+        alert('Failed to delete service provider');
+      }
+    }
   };
 
   const fetchUsers = async () => {
@@ -1312,7 +1347,9 @@ export default function AdminPanel() {
                     <button 
                       onClick={() => {
                         const typeMap = { mechanic: 'Mechanic', puncher: 'Puncher', driver: 'Acting Driver' };
-                        setServiceForm({ ...serviceForm, type: typeMap[activeTab] });
+                        setServiceForm({ name: '', mobile: '', location: '', image: null, idProof: null, type: typeMap[activeTab], latitude: 11.9416, longitude: 79.8083 });
+                        setIsEditingService(false);
+                        setEditingServiceId(null);
                         setShowServiceModal(true);
                       }}
                       className="px-6 py-3 bg-black text-white rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all"
@@ -1365,17 +1402,33 @@ export default function AdminPanel() {
                           </div>
                        </div>
                        
-                       <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-[#67748e] uppercase tracking-widest">{item.id_proof_url ? 'ID Proof Attached' : 'No ID Proof'}</span>
-                          {item.id_proof_url && (
-                             <button 
-                               onClick={() => setSelectedImg(`http://192.168.0.157:5000${item.id_proof_url}`)}
-                               className="text-[11px] font-bold text-black hover:underline uppercase tracking-widest"
-                             >
-                               View Document
-                             </button>
-                          )}
-                       </div>
+                       <div className="mt-6 pt-6 border-t border-gray-50 flex flex-col gap-4">
+                           <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-bold text-[#67748e] uppercase tracking-widest">{item.id_proof_url ? 'ID Proof Attached' : 'No ID Proof'}</span>
+                              {item.id_proof_url && (
+                                 <button 
+                                   onClick={() => setSelectedImg(`http://192.168.0.157:5000${item.id_proof_url}`)}
+                                   className="text-[11px] font-bold text-black hover:underline uppercase tracking-widest"
+                                 >
+                                   View Document
+                                 </button>
+                              )}
+                           </div>
+                           <div className="flex gap-2">
+                              <button 
+                                onClick={() => handleEditService(item)}
+                                className="flex-1 py-3 bg-gray-50 hover:bg-black hover:text-white transition-all rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+                              >
+                                <Edit size={14} /> Edit Profile
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteService(item.id)}
+                                className="py-3 px-4 bg-red-50 hover:bg-red-500 hover:text-white transition-all rounded-xl text-red-500 flex items-center justify-center"
+                              >
+                                <X size={14} />
+                              </button>
+                           </div>
+                        </div>
                     </div>
                   ))}
                   {(activeTab === 'mechanic' ? mechanics : activeTab === 'puncher' ? punchers : drivers).length === 0 && (
@@ -1903,7 +1956,7 @@ export default function AdminPanel() {
                     <div className="flex justify-between items-center px-1">
                        <p className="text-[10px] text-[#67748e] font-medium italic">Click map to set coordinates</p>
                        {serviceForm.latitude && (
-                          <p className="text-[9px] font-bold text-[#82d616] uppercase tracking-wider">{serviceForm.latitude.toFixed(4)}, {serviceForm.longitude.toFixed(4)}</p>
+                          <p className="text-[9px] font-bold text-[#82d616] uppercase tracking-wider">{Number(serviceForm.latitude).toFixed(4)}, {Number(serviceForm.longitude).toFixed(4)}</p>
                        )}
                     </div>
                   </div>
@@ -1926,9 +1979,19 @@ export default function AdminPanel() {
                     if(serviceForm.image) fd.append('image', serviceForm.image);
                     if(serviceForm.idProof) fd.append('idProof', serviceForm.idProof);
                     
-                    await adminAPI.addService(fd);
-                    alert(`${serviceForm.type} added successfully!`);
+                    if (isEditingService) {
+                      if (serviceForm.image_url) fd.append('image_url', serviceForm.image_url);
+                      if (serviceForm.id_proof_url) fd.append('id_proof_url', serviceForm.id_proof_url);
+                      await adminAPI.updateService(editingServiceId, fd);
+                      alert(`${serviceForm.type} updated successfully!`);
+                    } else {
+                      await adminAPI.addService(fd);
+                      alert(`${serviceForm.type} added successfully!`);
+                    }
+                    
                     setShowServiceModal(false);
+                    setIsEditingService(false);
+                    setEditingServiceId(null);
                     setServiceForm({ name: '', mobile: '', location: '', image: null, idProof: null, type: serviceForm.type, latitude: 11.9416, longitude: 79.8083 });
                     fetchData();
                   } catch(e) {

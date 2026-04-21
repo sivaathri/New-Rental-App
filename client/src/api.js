@@ -72,6 +72,10 @@ export const adminAPI = {
   addService: (formData) => api.post('/admin/services', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+  updateService: (id, formData) => api.put(`/admin/services/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deleteService: (id) => api.delete(`/admin/services/${id}`),
 };
 
 export const subscriptionAPI = {
