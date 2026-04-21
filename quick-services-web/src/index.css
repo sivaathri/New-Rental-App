@@ -1,14 +1,20 @@
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 @theme {
-  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-sans: "Outfit", sans-serif;
   --color-primary: #000000;
   --color-secondary: #FFFFFF;
 }
 
 @layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
   body {
     @apply font-sans text-black bg-white antialiased;
   }
@@ -16,11 +22,15 @@
 
 @layer components {
   .container {
-    @apply max-w-[1400px] mx-auto px-10;
+    @apply max-w-[1440px] mx-auto px-10;
   }
 }
 
-/* Recreating the soft shadows and road lines from the design */
-.road-gradient {
-  background: radial-gradient(circle at 50% 100%, #f0f0f0 0%, transparent 70%);
+/* Precise shadows to add depth without boxes */
+.shadow-premium {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-card {
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.03);
 }
