@@ -1176,12 +1176,12 @@ export default function Dashboard() {
                           className={`text-[17px] font-bold ${n.alertType === "Rejected" ? "text-red-600" : "text-[#252f40]"}`}
                         >
                           {n.alertType === "Rejected"
-                            ? `Action Required: ${n.name} Rejected`
+                            ? `Important: ${n.name} Listing Stopped`
                             : `Your ${n.name} is approved! 🚀`}
                         </h4>
                         <p className="text-[13px] text-[#67748e]">
                           {n.alertType === "Rejected"
-                            ? `Reason: ${n.rejection_reason || "Incomplete documentation"}`
+                            ? `Reason from Admin: ${n.rejection_reason || "Administrative review required."}`
                             : "Complete the listing by choosing a subscription plan."}
                         </p>
                       </div>
@@ -1199,7 +1199,7 @@ export default function Dashboard() {
                       }`}
                     >
                       {n.alertType === "Rejected"
-                        ? "Fix & Resubmit"
+                        ? "View Details & Resubmit"
                         : "Pay & List Vehicle"}
                     </button>
                   </div>
@@ -2306,7 +2306,7 @@ export default function Dashboard() {
                     selectedVehicle.rejection_reason && (
                       <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-xl">
                         <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">
-                          Rejection Reason
+                          Admin Note / Reason
                         </p>
                         <p className="text-sm font-medium text-red-600 italic">
                           "{selectedVehicle.rejection_reason}"

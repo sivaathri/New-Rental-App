@@ -1446,17 +1446,17 @@ export default function AdminPanel() {
                            </p>
                         </div>
                         <div className="flex gap-3">
-                           <button 
-                             onClick={() => {
-                               if(window.confirm('Are you sure you want to revoke approval for this vehicle?')) {
-                                 handleAction('vehicles', selectedVehicleForDetails.id, 'Rejected');
-                                 setSelectedVehicleForDetails(null);
-                               }
-                             }}
-                             className="px-8 py-4 bg-red-50 text-red-600 font-bold rounded-2xl text-[14px] hover:bg-red-600 hover:text-white transition-all flex items-center gap-2 shadow-sm"
-                           >
-                             <ShieldCheck size={18} /> Revoke Permit
-                           </button>
+                            <button 
+                              onClick={() => {
+                                if(window.confirm('Are you sure you want to stop listing this vehicle? This will notify the owner.')) {
+                                  handleAction('vehicles', selectedVehicleForDetails.id, 'Rejected');
+                                  setSelectedVehicleForDetails(null);
+                                }
+                              }}
+                              className="px-8 py-4 bg-red-50 text-red-600 font-bold rounded-2xl text-[14px] hover:bg-red-600 hover:text-white transition-all flex items-center gap-2 shadow-sm"
+                            >
+                              <ShieldCheck size={18} /> Stop Listing Assets
+                            </button>
                         </div>
                      </div>
                   </div>
