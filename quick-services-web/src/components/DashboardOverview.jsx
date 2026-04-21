@@ -17,27 +17,26 @@ const features = [
 
 const DashboardOverview = () => {
   return (
-    <div className="max-w-[1440px] mx-auto px-10 mb-20 flex flex-col xl:flex-row gap-8">
-      {/* Categories Wrapper */}
-      <div className="flex-[1.2] bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-card flex items-center justify-between">
+    <div className="container mb-24 flex flex-col xl:flex-row gap-10">
+      <div className="flex-[1.3] bg-white border border-gray-100 rounded-[3rem] p-12 shadow-card flex items-center justify-between">
         {categories.map((cat) => (
-          <button key={cat.id} className="flex flex-col items-center gap-4 group">
+          <button key={cat.id} className="flex flex-col items-center gap-6 group">
             <div className="relative">
-              <div className={`w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all duration-300 ${
+              <div className={`w-[88px] h-[88px] rounded-full flex items-center justify-center transition-all duration-500 border ${
                 cat.active 
-                ? 'bg-black text-white shadow-xl scale-110' 
-                : 'bg-white border border-gray-100 text-gray-300 group-hover:border-black group-hover:text-black'
+                ? 'bg-black border-black text-white shadow-[0_25px_50px_rgba(0,0,0,0.25)] scale-110' 
+                : 'bg-white border-gray-100 text-gray-200 group-hover:border-black group-hover:text-black'
               }`}>
-                <cat.icon size={28} strokeWidth={cat.active ? 2.5 : 2} />
+                <cat.icon size={36} strokeWidth={3} />
               </div>
               {cat.active && (
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-black border-2 border-white rounded-full flex items-center justify-center shadow-lg">
-                  <Check size={12} className="text-white" strokeWidth={5} />
+                <div className="absolute -top-1 -right-1 w-9 h-9 bg-black border-4 border-white rounded-full flex items-center justify-center shadow-2xl">
+                  <Check size={18} className="text-white" strokeWidth={5} />
                 </div>
               )}
             </div>
-            <span className={`text-[12px] font-[800] tracking-tight ${
-              cat.active ? 'text-black font-[900]' : 'text-gray-400 group-hover:text-black transition-colors'
+            <span className={`text-[15px] font-[900] uppercase tracking-[0.1em] ${
+              cat.active ? 'text-black' : 'text-[#ccc] transition-colors group-hover:text-black'
             }`}>
               {cat.label}
             </span>
@@ -45,16 +44,15 @@ const DashboardOverview = () => {
         ))}
       </div>
 
-      {/* Features Wrapper */}
-      <div className="flex-1 bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-card flex items-center justify-between">
+      <div className="flex-1 bg-white border border-gray-100 rounded-[3rem] p-12 shadow-card flex items-center justify-between">
         {features.map((feature) => (
-          <div key={feature.title} className="flex items-center gap-5">
-            <div className="w-[64px] h-[64px] bg-[#FBFBFB] rounded-2xl flex items-center justify-center text-black border border-gray-50">
-              <feature.icon size={28} />
+          <div key={feature.title} className="flex items-center gap-6">
+            <div className="w-[72px] h-[72px] bg-[#FBFBFB] rounded-full flex items-center justify-center text-black border border-gray-50 group-hover:bg-black group-hover:text-white transition-all">
+              <feature.icon size={32} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col">
-              <span className="text-[17px] font-[800] text-black tracking-tight leading-tight">{feature.title}</span>
-              <span className="text-[14px] text-gray-400 font-[500] tracking-tight">{feature.desc}</span>
+              <span className="text-[19px] font-[900] text-black tracking-tighter leading-tight">{feature.title}</span>
+              <span className="text-[15px] text-[#999] font-[600] tracking-tight">{feature.desc}</span>
             </div>
           </div>
         ))}
