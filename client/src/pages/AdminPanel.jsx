@@ -36,6 +36,8 @@ export default function AdminPanel() {
   const [subSearchQuery, setSubSearchQuery] = useState('');
   const [enquirySearchQuery, setEnquirySearchQuery] = useState('');
   const [subTimeFilter, setSubTimeFilter] = useState('all');
+  const [enquiryTimeFilter, setEnquiryTimeFilter] = useState('all');
+  const [approvedTimeFilter, setApprovedTimeFilter] = useState('all');
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [masterFormData, setMasterFormData] = useState({ name: '', image: null });
@@ -410,7 +412,27 @@ export default function AdminPanel() {
                 v.owner_unique_id?.includes(query)
               );
               const matchesType = typeFilter === 'All' || v.type === typeFilter;
-              return matchesSearch && matchesType;
+              
+              let matchesTime = true;
+              if (approvedTimeFilter !== 'all') {
+                const approvedDate = new Date(v.approved_at);
+                const now = new Date();
+                const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                
+                const tempNow = new Date();
+                const startOfWeek = new Date(tempNow.setDate(tempNow.getDate() - tempNow.getDay()));
+                startOfWeek.setHours(0, 0, 0, 0);
+
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+                if (approvedTimeFilter === 'day') matchesTime = approvedDate >= startOfDay;
+                else if (approvedTimeFilter === 'week') matchesTime = approvedDate >= startOfWeek;
+                else if (approvedTimeFilter === 'month') matchesTime = approvedDate >= startOfMonth;
+                else if (approvedTimeFilter === 'year') matchesTime = approvedDate >= startOfYear;
+              }
+
+              return matchesSearch && matchesType && matchesTime;
             });
 
             const vehicleTypes = ['All', 'Bike', 'Car', 'Van', 'Bus', 'Mini Bus', 'Mini Van', 'TempoTraveller', 'Traveller'];
@@ -447,19 +469,42 @@ export default function AdminPanel() {
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-2 pb-2">
-                  {vehicleTypes.map(t => (
-                    <button 
-                      key={t}
-                      onClick={() => setTypeFilter(t)}
-                      className={`px-5 py-2 rounded-xl text-[12px] font-bold transition-all border ${
-                        typeFilter === t 
-                        ? 'bg-black text-white border-black shadow-md' 
-                        : 'bg-white text-[#67748e] border-gray-100 hover:border-black hover:text-black'
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
+                  <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-xl border border-gray-100 mr-2 mb-2">
+                    {[
+                      { label: 'Today', value: 'day' },
+                      { label: 'Week', value: 'week' },
+                      { label: 'Month', value: 'month' },
+                      { label: 'Year', value: 'year' },
+                      { label: 'All', value: 'all' },
+                    ].map((f) => (
+                      <button
+                        key={f.value}
+                        onClick={() => setApprovedTimeFilter(f.value)}
+                        className={`px-4 py-2 text-[11px] font-bold rounded-lg transition-all ${
+                          approvedTimeFilter === f.value 
+                            ? 'bg-black text-white shadow-lg' 
+                            : 'text-[#67748e] hover:bg-gray-100'
+                        }`}
+                      >
+                        {f.label.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 pb-2">
+                    {vehicleTypes.map(t => (
+                      <button 
+                        key={t}
+                        onClick={() => setTypeFilter(t)}
+                        className={`px-5 py-2 rounded-xl text-[12px] font-bold transition-all border ${
+                          typeFilter === t 
+                          ? 'bg-black text-white border-black shadow-md' 
+                          : 'bg-white text-[#67748e] border-gray-100 hover:border-black hover:text-black'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -913,7 +958,11 @@ export default function AdminPanel() {
               const subDate = new Date(s.start_date);
               const now = new Date();
               const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-              const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+              
+              const tempNow = new Date();
+              const startOfWeek = new Date(tempNow.setDate(tempNow.getDate() - tempNow.getDay()));
+              startOfWeek.setHours(0, 0, 0, 0);
+
               const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
               const startOfYear = new Date(now.getFullYear(), 0, 1);
 
@@ -1155,7 +1204,7 @@ export default function AdminPanel() {
           {activeTab === 'enquiries' && (() => {
             const filteredEnquiries = enquiries.filter(e => {
               const query = enquirySearchQuery.toLowerCase();
-              return (
+              const matchesSearch = (
                 e.user_name?.toLowerCase().includes(query) ||
                 e.user_mobile?.includes(query) ||
                 e.vehicle_name?.toLowerCase().includes(query) ||
@@ -1163,24 +1212,82 @@ export default function AdminPanel() {
                 e.owner_name?.toLowerCase().includes(query) ||
                 e.owner_unique_id?.toString().includes(query)
               );
+
+              if (!matchesSearch) return false;
+              if (enquiryTimeFilter === 'all') return true;
+
+              const enquiryDate = new Date(e.created_at);
+              const now = new Date();
+              const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              
+              // Correctly calculate starts without mutating 'now'
+              const tempNow = new Date();
+              const startOfWeek = new Date(tempNow.setDate(tempNow.getDate() - tempNow.getDay()));
+              startOfWeek.setHours(0, 0, 0, 0);
+
+              const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+              const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+              if (enquiryTimeFilter === 'day') return enquiryDate >= startOfDay;
+              if (enquiryTimeFilter === 'week') return enquiryDate >= startOfWeek;
+              if (enquiryTimeFilter === 'month') return enquiryDate >= startOfMonth;
+              if (enquiryTimeFilter === 'year') return enquiryDate >= startOfYear;
+              
+              return true;
             });
 
             return (
               <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden pb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="p-8 border-b border-gray-50 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                  <div>
-                    <h3 className="text-[20px] font-bold text-[#252f40]">Enquiry List (Call Logs)</h3>
-                    <p className="text-[14px] text-[#67748e] mt-1">Track which users are contacting owners for specific vehicles.</p>
+                <div className="p-8 border-b border-gray-50 mb-6">
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+                    <div>
+                      <h3 className="text-[20px] font-bold text-[#252f40]">Enquiry List (Call Logs)</h3>
+                      <p className="text-[14px] text-[#67748e] mt-1">Track which users are contacting owners for specific vehicles.</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="bg-[#e6f0ff] px-6 py-3 rounded-2xl border border-blue-100">
+                        <p className="text-[10px] font-bold text-[#2167f2] uppercase tracking-wider mb-0.5">Total Enquiries</p>
+                        <p className="text-[18px] font-bold text-[#252f40]">{enquiries.length}</p>
+                      </div>
+                      <div className="bg-[#e6ffed] px-6 py-3 rounded-2xl border border-green-100">
+                        <p className="text-[10px] font-bold text-[#82d616] uppercase tracking-wider mb-0.5">Filtered Count</p>
+                        <p className="text-[18px] font-bold text-[#252f40]">{filteredEnquiries.length}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="relative group min-w-[320px] w-full md:w-auto">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#67748e] group-focus-within:text-black transition-colors" size={18} />
-                    <input 
-                      type="text" 
-                      placeholder="Search user, vehicle or owner..." 
-                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all text-sm font-medium"
-                      value={enquirySearchQuery}
-                      onChange={(e) => setEnquirySearchQuery(e.target.value)}
-                    />
+
+                  <div className="flex flex-col md:flex-row items-center gap-4">
+                    <div className="relative flex-1 group w-full">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#67748e] group-focus-within:text-black transition-colors" size={18} />
+                      <input 
+                        type="text" 
+                        placeholder="Search user, vehicle or owner..." 
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all text-sm font-medium"
+                        value={enquirySearchQuery}
+                        onChange={(e) => setEnquirySearchQuery(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-xl border border-gray-100 w-full md:w-auto">
+                      {[
+                        { label: 'Today', value: 'day' },
+                        { label: 'Week', value: 'week' },
+                        { label: 'Month', value: 'month' },
+                        { label: 'Year', value: 'year' },
+                        { label: 'All', value: 'all' },
+                      ].map((f) => (
+                        <button
+                          key={f.value}
+                          onClick={() => setEnquiryTimeFilter(f.value)}
+                          className={`px-4 py-2 text-[11px] font-bold rounded-lg transition-all ${
+                            enquiryTimeFilter === f.value 
+                              ? 'bg-black text-white shadow-lg' 
+                              : 'text-[#67748e] hover:bg-gray-100'
+                          }`}
+                        >
+                          {f.label.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
