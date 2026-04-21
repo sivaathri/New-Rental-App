@@ -6,7 +6,8 @@ import {
   BarChart as BarChartIcon, Users, Car, CheckSquare, MessageSquare, 
   Star, Tag, Landmark, Settings, LogOut, LayoutDashboard, 
   Smartphone, Search, Bell, UserCheck, TrendingUp, Clock, 
-  FileText, CreditCard, ChevronDown, ChevronUp, MoreHorizontal, Check, X, ShieldCheck, Zap, Edit, Plus
+  FileText, CreditCard, ChevronDown, ChevronUp, MoreHorizontal, Check, X, ShieldCheck, Zap, Edit, Plus,
+  Wrench, Hammer, MapPin, Phone
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
@@ -44,6 +45,17 @@ export default function AdminPanel() {
   const [uploadingMaster, setUploadingMaster] = useState(false);
   const [editingMaster, setEditingMaster] = useState(null);
   const [selectedImg, setSelectedImg] = useState(null);
+  const [punchers, setPunchers] = useState([]);
+  const [mechanics, setMechanics] = useState([]);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [serviceForm, setServiceForm] = useState({
+    name: '',
+    mobile: '',
+    location: '',
+    image: null,
+    idProof: null,
+    type: 'Puncher'
+  });
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
@@ -266,6 +278,8 @@ export default function AdminPanel() {
             active={activeTab === 'enquiries'} 
             onClick={() => handleTabClick('enquiries')} 
           />
+          <SidebarItem icon={<Wrench/>} label="Mechanic" active={activeTab === 'mechanic'} onClick={() => setActiveTab('mechanic')} />
+          <SidebarItem icon={<Hammer/>} label="Puncher" active={activeTab === 'puncher'} onClick={() => setActiveTab('puncher')} />
           <SidebarItem icon={<Star/>} label="Reviews" active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')} />
         </div>
 
@@ -1257,6 +1271,76 @@ export default function AdminPanel() {
             );
           })()}
 
+          {(activeTab === 'mechanic' || activeTab === 'puncher') && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <div className="flex justify-between items-center bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm">
+                  <div>
+                    <h2 className="text-[24px] font-bold text-[#252f40] capitalize">{activeTab} Directory</h2>
+                    <p className="text-[14px] text-[#67748e] mt-1">Manage verified local service providers in the ecosystem.</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setServiceForm({ ...serviceForm, type: activeTab === 'mechanic' ? 'Mechanic' : 'Puncher' });
+                      setShowServiceModal(true);
+                    }}
+                    className="px-6 py-3 bg-black text-white rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all"
+                  >
+                    <Plus size={18} /> Add {activeTab === 'mechanic' ? 'Mechanic' : 'Puncher'}
+                  </button>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {(activeTab === 'mechanic' ? mechanics : punchers).map((item) => (
+                    <div key={item.id} className="bg-white rounded-[24px] border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all">
+                       <div className="flex items-center gap-4 mb-6">
+                          <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden shrink-0">
+                             {item.image ? (
+                               <img src={URL.createObjectURL(item.image)} className="w-full h-full object-cover" alt="" />
+                             ) : (
+                               <div className="w-full h-full flex items-center justify-center text-gray-200">
+                                 {activeTab === 'mechanic' ? <Wrench size={32} /> : <Hammer size={32} />}
+                               </div>
+                             )}
+                          </div>
+                          <div>
+                             <h4 className="font-bold text-[#252f40] text-[17px]">{item.name}</h4>
+                             <div className="flex items-center gap-1.5 text-[#82d616] bg-[#82d616]/5 px-2 py-0.5 rounded-full w-fit mt-1">
+                                <ShieldCheck size={10} />
+                                <span className="text-[10px] font-bold uppercase">Verified Provider</span>
+                             </div>
+                          </div>
+                       </div>
+                       
+                       <div className="space-y-3 pt-4 border-t border-gray-50">
+                          <div className="flex items-center gap-3 text-[#67748e]">
+                             <Phone size={14} className="text-[#82d616]" />
+                             <span className="text-[13px] font-medium">{item.mobile}</span>
+                          </div>
+                          <div className="flex items-start gap-3 text-[#67748e]">
+                             <MapPin size={14} className="mt-1 shrink-0 text-[#82d616]" />
+                             <span className="text-[13px] font-medium leading-relaxed">{item.location}</span>
+                          </div>
+                       </div>
+                       
+                       <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-[#67748e] uppercase tracking-widest">ID Proof Attached</span>
+                          <button className="text-[11px] font-bold text-black hover:underline uppercase tracking-widest">View Document</button>
+                       </div>
+                    </div>
+                  ))}
+                  {(activeTab === 'mechanic' ? mechanics : punchers).length === 0 && (
+                    <div className="col-span-full py-20 bg-white rounded-[32px] border border-dashed border-gray-100 flex flex-col items-center justify-center text-gray-400">
+                       <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mb-4">
+                          {activeTab === 'mechanic' ? <Wrench size={40} className="opacity-20" /> : <Hammer size={40} className="opacity-20" />}
+                       </div>
+                       <p className="font-bold text-gray-500">No {activeTab} profiles added yet.</p>
+                       <p className="text-sm font-medium opacity-60">Expand your ecosystem by adding verified service nodes.</p>
+                    </div>
+                  )}
+               </div>
+            </div>
+          )}
+
           {activeTab === 'enquiries' && (() => {
             const filteredEnquiries = enquiries.filter(e => {
               const query = enquirySearchQuery.toLowerCase();
@@ -1665,6 +1749,101 @@ export default function AdminPanel() {
                 className="py-3 px-6 bg-[#ea0606] text-white rounded-lg font-bold text-[13px] shadow-sm hover:opacity-90 transition-all"
               >
                 Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showServiceModal && (
+        <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto" onClick={() => setShowServiceModal(false)}>
+          <div className="bg-white w-full max-w-xl rounded-[32px] overflow-hidden shadow-2xl relative my-8 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="p-8 border-b border-gray-50 flex items-center justify-between">
+              <div>
+                 <h2 className="text-2xl font-bold text-[#252f40]">Add New {serviceForm.type}</h2>
+                 <p className="text-sm text-[#67748e]">Create a verified service node in the ecosystem.</p>
+              </div>
+              <button onClick={() => setShowServiceModal(false)} className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 hover:bg-black hover:text-white transition-all">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-[#252f40]">Full Name</label>
+                <input 
+                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all font-medium"
+                  placeholder="e.g. Rahul Sharma"
+                  value={serviceForm.name}
+                  onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-[#252f40]">Mobile Number</label>
+                <input 
+                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all font-medium"
+                  placeholder="+91 00000 00000"
+                  value={serviceForm.mobile}
+                  onChange={(e) => setServiceForm({ ...serviceForm, mobile: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-[#252f40]">Shop Location / Address</label>
+                <textarea 
+                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all font-medium"
+                  placeholder="Enter full address of the shop"
+                  rows="3"
+                  value={serviceForm.location}
+                  onChange={(e) => setServiceForm({ ...serviceForm, location: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-[#252f40]">Shop Image</label>
+                  <label className="flex flex-col items-center justify-center w-full h-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all overflow-hidden text-center">
+                    {serviceForm.image ? (
+                        <img src={URL.createObjectURL(serviceForm.image)} className="w-full h-full object-cover" alt="" />
+                    ) : (
+                        <div className="flex flex-col items-center text-gray-400">
+                          <Plus size={24} />
+                          <span className="text-[10px] font-bold mt-2 uppercase tracking-widest">Profile Image</span>
+                        </div>
+                    )}
+                    <input type="file" className="hidden" onChange={(e) => setServiceForm({ ...serviceForm, image: e.target.files[0] })} />
+                  </label>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-[#252f40]">ID Proof Copy</label>
+                  <label className="flex flex-col items-center justify-center w-full h-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all overflow-hidden text-center">
+                    {serviceForm.idProof ? (
+                        <img src={URL.createObjectURL(serviceForm.idProof)} className="w-full h-full object-cover" alt="" />
+                    ) : (
+                        <div className="flex flex-col items-center text-gray-400">
+                          <FileText size={24} />
+                          <span className="text-[10px] font-bold mt-2 uppercase tracking-widest">ID Document</span>
+                        </div>
+                    )}
+                    <input type="file" className="hidden" onChange={(e) => setServiceForm({ ...serviceForm, idProof: e.target.files[0] })} />
+                  </label>
+                </div>
+              </div>
+
+              <button 
+                className="w-full py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:shadow-2xl hover:translate-y-[-2px] transition-all group mt-6"
+                onClick={() => {
+                  if(!serviceForm.name || !serviceForm.mobile) return alert('Please enter at least Name and Mobile Number');
+                  const newEntry = { ...serviceForm, id: Date.now() };
+                  if (serviceForm.type === 'Puncher') setPunchers([newEntry, ...punchers]);
+                  else setMechanics([newEntry, ...mechanics]);
+                  setShowServiceModal(false);
+                  setServiceForm({ name: '', mobile: '', location: '', image: null, idProof: null, type: serviceForm.type });
+                }}
+              >
+                Register {serviceForm.type} Profile <ShieldCheck size={18} className="text-[#82d616]" />
               </button>
             </div>
           </div>
