@@ -144,7 +144,7 @@ async function initializeDB() {
 
         await db.query(`CREATE TABLE IF NOT EXISTS services (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            type ENUM('Puncher', 'Mechanic') NOT NULL,
+            type ENUM('Puncher', 'Mechanic', 'Acting Driver') NOT NULL,
             name VARCHAR(255) NOT NULL,
             mobile VARCHAR(15) NOT NULL,
             location TEXT,
@@ -152,6 +152,10 @@ async function initializeDB() {
             id_proof_url VARCHAR(255),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
+
+        try {
+            await db.query(`ALTER TABLE services MODIFY COLUMN type ENUM('Puncher', 'Mechanic', 'Acting Driver') NOT NULL`);
+        } catch (e) {}
 
         console.log("Database tables checked/created.");
     } catch (error) {

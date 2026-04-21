@@ -47,6 +47,7 @@ export default function AdminPanel() {
   const [selectedImg, setSelectedImg] = useState(null);
   const [punchers, setPunchers] = useState([]);
   const [mechanics, setMechanics] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [serviceForm, setServiceForm] = useState({
     name: '',
@@ -124,6 +125,8 @@ export default function AdminPanel() {
       setMechanics(mechRes.data.services);
       const punchRes = await adminAPI.getServices('Puncher');
       setPunchers(punchRes.data.services);
+      const driverRes = await adminAPI.getServices('Acting Driver');
+      setDrivers(driverRes.data.services);
     } catch(err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -285,6 +288,7 @@ export default function AdminPanel() {
           />
           <SidebarItem icon={<Wrench/>} label="Mechanic" active={activeTab === 'mechanic'} onClick={() => setActiveTab('mechanic')} />
           <SidebarItem icon={<Hammer/>} label="Puncher" active={activeTab === 'puncher'} onClick={() => setActiveTab('puncher')} />
+          <SidebarItem icon={<UserCheck/>} label="Acting Driver" active={activeTab === 'driver'} onClick={() => setActiveTab('driver')} />
           <SidebarItem icon={<Star/>} label="Reviews" active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')} />
         </div>
 
