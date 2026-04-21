@@ -3,46 +3,43 @@ import { Bell, User, Car } from 'lucide-react';
 
 const Navbar = () => {
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-      <div className="container flex items-center justify-between h-20">
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="bg-black text-white p-2 rounded-xl">
-            <Car size={24} />
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
+      <div className="max-w-[1440px] mx-auto flex items-center justify-between h-[80px] px-10">
+        {/* Logo Section */}
+        <div className="flex items-center gap-3">
+          <div className="w-[45px] h-[45px] bg-black rounded-full flex items-center justify-center shadow-lg">
+            <Car size={26} className="text-white" fill="white" strokeWidth={1.5} />
           </div>
-          <div className="flex flex-col leading-none">
-            <span className="text-xl font-extrabold tracking-tight">Quick</span>
-            <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-gray-500">Services</span>
+          <div className="flex flex-col">
+            <span className="text-[26px] font-[700] tracking-tight leading-[0.8] mb-1">Quick</span>
+            <span className="text-[10px] uppercase font-[700] tracking-[0.5em] text-[#999] leading-none">Services</span>
           </div>
         </div>
 
         {/* Navigation Links */}
-        <div className="hidden md:flex items-center gap-8">
-          {['Home', 'Vehicles', 'Bookings', 'About Us', 'Contact'].map((link) => (
-            <a
-              key={link}
-              href={`#${link.toLowerCase().replace(' ', '-')}`}
-              className={`text-sm font-semibold transition-colors ${
-                link === 'Home' ? 'text-black border-b-2 border-black pb-1' : 'text-gray-500 hover:text-black'
-              }`}
-            >
-              {link}
-            </a>
-          ))}
+        <div className="flex items-center gap-12">
+          <div className="relative flex flex-col items-center">
+            <a href="#" className="text-[15px] font-[800] text-black">Home</a>
+            <div className="absolute -bottom-[28px] w-full h-[2.5px] bg-black"></div>
+          </div>
+          <a href="#" className="text-[15px] font-[500] text-[#999] hover:text-black transition-colors">Vehicles</a>
+          <a href="#" className="text-[15px] font-[500] text-[#999] hover:text-black transition-colors">Bookings</a>
+          <a href="#" className="text-[15px] font-[500] text-[#999] hover:text-black transition-colors">About Us</a>
+          <a href="#" className="text-[15px] font-[500] text-[#999] hover:text-black transition-colors">Contact</a>
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-4">
-          <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-all">
-            <Bell size={24} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+        <div className="flex items-center gap-6">
+          <button className="relative w-[48px] h-[48px] border border-gray-100 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors">
+            <Bell size={24} className="text-[#333]" />
+            <span className="absolute top-[10px] right-[10px] w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
           
-          <button className="flex items-center gap-3 pl-4 pr-1 py-1 bg-white border border-gray-200 rounded-full hover:shadow-md transition-all group">
-            <span className="text-sm font-semibold text-gray-700">Login / Signup</span>
-            <div className="bg-gray-100 p-2 rounded-full group-hover:bg-black group-hover:text-white transition-colors">
-              <User size={20} />
+          <button className="flex items-center gap-3 pl-1 pr-6 py-1 bg-white border border-gray-200 rounded-full hover:shadow-sm transition-all group">
+            <div className="w-[44px] h-[44px] bg-black text-white rounded-full flex items-center justify-center">
+              <User size={24} fill="white" />
             </div>
+            <span className="text-[15px] font-[600] text-[#333]">Login / Signup</span>
           </button>
         </div>
       </div>

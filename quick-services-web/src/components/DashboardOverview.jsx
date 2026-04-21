@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Bike, Car, Bus, Truck, ShieldCheck, Banknote, Headset } from 'lucide-react';
+import { LayoutGrid, Bike, Car, Bus, Truck, ShieldCheck, Banknote, Headset, Check } from 'lucide-react';
 
 const categories = [
   { id: 'all', label: 'All', icon: LayoutGrid, active: true },
@@ -17,28 +17,27 @@ const features = [
 
 const DashboardOverview = () => {
   return (
-    <div className="container py-12 grid grid-cols-1 xl:grid-cols-2 gap-8">
-      {/* Categories */}
-      <div className="bg-white rounded-[2.5rem] p-8 shadow-card border border-white flex flex-wrap items-center justify-between gap-6">
+    <div className="max-w-[1440px] mx-auto px-10 mb-20 flex flex-col xl:flex-row gap-8">
+      {/* Categories Wrapper */}
+      <div className="flex-[1.2] bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-card flex items-center justify-between">
         {categories.map((cat) => (
-          <button
-            key={cat.id}
-            className="flex flex-col items-center gap-3 group px-4 py-2 transition-all"
-          >
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
-              cat.active 
-              ? 'bg-black text-white shadow-lg' 
-              : 'bg-gray-50 text-gray-400 group-hover:bg-gray-100 group-hover:text-black'
-            }`}>
-              <cat.icon size={28} />
+          <button key={cat.id} className="flex flex-col items-center gap-4 group">
+            <div className="relative">
+              <div className={`w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all duration-300 ${
+                cat.active 
+                ? 'bg-black text-white shadow-xl scale-110' 
+                : 'bg-white border border-gray-100 text-gray-300 group-hover:border-black group-hover:text-black'
+              }`}>
+                <cat.icon size={28} strokeWidth={cat.active ? 2.5 : 2} />
+              </div>
               {cat.active && (
-                <div className="absolute top-0 right-0 w-4 h-4 bg-black rounded-full border-2 border-white flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-black border-2 border-white rounded-full flex items-center justify-center shadow-lg">
+                  <Check size={12} className="text-white" strokeWidth={5} />
                 </div>
               )}
             </div>
-            <span className={`text-xs font-bold uppercase tracking-wider ${
-              cat.active ? 'text-black' : 'text-gray-400'
+            <span className={`text-[12px] font-[800] tracking-tight ${
+              cat.active ? 'text-black font-[900]' : 'text-gray-400 group-hover:text-black transition-colors'
             }`}>
               {cat.label}
             </span>
@@ -46,16 +45,16 @@ const DashboardOverview = () => {
         ))}
       </div>
 
-      {/* Features */}
-      <div className="bg-white rounded-[2.5rem] p-8 shadow-card border border-white flex items-center justify-between gap-8 overflow-x-auto">
+      {/* Features Wrapper */}
+      <div className="flex-1 bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-card flex items-center justify-between">
         {features.map((feature) => (
-          <div key={feature.title} className="flex items-center gap-4 min-w-fit">
-            <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-black">
-              <feature.icon size={24} />
+          <div key={feature.title} className="flex items-center gap-5">
+            <div className="w-[64px] h-[64px] bg-[#FBFBFB] rounded-2xl flex items-center justify-center text-black border border-gray-50">
+              <feature.icon size={28} />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-black">{feature.title}</span>
-              <span className="text-[11px] text-gray-400 font-medium">{feature.desc}</span>
+              <span className="text-[17px] font-[800] text-black tracking-tight leading-tight">{feature.title}</span>
+              <span className="text-[14px] text-gray-400 font-[500] tracking-tight">{feature.desc}</span>
             </div>
           </div>
         ))}

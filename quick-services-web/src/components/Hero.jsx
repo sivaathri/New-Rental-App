@@ -4,90 +4,62 @@ import { motion } from 'framer-motion';
 
 const Hero = () => {
   return (
-    <section className="relative pt-32 pb-20 overflow-hidden bg-[#FBFBFB]">
-      {/* Background Cityscape Pattern (Simplified SVG) */}
-      <div className="absolute inset-x-0 bottom-0 pointer-events-none opacity-[0.03] flex items-end justify-center">
-        <svg width="1400" height="400" viewBox="0 0 1400 400" fill="currentColor">
-          <rect x="100" y="200" width="80" height="200" />
-          <rect x="200" y="150" width="100" height="250" />
-          <rect x="320" y="250" width="60" height="150" />
-          <rect x="400" y="100" width="120" height="300" />
-          <rect x="550" y="220" width="90" height="180" />
-          <rect x="660" y="180" width="80" height="220" />
-          <rect x="760" y="120" width="110" height="280" />
-          <rect x="890" y="240" width="70" height="160" />
-          <rect x="980" y="160" width="130" height="240" />
-          <rect x="1150" y="210" width="90" height="190" />
+    <section className="relative pt-[180px] pb-32 overflow-hidden bg-white">
+      {/* Background Cityscape - Very subtle line art style */}
+      <div className="absolute top-[280px] inset-x-0 opacity-[0.05] pointer-events-none">
+        <svg viewBox="0 0 1440 320" className="w-full fill-current text-gray-400">
+          <path d="M0,192L48,197.3C96,203,192,213,288,202.7C384,192,480,160,576,149.3C672,139,768,149,864,181.3C960,213,1056,267,1152,266.7C1248,267,1344,213,1392,186.7L1440,160V320H1392C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320H0Z" />
         </svg>
       </div>
 
-      <div className="container relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        {/* Left Content */}
-        <motion.div 
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
-          className="flex flex-col gap-8"
-        >
-          <div className="space-y-4">
-            <h1 className="text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1]">
-              Drive. Ride. <br />
-              <span className="text-gray-900/40">Explore.</span>
+      <div className="max-w-[1440px] mx-auto px-10 relative z-10 flex flex-col lg:flex-row items-center gap-16">
+        {/* Left Side */}
+        <div className="flex-1 space-y-12">
+          <div className="space-y-6">
+            <h1 className="text-[96px] font-[800] tracking-tight leading-[1] text-black">
+              Drive. Ride.<br />
+              Explore.
             </h1>
-            <p className="text-xl text-gray-500 max-w-md font-medium leading-relaxed">
+            <p className="text-[20px] font-[400] text-[#999] max-w-sm leading-relaxed">
               Find the perfect vehicle for your journey, anytime, anywhere.
             </p>
           </div>
 
-          <div className="relative max-w-lg group">
-            <div className="flex items-center bg-white rounded-full p-2 shadow-premium border border-gray-100 transition-all focus-within:ring-2 focus-within:ring-black/5">
-              <div className="pl-4 text-gray-400">
-                <Search size={24} />
-              </div>
+          <div className="max-w-xl">
+            <div className="bg-white border border-gray-100 rounded-full p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.06)] flex items-center group">
+              <Search size={24} className="ml-5 text-gray-300" />
               <input 
                 type="text" 
                 placeholder="Search your dream car..."
-                className="flex-1 bg-transparent px-4 py-3 outline-none text-lg font-medium"
+                className="w-full bg-transparent px-5 py-4 text-[18px] font-[500] text-[#333] outline-none placeholder:text-gray-300"
               />
-              <button className="bg-black text-white p-4 rounded-full transition-transform hover:scale-105 active:scale-95">
-                <SlidersHorizontal size={20} />
+              <button className="w-[56px] h-[56px] bg-black text-white flex items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95">
+                <SlidersHorizontal size={22} />
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Right Content - Images */}
-        <div className="relative h-[400px] lg:h-[500px]">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.2 }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full flex items-center justify-center"
-          >
+        {/* Right Side - Vehicle Visuals */}
+        <div className="flex-1 relative w-full h-[500px]">
+          <div className="absolute inset-0 flex items-center justify-center">
             {/* White Car */}
             <motion.img 
+              initial={{ x: 50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 1 }}
               src="/assets/car-white.png" 
-              alt="White Car" 
-              className="w-[70%] lg:w-[80%] drop-shadow-2xl z-20"
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              onError={(e) => {
-                e.target.src = 'https://raw.githubusercontent.com/shadcn/ui/main/apps/www/public/og.png'; // Fallback
-              }}
+              className="w-[85%] z-10 drop-shadow-[0_20px_60px_rgba(0,0,0,0.1)] translate-x-12"
             />
-            
             {/* White Scooter */}
             <motion.img 
+              initial={{ x: -50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 1, delay: 0.2 }}
               src="/assets/scooter-white.png" 
-              alt="White Scooter" 
-              className="absolute -right-4 bottom-10 w-[40%] lg:w-[50%] drop-shadow-xl z-30"
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
+              className="absolute left-0 bottom-[10%] w-[55%] z-20 drop-shadow-[0_20px_60px_rgba(0,0,0,0.1)] -translate-x-12 translate-y-12"
             />
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>
