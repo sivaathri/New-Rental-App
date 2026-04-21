@@ -11,10 +11,10 @@ function App() {
       <Navbar />
       <main>
         <Hero />
-        <DashboardOverview />
-        <VehicleGrid />
+        {/* <DashboardOverview /> */}
+        {/* <VehicleGrid /> */}
       </main>
-      <ProcessSteps />
+      {/* <ProcessSteps /> */}
     </div>
   );
 }
