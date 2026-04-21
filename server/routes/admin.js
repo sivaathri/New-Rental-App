@@ -278,4 +278,34 @@ router.get('/reviews', authMiddleware, async (req, res) => {
     }
 });
 
+// Get services by type
+router.get('/services', async (req, res) => {
+    const { type } = req.query;
+    try {
+        const [services] = await db.query('SELECT * FROM services WHERE type = ? ORDER BY id DESC', [type]);
+        res.json({ services });
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Add new service
+router.post('/services', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'idProof', maxCount: 1 }]), async (req, res) => {
+    const { type, name, mobile, location } = req.body;
+    const image_url = req.files['image'] ? `/uploads/${req.files['image'][0].filename}` : null;
+    const id_proof_url = req.files['idProof'] ? `/uploads/${req.files['idProof'][0].filename}` : null;
+    
+    try {
+        await db.query(
+            'INSERT INTO services (type, name, mobile, location, image_url, id_proof_url) VALUES (?, ?, ?, ?, ?, ?)',
+            [type, name, mobile, location, image_url, id_proof_url]
+        );
+        res.json({ message: `${type} added successfully` });
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

@@ -142,6 +142,17 @@ async function initializeDB() {
             FOREIGN KEY (user_id) REFERENCES users(id)
         )`);
 
+        await db.query(`CREATE TABLE IF NOT EXISTS services (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            type ENUM('Puncher', 'Mechanic') NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            mobile VARCHAR(15) NOT NULL,
+            location TEXT,
+            image_url VARCHAR(255),
+            id_proof_url VARCHAR(255),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`);
+
         console.log("Database tables checked/created.");
     } catch (error) {
         console.error("Failed to initialize database (is MySQL running and DB created?): ", error.message);

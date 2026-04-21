@@ -68,6 +68,10 @@ export const adminAPI = {
   getSubscriptions: () => api.get('/admin/subscriptions'),
   getEnquiries: () => api.get('/admin/enquiries'),
   getReviews: () => api.get('/admin/reviews'),
+  getServices: (type) => api.get(`/admin/services?type=${type}`),
+  addService: (formData) => api.post('/admin/services', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export const subscriptionAPI = {

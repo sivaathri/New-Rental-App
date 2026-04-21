@@ -119,6 +119,11 @@ export default function AdminPanel() {
       setEnquiries(enquiryRes.data.enquiries);
       const reviewRes = await adminAPI.getReviews();
       setAllReviews(reviewRes.data.reviews);
+
+      const mechRes = await adminAPI.getServices('Mechanic');
+      setMechanics(mechRes.data.services);
+      const punchRes = await adminAPI.getServices('Puncher');
+      setPunchers(punchRes.data.services);
     } catch(err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -1294,8 +1299,8 @@ export default function AdminPanel() {
                     <div key={item.id} className="bg-white rounded-[24px] border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all">
                        <div className="flex items-center gap-4 mb-6">
                           <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden shrink-0">
-                             {item.image ? (
-                               <img src={URL.createObjectURL(item.image)} className="w-full h-full object-cover" alt="" />
+                             {item.image_url ? (
+                               <img src={`http://192.168.0.157:5000${item.image_url}`} className="w-full h-full object-cover" alt="" />
                              ) : (
                                <div className="w-full h-full flex items-center justify-center text-gray-200">
                                  {activeTab === 'mechanic' ? <Wrench size={32} /> : <Hammer size={32} />}
@@ -1323,8 +1328,15 @@ export default function AdminPanel() {
                        </div>
                        
                        <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-[#67748e] uppercase tracking-widest">ID Proof Attached</span>
-                          <button className="text-[11px] font-bold text-black hover:underline uppercase tracking-widest">View Document</button>
+                          <span className="text-[11px] font-bold text-[#67748e] uppercase tracking-widest">{item.id_proof_url ? 'ID Proof Attached' : 'No ID Proof'}</span>
+                          {item.id_proof_url && (
+                             <button 
+                               onClick={() => setSelectedImg(`http://192.168.0.157:5000${item.id_proof_url}`)}
+                               className="text-[11px] font-bold text-black hover:underline uppercase tracking-widest"
+                             >
+                               View Document
+                             </button>
+                          )}
                        </div>
                     </div>
                   ))}
@@ -1834,13 +1846,29 @@ export default function AdminPanel() {
 
               <button 
                 className="w-full py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:shadow-2xl hover:translate-y-[-2px] transition-all group mt-6"
-                onClick={() => {
+                onClick={async () => {
                   if(!serviceForm.name || !serviceForm.mobile) return alert('Please enter at least Name and Mobile Number');
-                  const newEntry = { ...serviceForm, id: Date.now() };
-                  if (serviceForm.type === 'Puncher') setPunchers([newEntry, ...punchers]);
-                  else setMechanics([newEntry, ...mechanics]);
-                  setShowServiceModal(false);
-                  setServiceForm({ name: '', mobile: '', location: '', image: null, idProof: null, type: serviceForm.type });
+                  setLoading(true);
+                  try {
+                    const fd = new FormData();
+                    fd.append('type', serviceForm.type);
+                    fd.append('name', serviceForm.name);
+                    fd.append('mobile', serviceForm.mobile);
+                    fd.append('location', serviceForm.location);
+                    if(serviceForm.image) fd.append('image', serviceForm.image);
+                    if(serviceForm.idProof) fd.append('idProof', serviceForm.idProof);
+                    
+                    await adminAPI.addService(fd);
+                    alert(`${serviceForm.type} added successfully!`);
+                    setShowServiceModal(false);
+                    setServiceForm({ name: '', mobile: '', location: '', image: null, idProof: null, type: serviceForm.type });
+                    fetchData();
+                  } catch(e) {
+                    console.error(e);
+                    alert('Failed to save details to database. Check server connection.');
+                  } finally {
+                    setLoading(false);
+                  }
                 }}
               >
                 Register {serviceForm.type} Profile <ShieldCheck size={18} className="text-[#82d616]" />
