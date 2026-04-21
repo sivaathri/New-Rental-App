@@ -1,8 +1,14 @@
+@import "tailwindcss";
+
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@theme {
+  --font-sans: "Outfit", sans-serif;
+  --color-primary: #000000;
+  --color-secondary: #FFFFFF;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
 
 @layer base {
   body {
