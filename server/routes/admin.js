@@ -347,7 +347,7 @@ router.delete('/services/:id', async (req, res) => {
 // Track service clicks (Public accessibility)
 router.post('/services/:id/track', async (req, res) => {
     const { id } = req.params;
-    const { action } = req.body; // 'call' or 'map'
+    const { action, user_id } = req.body; // 'call' or 'map'
     
     try {
         if (action === 'call') {
@@ -355,9 +355,31 @@ router.post('/services/:id/track', async (req, res) => {
         } else if (action === 'map') {
             await db.query('UPDATE services SET map_clicks = map_clicks + 1 WHERE id = ?', [id]);
         }
+
+        if (user_id) {
+            console.log(`Tracking Lead: Service ${id}, User ${user_id}, Action ${action}`);
+            await db.query('INSERT INTO service_enquiries (service_id, user_id, action) VALUES (?, ?, ?)', [id, user_id, action]);
+        }
         res.json({ success: true });
     } catch(err) {
         console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Get detailed enquiries for a service
+router.get('/services/:id/enquiries', async (req, res) => {
+    try {
+        const [enquiries] = await db.query(`
+            SELECT se.*, u.full_name as user_name, u.mobile_number as user_mobile
+            FROM service_enquiries se
+            JOIN users u ON se.user_id = u.id
+            WHERE se.service_id = ?
+            ORDER BY se.created_at DESC
+        `, [req.params.id]);
+        res.json({ enquiries });
+    } catch(err) {
+        console.error("Error fetching enquiries:", err);
         res.status(500).json({ error: 'Server error' });
     }
 });

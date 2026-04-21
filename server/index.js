@@ -164,6 +164,16 @@ async function initializeDB() {
         try { await db.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS call_clicks INT DEFAULT 0`); } catch (e) {}
         try { await db.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS map_clicks INT DEFAULT 0`); } catch (e) {}
 
+        await db.query(`CREATE TABLE IF NOT EXISTS service_enquiries (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            service_id INT,
+            user_id INT,
+            action ENUM('call', 'map') NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`);
+
         console.log("Database tables checked/created.");
     } catch (error) {
         console.error("Failed to initialize database (is MySQL running and DB created?): ", error.message);

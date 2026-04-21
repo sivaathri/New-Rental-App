@@ -8,10 +8,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import axios from 'axios';
 import { API_URL } from '../constants/api';
+import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
 const ServiceDirectoryScreen = ({ navigation }) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('Mechanic'); // Mechanic, Puncher, Acting Driver
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,10 @@ const ServiceDirectoryScreen = ({ navigation }) => {
 
   const trackClick = async (id, action) => {
     try {
-      await axios.post(`${API_URL}/admin/services/${id}/track`, { action });
+      await axios.post(`${API_URL}/admin/services/${id}/track`, { 
+        action,
+        user_id: user?.id 
+      });
     } catch (e) {
       console.log('Tracking failed:', e);
     }

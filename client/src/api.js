@@ -76,6 +76,7 @@ export const adminAPI = {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
   deleteService: (id) => api.delete(`/admin/services/${id}`),
+  getServiceEnquiries: (id) => api.get(`/admin/services/${id}/enquiries`),
 };
 
 export const subscriptionAPI = {

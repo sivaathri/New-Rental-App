@@ -7,7 +7,7 @@ import {
   Star, Tag, Landmark, Settings, LogOut, LayoutDashboard, 
   Smartphone, Search, Bell, UserCheck, TrendingUp, Clock, 
   FileText, CreditCard, ChevronDown, ChevronUp, MoreHorizontal, Check, X, ShieldCheck, Zap, Edit, Plus,
-  Wrench, Hammer, MapPin, Phone, Map
+  Wrench, Hammer, MapPin, Phone, Map as MapIcon, History as HistoryIcon
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
@@ -41,6 +41,17 @@ export default function AdminPanel() {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
+    });
+  };
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
     });
   };
   const [verifications, setVerifications] = useState([]);
@@ -81,6 +92,9 @@ export default function AdminPanel() {
   });
   const [isEditingService, setIsEditingService] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState(null);
+  const [showEnquiriesModal, setShowEnquiriesModal] = useState(false);
+  const [serviceEnquiries, setServiceEnquiries] = useState([]);
+  const [selectedServiceName, setSelectedServiceName] = useState('');
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
@@ -185,6 +199,18 @@ export default function AdminPanel() {
         console.error(e);
         alert('Failed to delete service provider');
       }
+    }
+  };
+
+  const handleViewEnquiries = async (service) => {
+    try {
+      const res = await adminAPI.getServiceEnquiries(service.id);
+      setServiceEnquiries(res.data.enquiries);
+      setSelectedServiceName(service.name);
+      setShowEnquiriesModal(true);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to fetch lead details');
     }
   };
 
@@ -1394,7 +1420,7 @@ export default function AdminPanel() {
                                    onClick={() => window.open(`https://www.google.com/maps?q=${item.latitude},${item.longitude}`, '_blank')}
                                    className="text-[10px] text-[#82d616] font-bold mt-1.5 flex items-center gap-1 hover:underline group/map"
                                  >
-                                   <Map size={12} className="group-hover/map:scale-110 transition-transform" /> 
+                                   <MapIcon size={12} className="group-hover/map:scale-110 transition-transform" /> 
                                    View Map Location
                                  </button>
                                )}
@@ -1402,16 +1428,19 @@ export default function AdminPanel() {
                           </div>
                        </div>
 
-                       <div className="flex items-center gap-4 py-3 bg-gray-50/50 rounded-2xl px-4 mt-4">
-                          <div className="flex flex-col items-center flex-1 border-r border-gray-200">
-                             <span className="text-[14px] font-bold text-black">{item.call_clicks || 0}</span>
-                             <span className="text-[9px] font-bold text-[#67748e] uppercase tracking-wider">Call Inquiries</span>
-                          </div>
-                          <div className="flex flex-col items-center flex-1">
-                             <span className="text-[14px] font-bold text-black">{item.map_clicks || 0}</span>
-                             <span className="text-[9px] font-bold text-[#67748e] uppercase tracking-wider">Map Views</span>
-                          </div>
-                       </div>
+                        <div 
+                          onClick={() => handleViewEnquiries(item)}
+                          className="flex items-center gap-4 py-3 bg-gray-50/50 hover:bg-gray-100 transition-all rounded-2xl px-4 mt-4 cursor-pointer group/stats"
+                        >
+                           <div className="flex flex-col items-center flex-1 border-r border-gray-200">
+                              <span className="text-[14px] font-bold text-black group-hover/stats:scale-110 transition-transform">{item.call_clicks || 0}</span>
+                              <span className="text-[9px] font-bold text-[#67748e] uppercase tracking-wider">Call Inquiries</span>
+                           </div>
+                           <div className="flex flex-col items-center flex-1">
+                              <span className="text-[14px] font-bold text-black group-hover/stats:scale-110 transition-transform">{item.map_clicks || 0}</span>
+                              <span className="text-[9px] font-bold text-[#67748e] uppercase tracking-wider">Map Views</span>
+                           </div>
+                        </div>
                        
                        <div className="mt-6 pt-6 border-t border-gray-50 flex flex-col gap-4">
                            <div className="flex items-center justify-between">
@@ -2020,11 +2049,69 @@ export default function AdminPanel() {
         </div>
       )}
 
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        body { background-color: #f8f9fa; }
-      `}</style>
+      {showEnquiriesModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] w-full max-w-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col h-[80vh]">
+            <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+               <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-black border border-gray-100">
+                     <Users size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-[20px] font-bold text-[#252f40]">{selectedServiceName}</h3>
+                    <p className="text-[12px] text-[#67748e] font-bold uppercase tracking-widest mt-0.5">Interaction History</p>
+                  </div>
+               </div>
+               <button onClick={() => setShowEnquiriesModal(false)} className="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 hover:text-black hover:bg-gray-100 transition-all flex items-center justify-center">
+                 <X size={20} />
+               </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
+               {serviceEnquiries.length > 0 ? (
+                 <div className="grid grid-cols-1 gap-4">
+                    {serviceEnquiries.map((enq) => (
+                      <div key={enq.id} className="flex items-center justify-between p-5 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-md transition-all group">
+                         <div className="flex items-center gap-4">
+                            <div className="w-11 h-11 bg-white rounded-xl shadow-sm border border-gray-50 flex items-center justify-center text-black font-bold text-sm uppercase">
+                               {enq.user_name?.charAt(0)}
+                            </div>
+                            <div>
+                               <p className="font-bold text-[#252f40] text-[15px]">{enq.user_name}</p>
+                               <p className="text-[12px] font-medium text-[#67748e] flex items-center gap-2 mt-0.5">
+                                 <Phone size={11} className="text-[#82d616]" /> {enq.user_mobile}
+                               </p>
+                            </div>
+                         </div>
+                         <div className="text-right">
+                            <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider mb-1.5 inline-block ${enq.action === 'call' ? 'bg-black text-white' : 'bg-[#82d616] text-white'}`}>
+                               {enq.action === 'call' ? 'Called Now' : 'Map Viewed'}
+                            </div>
+                            <p className="text-[11px] font-medium text-gray-400">{formatDateTime(enq.created_at)}</p>
+                         </div>
+                      </div>
+                    ))}
+                 </div>
+               ) : (
+                 <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                    <HistoryIcon size={48} className="opacity-20 mb-4" />
+                    <p className="font-bold">No interaction history found yet.</p>
+                    <p className="text-sm opacity-60">Leads will appear here as users interact on the app.</p>
+                 </div>
+               )}
+            </div>
+            
+            <div className="p-8 bg-gray-50 border-t border-gray-100 shrink-0">
+               <button 
+                 onClick={() => setShowEnquiriesModal(false)}
+                 className="w-full py-4 bg-white border border-gray-100 rounded-2xl font-bold text-[14px] hover:bg-gray-100 transition-all shadow-sm"
+               >
+                 Close Detail View
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
