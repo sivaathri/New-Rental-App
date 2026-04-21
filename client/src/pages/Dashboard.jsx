@@ -63,7 +63,7 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "http://192.168.0.157:5000/api";
 
 function LocationPickerModal({ onSelect, onClose }) {
   const [position, setPosition] = useState([11.9416, 79.8083]);
@@ -1146,7 +1146,7 @@ export default function Dashboard() {
                         <div className="w-16 h-16 rounded-2xl bg-gray-50 overflow-hidden border border-gray-100">
                           {n.vehicle_images?.[0] ? (
                             <img
-                              src={`http://localhost:5000${n.vehicle_images[0].media_url}`}
+                              src={`http://192.168.0.157:5000${n.vehicle_images[0].media_url}`}
                               className="w-full h-full object-cover"
                               alt=""
                             />
@@ -1287,7 +1287,7 @@ export default function Dashboard() {
                       <div className="w-20 h-20 rounded-2xl bg-gray-50 overflow-hidden border border-gray-100">
                         {v.vehicle_images?.[0] ? (
                           <img
-                            src={`http://localhost:5000${v.vehicle_images[0].media_url}`}
+                            src={`http://192.168.0.157:5000${v.vehicle_images[0].media_url}`}
                             className="w-full h-full object-cover"
                             alt=""
                           />
@@ -1625,7 +1625,7 @@ export default function Dashboard() {
                     </div>
                     {userProfile?.verification?.aadhar_card_url ? (
                       <a
-                        href={`http://localhost:5000${userProfile.verification.aadhar_card_url}`}
+                        href={`http://192.168.0.157:5000${userProfile.verification.aadhar_card_url}`}
                         target="_blank"
                         rel="noreferrer"
                         className="px-5 py-2 bg-black text-white rounded-xl text-[12px] font-bold shadow-md hover:scale-105 transition-all"
@@ -1655,7 +1655,7 @@ export default function Dashboard() {
                     </div>
                     {userProfile?.verification?.driving_license_url ? (
                       <a
-                        href={`http://localhost:5000${userProfile.verification.driving_license_url}`}
+                        href={`http://192.168.0.157:5000${userProfile.verification.driving_license_url}`}
                         target="_blank"
                         rel="noreferrer"
                         className="px-5 py-2 bg-black text-white rounded-xl text-[12px] font-bold shadow-md hover:scale-105 transition-all"
@@ -1696,7 +1696,7 @@ export default function Dashboard() {
                       </div>
                       {v.rc_book_url ? (
                         <a
-                          href={`http://localhost:5000${v.rc_book_url}`}
+                          href={`http://192.168.0.157:5000${v.rc_book_url}`}
                           target="_blank"
                           rel="noreferrer"
                           className="px-5 py-2 bg-black text-white rounded-xl text-[12px] font-bold shadow-md hover:scale-105 transition-all"
@@ -2248,7 +2248,7 @@ export default function Dashboard() {
               </button>
               {selectedVehicle.vehicle_images?.length > 0 ? (
                 <img
-                  src={`http://localhost:5000${selectedVehicle.vehicle_images[0].media_url}`}
+                  src={`http://192.168.0.157:5000${selectedVehicle.vehicle_images[0].media_url}`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
                   alt=""
                 />
@@ -2344,7 +2344,7 @@ export default function Dashboard() {
                   </div>
                   {selectedVehicle.rc_book_url && (
                     <a
-                      href={`http://localhost:5000${selectedVehicle.rc_book_url}`}
+                      href={`http://192.168.0.157:5000${selectedVehicle.rc_book_url}`}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[11px] font-bold border border-blue-100 hover:bg-blue-100 transition-all"
@@ -2376,7 +2376,7 @@ export default function Dashboard() {
                         className="w-[180px] h-[120px] rounded-2xl border border-gray-100 relative overflow-hidden shrink-0 group"
                       >
                         <img
-                          src={`http://localhost:5000${img.media_url}`}
+                          src={`http://192.168.0.157:5000${img.media_url}`}
                           className="w-full h-full object-cover"
                           alt=""
                         />
@@ -2939,7 +2939,7 @@ function VehicleCard({ vehicle, onDetails }) {
         </div>
         {vehicle.vehicle_images?.[0] ? (
           <img
-            src={`http://localhost:5000${vehicle.vehicle_images[0].media_url}`}
+            src={`http://192.168.0.157:5000${vehicle.vehicle_images[0].media_url}`}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
             alt=""
           />

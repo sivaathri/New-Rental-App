@@ -350,10 +350,10 @@ export default function AdminPanel() {
                           {v.media && v.media.map((img, idx) => (
                             <div key={idx} className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200">
                               <img 
-                                src={`http://localhost:5000${img.media_url}`} 
+                                src={`http://192.168.0.157:5000${img.media_url}`} 
                                 alt="Vehicle" 
                                 className="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform"
-                                onClick={() => setSelectedImg(`http://localhost:5000${img.media_url}`)}
+                                onClick={() => setSelectedImg(`http://192.168.0.157:5000${img.media_url}`)}
                               />
                             </div>
                           ))}
@@ -367,19 +367,19 @@ export default function AdminPanel() {
                             label="RC Book" 
                             url={v.rc_book_url} 
                             icon={<FileText size={16}/>} 
-                            onClick={() => setSelectedImg(`http://localhost:5000${v.rc_book_url}`)} 
+                            onClick={() => setSelectedImg(`http://192.168.0.157:5000${v.rc_book_url}`)} 
                           />
                           <DocThumbnail 
                             label="Driving License" 
                             url={v.driving_license_url} 
                             icon={<ShieldCheck size={16}/>} 
-                            onClick={() => setSelectedImg(`http://localhost:5000${v.driving_license_url}`)} 
+                            onClick={() => setSelectedImg(`http://192.168.0.157:5000${v.driving_license_url}`)} 
                           />
                           <DocThumbnail 
                             label="Aadhar Card" 
                             url={v.aadhar_card_url} 
                             icon={<UserCheck size={16}/>} 
-                            onClick={() => setSelectedImg(`http://localhost:5000${v.aadhar_card_url}`)} 
+                            onClick={() => setSelectedImg(`http://192.168.0.157:5000${v.aadhar_card_url}`)} 
                           />
                         </div>
                       </div>
@@ -437,7 +437,7 @@ export default function AdminPanel() {
                         <div className="flex -space-x-3">
                           {approvedVehicles.slice(0, 5).map((v, i) => (
                             <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 overflow-hidden shadow-sm">
-                              <img src={v.media?.[0] ? `http://localhost:5000${v.media[0].media_url}` : `https://ui-avatars.com/api/?name=${v.name}&background=random`} className="w-full h-full object-cover" />
+                              <img src={v.media?.[0] ? `http://192.168.0.157:5000${v.media[0].media_url}` : `https://ui-avatars.com/api/?name=${v.name}&background=random`} className="w-full h-full object-cover" />
                             </div>
                           ))}
                         </div>
@@ -467,7 +467,7 @@ export default function AdminPanel() {
                     <div key={v.id} className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden group hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300">
                         <div className="relative h-56 overflow-hidden">
                           <img 
-                              src={v.media?.[0] ? `http://localhost:5000${v.media[0].media_url}` : 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80'} 
+                              src={v.media?.[0] ? `http://192.168.0.157:5000${v.media[0].media_url}` : 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80'} 
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                           />
                           <div className="absolute top-4 right-4 flex flex-col gap-2">
@@ -581,7 +581,7 @@ export default function AdminPanel() {
                          <td className="p-4">
                            <div className="flex items-center gap-4">
                              <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden border border-gray-100 cursor-pointer" onClick={() => v.media?.[0] && setSelectedImg(v.media[0].media_url)}>
-                                {v.media?.[0] ? <img src={`http://localhost:5000${v.media[0].media_url}`} className="w-full h-full object-cover" /> : <Car className="m-auto mt-3 text-gray-300"/>}
+                                {v.media?.[0] ? <img src={`http://192.168.0.157:5000${v.media[0].media_url}`} className="w-full h-full object-cover" /> : <Car className="m-auto mt-3 text-gray-300"/>}
                              </div>
                              <div>
                                <p className="text-[14px] font-bold text-[#252f40]">{v.name}</p>
@@ -723,7 +723,7 @@ export default function AdminPanel() {
                                  </div>
                                ) : editingMaster && masterVehicles.find(v => v.id === editingMaster)?.image_url ? (
                                  <div className="h-40 w-full rounded-xl overflow-hidden border border-gray-100 relative">
-                                    <img src={`http://localhost:5000${masterVehicles.find(v => v.id === editingMaster).image_url}`} className="w-full h-full object-cover opacity-50" />
+                                    <img src={`http://192.168.0.157:5000${masterVehicles.find(v => v.id === editingMaster).image_url}`} className="w-full h-full object-cover opacity-50" />
                                     <div className="absolute inset-0 flex items-center justify-center">
                                        <span className="text-[10px] font-bold text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm">CHANGE CURRENT GRAPHIC</span>
                                     </div>
@@ -752,7 +752,7 @@ export default function AdminPanel() {
                              #{index + 1}
                            </div>
                            <div className="w-20 h-20 rounded-2xl bg-gray-50 overflow-hidden border border-gray-100 shrink-0">
-                              <img src={`http://localhost:5000${mv.image_url}`} className="w-full h-full object-cover" />
+                              <img src={`http://192.168.0.157:5000${mv.image_url}`} className="w-full h-full object-cover" />
                            </div>
                            <div className="flex-1">
                               <h4 className="text-[18px] font-bold text-[#252f40]">{mv.name}</h4>
@@ -852,7 +852,7 @@ export default function AdminPanel() {
                             <div className="flex gap-2">
                               {u.aadhar_card_url && (
                                 <button 
-                                  onClick={() => setSelectedImg(`http://localhost:5000${u.aadhar_card_url}`)}
+                                  onClick={() => setSelectedImg(`http://192.168.0.157:5000${u.aadhar_card_url}`)}
                                   className="w-8 h-8 flex items-center justify-center bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                                   title="Aadhar Card"
                                 >
@@ -861,7 +861,7 @@ export default function AdminPanel() {
                               )}
                               {u.driving_license_url && (
                                 <button 
-                                  onClick={() => setSelectedImg(`http://localhost:5000${u.driving_license_url}`)}
+                                  onClick={() => setSelectedImg(`http://192.168.0.157:5000${u.driving_license_url}`)}
                                   className="w-8 h-8 flex items-center justify-center bg-green-50 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all shadow-sm"
                                   title="Driving License"
                                 >
@@ -1266,7 +1266,7 @@ export default function AdminPanel() {
                {/* Hero Section in Modal */}
                <div className="relative h-72 shrink-0">
                   <img 
-                    src={selectedVehicleForDetails.media?.[0] ? `http://localhost:5000${selectedVehicleForDetails.media[0].media_url}` : 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80'} 
+                    src={selectedVehicleForDetails.media?.[0] ? `http://192.168.0.157:5000${selectedVehicleForDetails.media[0].media_url}` : 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80'} 
                     className="w-full h-full object-cover" 
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
@@ -1361,9 +1361,9 @@ export default function AdminPanel() {
                                 <div 
                                   key={idx} 
                                   className="aspect-square rounded-2xl overflow-hidden border border-gray-100 cursor-pointer hover:border-[#82d616] transition-all group relative"
-                                  onClick={() => setSelectedImg(`http://localhost:5000${img.media_url}`)}
+                                  onClick={() => setSelectedImg(`http://192.168.0.157:5000${img.media_url}`)}
                                 >
-                                  <img src={`http://localhost:5000${img.media_url}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                  <img src={`http://192.168.0.157:5000${img.media_url}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                      <Search size={20} className="text-white" />
                                   </div>
@@ -1433,9 +1433,9 @@ export default function AdminPanel() {
                         <div className="space-y-6">
                            <h3 className="text-[15px] font-bold text-[#252f40] uppercase tracking-wider">Compliance Documents</h3>
                            <div className="grid grid-cols-3 gap-3">
-                              <DocThumbnail label="RC Book" url={selectedVehicleForDetails.rc_book_url} icon={<FileText size={16}/>} onClick={() => setSelectedImg(`http://localhost:5000${selectedVehicleForDetails.rc_book_url}`)} />
-                              <DocThumbnail label="License" url={selectedVehicleForDetails.driving_license_url} icon={<ShieldCheck size={16}/>} onClick={() => setSelectedImg(`http://localhost:5000${selectedVehicleForDetails.driving_license_url}`)} />
-                              <DocThumbnail label="Aadhar" url={selectedVehicleForDetails.aadhar_card_url} icon={<UserCheck size={16}/>} onClick={() => setSelectedImg(`http://localhost:5000${selectedVehicleForDetails.aadhar_card_url}`)} />
+                              <DocThumbnail label="RC Book" url={selectedVehicleForDetails.rc_book_url} icon={<FileText size={16}/>} onClick={() => setSelectedImg(`http://192.168.0.157:5000${selectedVehicleForDetails.rc_book_url}`)} />
+                              <DocThumbnail label="License" url={selectedVehicleForDetails.driving_license_url} icon={<ShieldCheck size={16}/>} onClick={() => setSelectedImg(`http://192.168.0.157:5000${selectedVehicleForDetails.driving_license_url}`)} />
+                              <DocThumbnail label="Aadhar" url={selectedVehicleForDetails.aadhar_card_url} icon={<UserCheck size={16}/>} onClick={() => setSelectedImg(`http://192.168.0.157:5000${selectedVehicleForDetails.aadhar_card_url}`)} />
                            </div>
                         </div>
                      </div>
@@ -1536,7 +1536,7 @@ function DocThumbnail({ label, url, icon, onClick }) {
         className="group relative w-20 h-24 rounded-lg overflow-hidden border border-gray-200 cursor-pointer shadow-sm hover:shadow-md transition-all"
       >
         <img 
-          src={`http://localhost:5000${url}`} 
+          src={`http://192.168.0.157:5000${url}`} 
           alt={label} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
         />

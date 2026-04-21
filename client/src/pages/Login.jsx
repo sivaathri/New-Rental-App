@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Smartphone, Lock } from 'lucide-react';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'http://192.168.0.157:5000/api';
 
 export default function Login() {
   const [mobile, setMobile] = useState('');
