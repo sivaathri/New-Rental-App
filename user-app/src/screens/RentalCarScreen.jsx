@@ -206,6 +206,24 @@ const RentalCarScreen = ({ navigation }) => {
   });
   const [mapPickedAddress, setMapPickedAddress] = useState('');
   const geocodeTimeout = useRef(null);
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: -15,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   useEffect(() => {
     fetchBrands();
@@ -637,9 +655,26 @@ const RentalCarScreen = ({ navigation }) => {
             />
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#000']} />}
       />
+
+      <Animated.View 
+        style={[
+          styles.fabContainer, 
+          { transform: [{ translateY: bounceAnim }] }
+        ]}
+      >
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('ServiceDirectory')}
+          activeOpacity={0.9}
+        >
+          <View style={styles.fabCircle}>
+             <Text style={styles.fabText}>Quick</Text>
+             <Text style={styles.fabSubText}>SERVICES</Text>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
 
       <RentalFilterModal
         visible={filterModalVisible}
@@ -708,6 +743,42 @@ const styles = StyleSheet.create({
   priceContainer: { flexDirection: 'row', alignItems: 'baseline' },
   priceText: { fontSize: 13, fontWeight: 'bold', color: '#111' },
   dayText: { fontSize: 11, color: '#888' },
+  fabContainer: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    zIndex: 999,
+  },
+  fabCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#000', // Black
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 12,
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  fabText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  fabSubText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#fff',
+    letterSpacing: 1.5,
+    opacity: 0.9,
+    marginTop: -2,
+  },
 });
 
 export default RentalCarScreen;
