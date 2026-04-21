@@ -49,7 +49,27 @@ export default function AdminPanel() {
   const [typeFilter, setTypeFilter] = useState('All');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [lastSeenCounts, setLastSeenCounts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('adminLastSeenCounts');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
   const navigate = useNavigate();
+
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    const newSeen = { ...lastSeenCounts };
+    if (tab === 'requests') newSeen[tab] = vehicles.length;
+    else if (tab === 'approved') newSeen[tab] = approvedVehicles.length;
+    else if (tab === 'rejected') newSeen[tab] = rejectedVehicles.length;
+    else if (tab === 'list-vehicles') newSeen[tab] = masterVehicles.length;
+    else if (tab === 'subscriptions') newSeen[tab] = subscriptions.length;
+    else if (tab === 'enquiries') newSeen[tab] = enquiries.length;
+    
+    setLastSeenCounts(newSeen);
+    localStorage.setItem('adminLastSeenCounts', JSON.stringify(newSeen));
+  };
 
   useEffect(() => { 
     const token = localStorage.getItem('token');
@@ -203,13 +223,49 @@ export default function AdminPanel() {
 
         <div className="space-y-1 overflow-y-auto no-scrollbar flex-1 pb-10">
           <SidebarItem icon={<LayoutDashboard/>} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <SidebarItem icon={<CheckSquare/>} label="New Requests" count={vehicles.length} active={activeTab === 'requests'} onClick={() => setActiveTab('requests')} />
-          <SidebarItem icon={<CheckSquare/>} label="Approved" count={approvedVehicles.length} active={activeTab === 'approved'} onClick={() => setActiveTab('approved')} />
-          <SidebarItem icon={<X/>} label="Rejected" count={rejectedVehicles.length} active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')} />
-          <SidebarItem icon={<Car/>} label="List Vehicles" count={masterVehicles.length} active={activeTab === 'list-vehicles'} onClick={() => setActiveTab('list-vehicles')} />
+          <SidebarItem 
+            icon={<CheckSquare/>} 
+            label="New Requests" 
+            count={vehicles.length > (lastSeenCounts['requests'] || 0) && activeTab !== 'requests' ? vehicles.length : 0} 
+            active={activeTab === 'requests'} 
+            onClick={() => handleTabClick('requests')} 
+          />
+          <SidebarItem 
+            icon={<CheckSquare/>} 
+            label="Approved" 
+            count={approvedVehicles.length > (lastSeenCounts['approved'] || 0) && activeTab !== 'approved' ? approvedVehicles.length : 0} 
+            active={activeTab === 'approved'} 
+            onClick={() => handleTabClick('approved')} 
+          />
+          <SidebarItem 
+            icon={<X/>} 
+            label="Rejected" 
+            count={rejectedVehicles.length > (lastSeenCounts['rejected'] || 0) && activeTab !== 'rejected' ? rejectedVehicles.length : 0} 
+            active={activeTab === 'rejected'} 
+            onClick={() => handleTabClick('rejected')} 
+          />
+          <SidebarItem 
+            icon={<Car/>} 
+            label="List Vehicles" 
+            count={masterVehicles.length > (lastSeenCounts['list-vehicles'] || 0) && activeTab !== 'list-vehicles' ? masterVehicles.length : 0} 
+            active={activeTab === 'list-vehicles'} 
+            onClick={() => handleTabClick('list-vehicles')} 
+          />
           <SidebarItem icon={<Users/>} label="All Vehicle Owners" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
-          <SidebarItem icon={<CreditCard/>} label="Subscriptions" count={subscriptions.length} active={activeTab === 'subscriptions'} onClick={() => setActiveTab('subscriptions')} />
-          <SidebarItem icon={<MessageSquare/>} label="Enquiry List" count={enquiries.length} active={activeTab === 'enquiries'} onClick={() => setActiveTab('enquiries')} />
+          <SidebarItem 
+            icon={<CreditCard/>} 
+            label="Subscriptions" 
+            count={subscriptions.length > (lastSeenCounts['subscriptions'] || 0) && activeTab !== 'subscriptions' ? subscriptions.length : 0} 
+            active={activeTab === 'subscriptions'} 
+            onClick={() => handleTabClick('subscriptions')} 
+          />
+          <SidebarItem 
+            icon={<MessageSquare/>} 
+            label="Enquiry List" 
+            count={enquiries.length > (lastSeenCounts['enquiries'] || 0) && activeTab !== 'enquiries' ? enquiries.length : 0} 
+            active={activeTab === 'enquiries'} 
+            onClick={() => handleTabClick('enquiries')} 
+          />
           <SidebarItem icon={<Star/>} label="Reviews" active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')} />
         </div>
 
