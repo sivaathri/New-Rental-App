@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, Image, 
   TouchableOpacity, ActivityIndicator, Linking, 
-  Dimensions, TextInput 
+  Dimensions, TextInput, ScrollView 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
@@ -40,8 +40,9 @@ const LocationText = ({ lat, lng }) => {
 
 const ServiceDirectoryScreen = ({ navigation }) => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('Mechanic'); // Mechanic, Puncher, Acting Driver
+  const [activeTab, setActiveTab] = useState('Mechanic'); 
   const [services, setServices] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -49,18 +50,55 @@ const ServiceDirectoryScreen = ({ navigation }) => {
     { id: 'Mechanic', name: 'Mechanic', icon: 'wrench' },
     { id: 'Puncher', name: 'Puncher', icon: 'hammer' },
     { id: 'Acting Driver', name: 'Acting Driver', icon: 'account-check' },
-    { id: 'Tour Packages', name: 'Tour', icon: 'map-marker-radius' },
+    { id: 'Tour Packages', name: 'Tour Packages', icon: 'map-marker-radius' },
   ];
 
   useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        let loc = await Location.getCurrentPositionAsync({});
+        setUserLocation(loc.coords);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
     fetchServices();
-  }, [activeTab]);
+  }, [activeTab, userLocation]);
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
 
   const fetchServices = async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_URL}/admin/services?type=${activeTab}`);
-      setServices(response.data.services);
+      let data = response.data.services;
+      
+      if (userLocation) {
+        data = data.map(item => ({
+          ...item,
+          distance: calculateDistance(
+            userLocation.latitude, 
+            userLocation.longitude, 
+            parseFloat(item.latitude), 
+            parseFloat(item.longitude)
+          )
+        })).sort((a, b) => a.distance - b.distance);
+      }
+      
+      setServices(data);
     } catch (error) {
       console.log('Error fetching services:', error);
     } finally {
@@ -119,6 +157,11 @@ const ServiceDirectoryScreen = ({ navigation }) => {
             <Text style={styles.verifiedText}>VERIFIED</Text>
           </View>
         </View>
+        {item.distance && item.distance !== Infinity && (
+          <View style={styles.distanceBadge}>
+            <Text style={styles.distanceText}>{item.distance.toFixed(1)} km</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.cardBody}>
@@ -126,17 +169,27 @@ const ServiceDirectoryScreen = ({ navigation }) => {
           <Ionicons name="location-outline" size={16} color="#666" />
           <LocationText lat={item.latitude} lng={item.longitude} />
         </View>
-        
+       
       </View>
 
       <View style={styles.cardFooter}>
-        <TouchableOpacity 
-          style={[styles.actionBtn, styles.callBtn]}
-          onPress={() => handleCall(item.id, item.mobile)}
-        >
-          <Ionicons name="call" size={18} color="white" />
-          <Text style={styles.callBtnText}>Call Now</Text>
-        </TouchableOpacity>
+        {item.distance < 20 ? (
+          <TouchableOpacity 
+            style={[styles.actionBtn, styles.callBtn]} 
+            onPress={() => handleCall(item.id, item.mobile)}
+          >
+            <Ionicons name="call" size={20} color="white" />
+            <Text style={styles.callBtnText}>Call Now</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.actionBtn, styles.callBtn]} 
+            onPress={() => handleCall(item.id, item.mobile)}
+          >
+            <Ionicons name="call" size={20} color="white" />
+            <Text style={styles.callBtnText}>Call Now</Text>
+          </TouchableOpacity>
+        )}
         
         {item.latitude && (
           <TouchableOpacity 
@@ -170,23 +223,29 @@ const ServiceDirectoryScreen = ({ navigation }) => {
         />
       </View>
 
-      <View style={styles.tabBar}>
-        {tabs.map((tab) => (
-          <TouchableOpacity 
-            key={tab.id}
-            style={[styles.tab, activeTab === tab.id && styles.activeTab]}
-            onPress={() => setActiveTab(tab.id)}
-          >
-            <MaterialCommunityIcons 
-              name={tab.icon} 
-              size={20} 
-              color={activeTab === tab.id ? 'white' : '#666'} 
-            />
-            <Text style={[styles.tabLabel, activeTab === tab.id && styles.activeTabLabel]}>
-              {tab.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      <View style={{ marginTop: 20, marginBottom: 10 }}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabBar}
+        >
+          {tabs.map((tab) => (
+            <TouchableOpacity 
+              key={tab.id}
+              style={[styles.tab, activeTab === tab.id && styles.activeTab]}
+              onPress={() => setActiveTab(tab.id)}
+            >
+              <MaterialCommunityIcons 
+                name={tab.icon} 
+                size={20} 
+                color={activeTab === tab.id ? 'white' : '#666'} 
+              />
+              <Text style={[styles.tabLabel, activeTab === tab.id && styles.activeTabLabel]}>
+                {tab.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       {loading ? (
@@ -238,19 +297,17 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 10,
-    justifyContent: 'space-between',
+    gap: 10,
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
-    paddingHorizontal: 15,
+    paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,
-    width: (width - 60) / 3,
     justifyContent: 'center',
+    minWidth: 100
   },
   activeTab: { backgroundColor: '#000' },
   tabLabel: { fontSize: 11, fontWeight: 'bold', color: '#666', marginLeft: 6 },
@@ -299,10 +356,23 @@ const styles = StyleSheet.create({
   },
   callBtn: { backgroundColor: '#000', flex: 1 },
   callBtnText: { color: 'white', fontWeight: 'bold', marginLeft: 10, fontSize: 14 },
+  disabledBtn: { backgroundColor: '#f0f0f0', flex: 1, borderWidth: 1, borderColor: '#eee' },
+  disabledBtnText: { color: '#ccc', fontWeight: 'bold', marginLeft: 10, fontSize: 13 },
   mapBtn: { backgroundColor: '#FAD02C', width: 45 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 },
   loadingText: { marginTop: 15, color: '#666', fontSize: 14, fontWeight: '500' },
   emptyText: { marginTop: 20, color: '#999', fontSize: 15, textAlign: 'center' },
+  distanceBadge: {
+    backgroundColor: '#000',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    position: 'absolute',
+    top: 5,
+    right: 5
+  },
+  distanceText: { color: 'white', fontSize: 10, fontWeight: '900' },
+  ownerContactText: { fontSize: 11, color: '#999', marginLeft: 8, fontWeight: '600' },
 });
 
 export default ServiceDirectoryScreen;

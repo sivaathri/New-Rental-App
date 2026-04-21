@@ -166,6 +166,8 @@ export default function AdminPanel() {
       setPunchers(punchRes.data.services);
       const driversRes = await adminAPI.getServices('Acting Driver');
       setDrivers(driversRes.data.services);
+      const tourRes = await adminAPI.getServices('Tour Packages');
+      setTours(tourRes.data.services);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -373,6 +375,7 @@ export default function AdminPanel() {
           <SidebarItem icon={<Wrench/>} label="Mechanic" active={activeTab === 'mechanic'} onClick={() => setActiveTab('mechanic')} />
           <SidebarItem icon={<Hammer/>} label="Puncher" active={activeTab === 'puncher'} onClick={() => setActiveTab('puncher')} />
           <SidebarItem icon={<UserCheck/>} label="Acting Driver" active={activeTab === 'driver'} onClick={() => setActiveTab('driver')} />
+          <SidebarItem icon={<MapPin/>} label="Tour Packages" active={activeTab === 'tour'} onClick={() => setActiveTab('tour')} />
           <SidebarItem icon={<Star/>} label="Reviews" active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')} />
         </div>
 
@@ -1364,8 +1367,11 @@ export default function AdminPanel() {
             );
           })()}
 
-          {(activeTab === 'mechanic' || activeTab === 'puncher' || activeTab === 'driver') && (() => {
-            const currentList = activeTab === 'mechanic' ? mechanics : activeTab === 'puncher' ? punchers : drivers;
+          {(activeTab === 'mechanic' || activeTab === 'puncher' || activeTab === 'driver' || activeTab === 'tour') && (() => {
+            const currentList = 
+              activeTab === 'mechanic' ? mechanics : 
+              activeTab === 'puncher' ? punchers : 
+              activeTab === 'driver' ? drivers : tours;
             const totalCalls = currentList.reduce((acc, item) => acc + (item.call_clicks || 0), 0);
             const totalMaps = currentList.reduce((acc, item) => acc + (item.map_clicks || 0), 0);
             
@@ -1374,7 +1380,9 @@ export default function AdminPanel() {
                  <div className="flex justify-between items-center bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm overflow-hidden relative">
                     <div className="flex items-center gap-6">
                       <div>
-                        <h2 className="text-[24px] font-bold text-[#252f40] capitalize">{activeTab === 'driver' ? 'Acting Driver' : activeTab} Directory</h2>
+                        <h2 className="text-[24px] font-bold text-[#252f40] capitalize">
+                          {activeTab === 'driver' ? 'Acting Driver' : activeTab === 'tour' ? 'Tour Packages' : activeTab} Directory
+                        </h2>
                         <p className="text-[14px] text-[#67748e] mt-1">Manage verified local service providers in the ecosystem.</p>
                       </div>
 
@@ -1398,7 +1406,7 @@ export default function AdminPanel() {
 
                     <button 
                       onClick={() => {
-                        const typeMap = { mechanic: 'Mechanic', puncher: 'Puncher', driver: 'Acting Driver' };
+                        const typeMap = { mechanic: 'Mechanic', puncher: 'Puncher', driver: 'Acting Driver', tour: 'Tour Packages' };
                         setServiceForm({ name: '', mobile: '', location: '', image: null, idProof: null, type: typeMap[activeTab], latitude: 11.9416, longitude: 79.8083 });
                         setIsEditingService(false);
                         setEditingServiceId(null);
@@ -1406,12 +1414,12 @@ export default function AdminPanel() {
                       }}
                       className="px-6 py-3 bg-black text-white rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all"
                     >
-                      <Plus size={18} /> Add {activeTab === 'driver' ? 'Acting Driver' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                      <Plus size={18} /> Add {activeTab === 'driver' ? 'Acting Driver' : activeTab === 'tour' ? 'Tour Package' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
                     </button>
                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {(activeTab === 'mechanic' ? mechanics : activeTab === 'puncher' ? punchers : drivers).map((item) => (
+                  {(activeTab === 'mechanic' ? mechanics : activeTab === 'puncher' ? punchers : activeTab === 'driver' ? drivers : tours).map((item) => (
                     <div key={item.id} className="bg-white rounded-[24px] border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all">
                        <div className="flex items-center gap-4 mb-6">
                           <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden shrink-0">
@@ -1496,12 +1504,15 @@ export default function AdminPanel() {
                         </div>
                     </div>
                   ))}
-                  {(activeTab === 'mechanic' ? mechanics : activeTab === 'puncher' ? punchers : drivers).length === 0 && (
+                  {(activeTab === 'mechanic' ? mechanics : activeTab === 'puncher' ? punchers : activeTab === 'driver' ? drivers : tours).length === 0 && (
                     <div className="col-span-full py-20 bg-white rounded-[32px] border border-dashed border-gray-100 flex flex-col items-center justify-center text-gray-400">
                        <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mb-4">
-                          {activeTab === 'mechanic' ? <Wrench size={40} className="opacity-20" /> : activeTab === 'puncher' ? <Hammer size={40} className="opacity-20" /> : <UserCheck size={40} className="opacity-20" />}
+                          {activeTab === 'mechanic' ? <Wrench size={40} className="opacity-20" /> : 
+                           activeTab === 'puncher' ? <Hammer size={40} className="opacity-20" /> : 
+                           activeTab === 'tour' ? <MapPin size={40} className="opacity-20" /> :
+                           <UserCheck size={40} className="opacity-20" />}
                        </div>
-                       <p className="font-bold text-gray-500">No {activeTab === 'driver' ? 'acting driver' : activeTab} profiles added yet.</p>
+                       <p className="font-bold text-gray-500">No {activeTab === 'driver' ? 'acting driver' : activeTab === 'tour' ? 'tour package' : activeTab} profiles added yet.</p>
                        <p className="text-sm font-medium opacity-60">Expand your ecosystem by adding verified service nodes.</p>
                     </div>
                   )}
