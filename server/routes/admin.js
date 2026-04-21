@@ -344,4 +344,22 @@ router.delete('/services/:id', async (req, res) => {
     }
 });
 
+// Track service clicks (Public accessibility)
+router.post('/services/:id/track', async (req, res) => {
+    const { id } = req.params;
+    const { action } = req.body; // 'call' or 'map'
+    
+    try {
+        if (action === 'call') {
+            await db.query('UPDATE services SET call_clicks = call_clicks + 1 WHERE id = ?', [id]);
+        } else if (action === 'map') {
+            await db.query('UPDATE services SET map_clicks = map_clicks + 1 WHERE id = ?', [id]);
+        }
+        res.json({ success: true });
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

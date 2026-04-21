@@ -1401,6 +1401,17 @@ export default function AdminPanel() {
                              </div>
                           </div>
                        </div>
+
+                       <div className="flex items-center gap-4 py-3 bg-gray-50/50 rounded-2xl px-4 mt-4">
+                          <div className="flex flex-col items-center flex-1 border-r border-gray-200">
+                             <span className="text-[14px] font-bold text-black">{item.call_clicks || 0}</span>
+                             <span className="text-[9px] font-bold text-[#67748e] uppercase tracking-wider">Call Inquiries</span>
+                          </div>
+                          <div className="flex flex-col items-center flex-1">
+                             <span className="text-[14px] font-bold text-black">{item.map_clicks || 0}</span>
+                             <span className="text-[9px] font-bold text-[#67748e] uppercase tracking-wider">Map Views</span>
+                          </div>
+                       </div>
                        
                        <div className="mt-6 pt-6 border-t border-gray-50 flex flex-col gap-4">
                            <div className="flex items-center justify-between">

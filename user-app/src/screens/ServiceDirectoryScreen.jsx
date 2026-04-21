@@ -39,11 +39,21 @@ const ServiceDirectoryScreen = ({ navigation }) => {
     }
   };
 
-  const handleCall = (number) => {
+  const trackClick = async (id, action) => {
+    try {
+      await axios.post(`${API_URL}/admin/services/${id}/track`, { action });
+    } catch (e) {
+      console.log('Tracking failed:', e);
+    }
+  };
+
+  const handleCall = (id, number) => {
+    trackClick(id, 'call');
     Linking.openURL(`tel:${number}`);
   };
 
-  const handleMap = (lat, lng) => {
+  const handleMap = (id, lat, lng) => {
+    trackClick(id, 'map');
     if (lat && lng) {
       const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
       Linking.openURL(url);
@@ -93,7 +103,7 @@ const ServiceDirectoryScreen = ({ navigation }) => {
       <View style={styles.cardFooter}>
         <TouchableOpacity 
           style={[styles.actionBtn, styles.callBtn]}
-          onPress={() => handleCall(item.mobile)}
+          onPress={() => handleCall(item.id, item.mobile)}
         >
           <Ionicons name="call" size={18} color="white" />
           <Text style={styles.callBtnText}>Call Now</Text>
@@ -102,7 +112,7 @@ const ServiceDirectoryScreen = ({ navigation }) => {
         {item.latitude && (
           <TouchableOpacity 
             style={[styles.actionBtn, styles.mapBtn]}
-            onPress={() => handleMap(item.latitude, item.longitude)}
+            onPress={() => handleMap(item.id, item.latitude, item.longitude)}
           >
             <Ionicons name="map" size={18} color="#000" />
           </TouchableOpacity>
