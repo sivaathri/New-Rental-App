@@ -1807,7 +1807,7 @@ export default function AdminPanel() {
 
       {showServiceModal && (
         <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto" onClick={() => setShowServiceModal(false)}>
-          <div className="bg-white w-full max-w-xl rounded-[32px] overflow-hidden shadow-2xl relative my-8 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white w-full max-w-4xl rounded-[32px] overflow-hidden shadow-2xl relative my-8 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
             <div className="p-8 border-b border-gray-50 flex items-center justify-between">
               <div>
                  <h2 className="text-2xl font-bold text-[#252f40]">Add New {serviceForm.type}</h2>
@@ -1818,92 +1818,100 @@ export default function AdminPanel() {
               </button>
             </div>
             
-            <div className="p-8 space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-[#252f40]">Full Name</label>
-                <input 
-                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all font-medium"
-                  placeholder="e.g. Rahul Sharma"
-                  value={serviceForm.name}
-                  onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-[#252f40]">Mobile Number</label>
-                <input 
-                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all font-medium"
-                  placeholder="+91 00000 00000"
-                  value={serviceForm.mobile}
-                  onChange={(e) => setServiceForm({ ...serviceForm, mobile: e.target.value })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-[#252f40]">{serviceForm.type === 'Acting Driver' ? 'Home Town Location' : 'Shop Location / Address'}</label>
-                <textarea 
-                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all font-medium"
-                  placeholder={serviceForm.type === 'Acting Driver' ? "Enter home town city/village name" : "Enter full address of the shop"}
-                  rows="3"
-                  value={serviceForm.location}
-                  onChange={(e) => setServiceForm({ ...serviceForm, location: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-[#252f40]">Pin on Map</label>
-                <div className="h-44 w-full rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-                  <MapContainer center={[11.9416, 79.8083]} zoom={13} style={{ height: '100%', width: '100%' }}>
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <LocationPicker 
-                      lat={serviceForm.latitude} 
-                      lng={serviceForm.longitude} 
-                      onChange={(lat, lng) => setServiceForm({ ...serviceForm, latitude: lat, longitude: lng })} 
+            <div className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                {/* Left Side: Basic Info */}
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-[#252f40]">Full Name</label>
+                    <input 
+                      className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all font-medium"
+                      placeholder="e.g. Rahul Sharma"
+                      value={serviceForm.name}
+                      onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
                     />
-                  </MapContainer>
-                </div>
-                <div className="flex justify-between items-center px-1">
-                   <p className="text-[10px] text-[#67748e] font-medium italic">Click map to set precise coordinates</p>
-                   {serviceForm.latitude && (
-                      <p className="text-[9px] font-bold text-[#82d616] uppercase tracking-wider">{serviceForm.latitude.toFixed(4)}, {serviceForm.longitude.toFixed(4)}</p>
-                   )}
-                </div>
-              </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-[#252f40]">Mobile Number</label>
+                    <input 
+                      className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all font-medium"
+                      placeholder="+91 00000 00000"
+                      value={serviceForm.mobile}
+                      onChange={(e) => setServiceForm({ ...serviceForm, mobile: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-[#252f40]">{serviceForm.type === 'Acting Driver' ? 'Home Town Location' : 'Shop Location / Address'}</label>
+                    <textarea 
+                      className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-black/5 focus:border-black outline-none transition-all font-medium"
+                      placeholder={serviceForm.type === 'Acting Driver' ? "Enter home town city/village name" : "Enter full address of the shop"}
+                      rows="3"
+                      value={serviceForm.location}
+                      onChange={(e) => setServiceForm({ ...serviceForm, location: e.target.value })}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-[#252f40]">{serviceForm.type === 'Acting Driver' ? 'Driver Photo' : 'Shop Image'}</label>
-                  <label className="flex flex-col items-center justify-center w-full h-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all overflow-hidden text-center">
-                    {serviceForm.image ? (
-                        <img src={URL.createObjectURL(serviceForm.image)} className="w-full h-full object-cover" alt="" />
-                    ) : (
-                        <div className="flex flex-col items-center text-gray-400">
-                          <Plus size={24} />
-                          <span className="text-[10px] font-bold mt-2 uppercase tracking-widest">Profile Image</span>
-                        </div>
-                    )}
-                    <input type="file" className="hidden" onChange={(e) => setServiceForm({ ...serviceForm, image: e.target.files[0] })} />
-                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-[#252f40]">{serviceForm.type === 'Acting Driver' ? 'Driver Photo' : 'Shop Image'}</label>
+                      <label className="flex flex-col items-center justify-center w-full h-28 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all overflow-hidden text-center">
+                        {serviceForm.image ? (
+                            <img src={URL.createObjectURL(serviceForm.image)} className="w-full h-full object-cover" alt="" />
+                        ) : (
+                            <div className="flex flex-col items-center text-gray-400">
+                              <Plus size={20} />
+                              <span className="text-[9px] font-bold mt-1 uppercase tracking-widest">Photo</span>
+                            </div>
+                        )}
+                        <input type="file" className="hidden" onChange={(e) => setServiceForm({ ...serviceForm, image: e.target.files[0] })} />
+                      </label>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-[#252f40]">ID Proof Copy</label>
+                      <label className="flex flex-col items-center justify-center w-full h-28 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all overflow-hidden text-center">
+                        {serviceForm.idProof ? (
+                            <img src={URL.createObjectURL(serviceForm.idProof)} className="w-full h-full object-cover" alt="" />
+                        ) : (
+                            <div className="flex flex-col items-center text-gray-400">
+                              <FileText size={20} />
+                              <span className="text-[9px] font-bold mt-1 uppercase tracking-widest">ID Proof</span>
+                            </div>
+                        )}
+                        <input type="file" className="hidden" onChange={(e) => setServiceForm({ ...serviceForm, idProof: e.target.files[0] })} />
+                      </label>
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-[#252f40]">ID Proof Copy</label>
-                  <label className="flex flex-col items-center justify-center w-full h-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all overflow-hidden text-center">
-                    {serviceForm.idProof ? (
-                        <img src={URL.createObjectURL(serviceForm.idProof)} className="w-full h-full object-cover" alt="" />
-                    ) : (
-                        <div className="flex flex-col items-center text-gray-400">
-                          <FileText size={24} />
-                          <span className="text-[10px] font-bold mt-2 uppercase tracking-widest">ID Document</span>
-                        </div>
-                    )}
-                    <input type="file" className="hidden" onChange={(e) => setServiceForm({ ...serviceForm, idProof: e.target.files[0] })} />
-                  </label>
+
+                {/* Right Side: Map */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-[#252f40]">Pin precise location</label>
+                    <div className="h-[340px] w-full rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                      <MapContainer center={[11.9416, 79.8083]} zoom={13} style={{ height: '100%', width: '100%' }}>
+                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                        <LocationPicker 
+                          lat={serviceForm.latitude} 
+                          lng={serviceForm.longitude} 
+                          onChange={(lat, lng) => setServiceForm({ ...serviceForm, latitude: lat, longitude: lng })} 
+                        />
+                      </MapContainer>
+                    </div>
+                    <div className="flex justify-between items-center px-1">
+                       <p className="text-[10px] text-[#67748e] font-medium italic">Click map to set coordinates</p>
+                       {serviceForm.latitude && (
+                          <p className="text-[9px] font-bold text-[#82d616] uppercase tracking-wider">{serviceForm.latitude.toFixed(4)}, {serviceForm.longitude.toFixed(4)}</p>
+                       )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <button 
-                className="w-full py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:shadow-2xl hover:translate-y-[-2px] transition-all group mt-6"
+                className="w-full py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:shadow-2xl hover:translate-y-[-2px] transition-all group mt-10"
                 onClick={async () => {
                   if(!serviceForm.name || !serviceForm.mobile) return alert('Please enter at least Name and Mobile Number');
                   setLoading(true);
