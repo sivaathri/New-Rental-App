@@ -29,6 +29,8 @@ function App() {
         setSearchQuery={setSearchQuery} 
         setIsFilterOpen={setIsFilterOpen}
         isFilterOpen={isFilterOpen}
+        filters={filters}
+        setFilters={setFilters}
       />
       <InfoStrip activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
       <Allvehicles 

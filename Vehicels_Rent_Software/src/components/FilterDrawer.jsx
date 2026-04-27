@@ -1,9 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './FilterDrawer.css';
 
-const FilterDrawer = ({ isOpen, onClose }) => {
+const FilterDrawer = ({ isOpen, onClose, filters, setFilters }) => {
+    const [localFilters, setLocalFilters] = useState(filters);
+
     useEffect(() => {
         if (isOpen) {
+            setLocalFilters(filters);
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'unset';
@@ -12,7 +15,30 @@ const FilterDrawer = ({ isOpen, onClose }) => {
         return () => {
             document.body.style.overflow = 'unset';
         };
-    }, [isOpen]);
+    }, [isOpen, filters]);
+
+    const handleApply = () => {
+        setFilters(localFilters);
+        onClose();
+    };
+
+    const handleReset = () => {
+        const defaultFilters = {
+            type: 'All',
+            location: '',
+            minPrice: 250,
+            maxPrice: 5000,
+            fuelType: 'All',
+            transmission: 'All',
+            seats: 'All',
+            sortBy: 'Recommended'
+        };
+        setLocalFilters(defaultFilters);
+    };
+
+    const updateField = (field, value) => {
+        setLocalFilters(prev => ({ ...prev, [field]: value }));
+    };
 
     return (
         <>
@@ -42,7 +68,7 @@ const FilterDrawer = ({ isOpen, onClose }) => {
                             <h3>Filter</h3>
                         </div>
                         <div className="header-right">
-                            <button className="reset-btn">Reset All</button>
+                            <button className="reset-btn" onClick={handleReset}>Reset All</button>
                             <button className="close-btn" onClick={onClose}>
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -57,11 +83,15 @@ const FilterDrawer = ({ isOpen, onClose }) => {
                         <div className="filter-group">
                             <label>Vehicle Type</label>
                             <div className="filter-options">
-                                <button className="option-btn active">All</button>
-                                <button className="option-btn">Bike</button>
-                                <button className="option-btn">Car</button>
-                                <button className="option-btn">Bus</button>
-                                <button className="option-btn">Mini Van</button>
+                                {['All', 'Bike', 'Car', 'Bus', 'Mini Van'].map(type => (
+                                    <button 
+                                        key={type}
+                                        className={`option-btn ${localFilters.type === type ? 'active' : ''}`}
+                                        onClick={() => updateField('type', type)}
+                                    >
+                                        {type}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -75,7 +105,12 @@ const FilterDrawer = ({ isOpen, onClose }) => {
                                 Location
                             </label>
                             <div className="location-input-wrapper">
-                                <input type="text" placeholder="Enter location" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Enter location" 
+                                    value={localFilters.location}
+                                    onChange={(e) => updateField('location', e.target.value)}
+                                />
                                 <svg className="target-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <circle cx="12" cy="12" r="3"></circle>
                                     <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
@@ -98,12 +133,20 @@ const FilterDrawer = ({ isOpen, onClose }) => {
                             <div className="price-inputs">
                                 <div className="price-input">
                                     <span>₹</span>
-                                    <input type="text" defaultValue="250" />
+                                    <input 
+                                        type="number" 
+                                        value={localFilters.minPrice}
+                                        onChange={(e) => updateField('minPrice', e.target.value)}
+                                    />
                                 </div>
                                 <span className="to-text">to</span>
                                 <div className="price-input">
                                     <span>₹</span>
-                                    <input type="text" defaultValue="5000+" />
+                                    <input 
+                                        type="text" 
+                                        value={localFilters.maxPrice}
+                                        onChange={(e) => updateField('maxPrice', e.target.value)}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -117,12 +160,15 @@ const FilterDrawer = ({ isOpen, onClose }) => {
                                 Fuel Type
                             </label>
                             <div className="filter-options">
-                                <button className="option-btn active">All</button>
-                                <button className="option-btn">Petrol</button>
-                                <button className="option-btn">Diesel</button>
-                                <button className="option-btn">Electric</button>
-                                <button className="option-btn">CNG</button>
-                                <button className="option-btn">Hybrid</button>
+                                {['All', 'Petrol', 'Diesel', 'Electric', 'CNG', 'Hybrid'].map(fuel => (
+                                    <button 
+                                        key={fuel}
+                                        className={`option-btn ${localFilters.fuelType === fuel ? 'active' : ''}`}
+                                        onClick={() => updateField('fuelType', fuel)}
+                                    >
+                                        {fuel}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -130,9 +176,15 @@ const FilterDrawer = ({ isOpen, onClose }) => {
                         <div className="filter-group">
                             <label>Transmission</label>
                             <div className="filter-options">
-                                <button className="option-btn active">All</button>
-                                <button className="option-btn">Manual</button>
-                                <button className="option-btn">Automatic</button>
+                                {['All', 'Manual', 'Automatic'].map(trans => (
+                                    <button 
+                                        key={trans}
+                                        className={`option-btn ${localFilters.transmission === trans ? 'active' : ''}`}
+                                        onClick={() => updateField('transmission', trans)}
+                                    >
+                                        {trans}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -140,11 +192,15 @@ const FilterDrawer = ({ isOpen, onClose }) => {
                         <div className="filter-group">
                             <label>Seats</label>
                             <div className="filter-options">
-                                <button className="option-btn active">All</button>
-                                <button className="option-btn">2</button>
-                                <button className="option-btn">4</button>
-                                <button className="option-btn">6</button>
-                                <button className="option-btn">7+</button>
+                                {['All', '2', '4', '6', '7+'].map(seat => (
+                                    <button 
+                                        key={seat}
+                                        className={`option-btn ${localFilters.seats === seat ? 'active' : ''}`}
+                                        onClick={() => updateField('seats', seat)}
+                                    >
+                                        {seat}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -152,7 +208,10 @@ const FilterDrawer = ({ isOpen, onClose }) => {
                         <div className="filter-group">
                             <label>Sort By</label>
                             <div className="sort-input-wrapper">
-                                <select>
+                                <select 
+                                    value={localFilters.sortBy}
+                                    onChange={(e) => updateField('sortBy', e.target.value)}
+                                >
                                     <option>Recommended</option>
                                     <option>Price: Low to High</option>
                                     <option>Price: High to Low</option>
@@ -166,7 +225,7 @@ const FilterDrawer = ({ isOpen, onClose }) => {
 
                     {/* Footer */}
                     <div className="filter-footer">
-                        <button className="apply-btn" onClick={onClose}>Apply Filter</button>
+                        <button className="apply-btn" onClick={handleApply}>Apply Filter</button>
                     </div>
                 </div>
             </div>

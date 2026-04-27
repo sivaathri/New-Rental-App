@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import API_BASE_URL from '../api';
 
-const Allvehicles = ({ searchQuery, activeCategory }) => {
+const Allvehicles = ({ searchQuery, activeCategory, filters }) => {
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
-    const API_URL = API_BASE_URL; // Define API base URL
+    const API_URL = API_BASE_URL;
 
     useEffect(() => {
         const fetchVehicles = async () => {
@@ -13,7 +13,6 @@ const Allvehicles = ({ searchQuery, activeCategory }) => {
                 const result = await response.json();
                 if (result.success) {
                     setVehicles(result.data);
-                    console.log("Fetched Vehicles:", result.data);
                 }
             } catch (error) {
                 console.error("Failed to fetch vehicles:", error);
@@ -21,27 +20,62 @@ const Allvehicles = ({ searchQuery, activeCategory }) => {
                 setLoading(false);
             }
         };
-
         fetchVehicles();
     }, []);
 
-    const filteredVehicles = vehicles.filter(v => {
-        const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            (v.pickup_location && v.pickup_location.toLowerCase().includes(searchQuery.toLowerCase()));
-        
-        // Normalize comparison: lower, trim, handle null
-        const vehicleType = (v.type || "").trim().toLowerCase();
-        const categoryType = (activeCategory || "").trim().toLowerCase();
-        
-        const matchesCategory = categoryType === 'all' || vehicleType === categoryType;
-        
-        return matchesSearch && matchesCategory;
-    });
+    const filteredVehicles = vehicles
+        .filter(v => {
+            // Search Query Filter
+            const matchesSearch = !searchQuery || 
+                                v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                (v.pickup_location && v.pickup_location.toLowerCase().includes(searchQuery.toLowerCase()));
+            
+            // Category Filter (from top bar)
+            const vehicleType = (v.type || "").trim().toLowerCase();
+            const categoryType = (activeCategory || "").trim().toLowerCase();
+            const matchesCategory = categoryType === 'all' || vehicleType === categoryType;
+
+            // Advanced Filters (from drawer)
+            const matchesDrawerType = filters.type === 'All' || vehicleType === filters.type.toLowerCase();
+            
+            const matchesLocation = !filters.location || 
+                                    (v.pickup_location && v.pickup_location.toLowerCase().includes(filters.location.toLowerCase()));
+            
+            const price = parseInt(v.price_per_day, 10);
+            const matchesPrice = price >= filters.minPrice && (filters.maxPrice === '5000+' ? true : price <= parseInt(filters.maxPrice, 10));
+            
+            const matchesFuel = filters.fuelType === 'All' || 
+                                (v.fuel_type && v.fuel_type.toLowerCase() === filters.fuelType.toLowerCase());
+            
+            const matchesTransmission = filters.transmission === 'All' || 
+                                        (v.transmission && v.transmission.toLowerCase() === filters.transmission.toLowerCase());
+            
+            const vSeats = parseInt(v.seating_capacity, 10) || 4;
+            let matchesSeats = true;
+            if (filters.seats !== 'All') {
+                if (filters.seats === '7+') {
+                    matchesSeats = vSeats >= 7;
+                } else {
+                    matchesSeats = vSeats === parseInt(filters.seats, 10);
+                }
+            }
+
+            return matchesSearch && matchesCategory && matchesDrawerType && matchesLocation && matchesPrice && matchesFuel && matchesTransmission && matchesSeats;
+        })
+        .sort((a, b) => {
+            if (filters.sortBy === 'Price: Low to High') {
+                return parseInt(a.price_per_day, 10) - parseInt(b.price_per_day, 10);
+            }
+            if (filters.sortBy === 'Price: High to Low') {
+                return parseInt(b.price_per_day, 10) - parseInt(a.price_per_day, 10);
+            }
+            return 0; // Recommended / Default
+        });
 
     useEffect(() => {
-        console.log("Active Category:", activeCategory);
+        console.log("Filters Applied:", filters);
         console.log("Filtered List Size:", filteredVehicles.length);
-    }, [activeCategory, filteredVehicles]);
+    }, [filters, activeCategory, searchQuery, vehicles]);
 
     if (loading) return (
         <div className="max-w-[1240px] mx-auto px-6 py-20 text-center text-gray-500 font-medium">
