@@ -225,4 +225,30 @@ router.get('/reviews', authMiddleware, async (req, res) => {
     }
 });
 
+// Get activity history for a user (what vehicles they viewed/called)
+router.get('/history', authMiddleware, async (req, res) => {
+    try {
+        const [history] = await db.query(`
+            SELECT 
+                vc.id,
+                vc.created_at,
+                v.id as vehicle_id,
+                v.name as vehicle_name,
+                v.type as vehicle_type,
+                v.pickup_location,
+                v.price_per_day,
+                v.fuel_type,
+                (SELECT media_url FROM vehicle_media WHERE vehicle_id = v.id LIMIT 1) as image
+            FROM vehicle_calls vc
+            JOIN vehicles v ON vc.vehicle_id = v.id
+            WHERE vc.user_id = ?
+            ORDER BY vc.created_at DESC
+        `, [req.user.id]);
+        res.json({ history });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;
