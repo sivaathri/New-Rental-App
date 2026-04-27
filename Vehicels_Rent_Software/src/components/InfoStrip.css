@@ -95,6 +95,19 @@
     align-items: center;
     justify-content: center;
     border: 2px solid #141414;
+    z-index: 5;
+}
+
+.category-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    transition: filter 0.2s ease;
+}
+
+.category-icon.active {
+    filter: brightness(0) invert(1);
+    /* Turns dark icons white when background is black */
 }
 
 /* Feature Items */

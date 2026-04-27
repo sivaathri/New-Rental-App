@@ -1,69 +1,76 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './InfoStrip.css';
 
 const InfoStrip = () => {
+    const [categories, setCategories] = useState([]);
+    const [activeCategory, setActiveCategory] = useState('All');
+    const API_URL = 'http://localhost:5000'; // Adjust as needed
+
+    useEffect(() => {
+        fetch(`${API_URL}/api/admin/vehicles/master`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.vehicles) {
+                    setCategories(data.vehicles);
+                }
+            })
+            .catch(err => console.error("Error fetching categories:", err));
+    }, []);
+
     return (
         <section className="info-strip-container">
             <div className="info-strip-panel left-panel">
-                <div className="vehicle-type active">
-                    <div className="icon-wrapper active">
+                <div 
+                    className={`vehicle-type ${activeCategory === 'All' ? 'active' : ''}`}
+                    onClick={() => setActiveCategory('All')}
+                >
+                    <div className={`icon-wrapper ${activeCategory === 'All' ? 'active' : ''}`}>
                         <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="3" y="3" width="10" height="7"></rect>
                             <rect x="14" y="3" width="10" height="7"></rect>
                             <rect x="14" y="14" width="10" height="7"></rect>
                             <rect x="3" y="14" width="10" height="7"></rect>
                         </svg>
-                        <div className="active-tick">
-                            <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </div>
+                        {activeCategory === 'All' && (
+                            <div className="active-tick">
+                                <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                        )}
                     </div>
                     <span>All</span>
                 </div>
-                <div className="vehicle-type">
-                    <div className="icon-wrapper">
-                        {/* Bike SVG placeholder */}
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="5.5" cy="17.5" r="3.5" />
-                            <circle cx="18.5" cy="17.5" r="3.5" />
-                            <path d="M15 6a1 1 0 100-2 1 1 0 000 2zm-3 11.5V14l-3-3 4-3 2 3h2" />
-                        </svg>
+
+                {categories.map((cat) => (
+                    <div 
+                        key={cat.id} 
+                        className={`vehicle-type ${activeCategory === cat.name ? 'active' : ''}`}
+                        onClick={() => setActiveCategory(cat.name)}
+                    >
+                        <div className={`icon-wrapper ${activeCategory === cat.name ? 'active' : ''}`}>
+                            {cat.image_url ? (
+                                <img 
+                                    src={`${API_URL}${cat.image_url}`} 
+                                    alt={cat.name} 
+                                    className={`category-icon ${activeCategory === cat.name ? 'active' : ''}`}
+                                />
+                            ) : (
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a2 2 0 0 0-1.6-.8H9.3a2 2 0 0 0-1.6.8L5 11l-5.16.86a1 1 0 0 0-.84.99V16h3" />
+                                </svg>
+                            )}
+                            {activeCategory === cat.name && (
+                                <div className="active-tick">
+                                    <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
+                        <span>{cat.name}</span>
                     </div>
-                    <span>Bike</span>
-                </div>
-                <div className="vehicle-type">
-                    <div className="icon-wrapper">
-                        {/* Car SVG placeholder */}
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a2 2 0 0 0-1.6-.8H9.3a2 2 0 0 0-1.6.8L5 11l-5.16.86a1 1 0 0 0-.84.99V16h3m10 0a2 2 0 1 0-4 0m4 0a2 2 0 1 1-4 0m-7 0a2 2 0 1 0-4 0m4 0a2 2 0 1 1-4 0" />
-                        </svg>
-                    </div>
-                    <span>Car</span>
-                </div>
-                <div className="vehicle-type">
-                    <div className="icon-wrapper">
-                        {/* Bus SVG placeholder */}
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="2" y="3" width="20" height="14" rx="2" />
-                            <path d="M2 17h20v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2z" />
-                            <path d="M6 21v2M18 21v2" />
-                            <circle cx="7" cy="17" r="1" />
-                            <circle cx="17" cy="17" r="1" />
-                            <path d="M2 11h20" />
-                        </svg>
-                    </div>
-                    <span>Bus</span>
-                </div>
-                <div className="vehicle-type">
-                    <div className="icon-wrapper">
-                        {/* Minivan SVG placeholder */}
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M5 18H3a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h2m14 6h2a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1h-6.5l-3.5-4H7a2 2 0 0 0-2 2v6m14 3a2 2 0 1 1-4 0m4 0a2 2 0 1 0-4 0m-7 0a2 2 0 1 1-4 0m4 0a2 2 0 1 0-4 0" />
-                        </svg>
-                    </div>
-                    <span>Mini Van</span>
-                </div>
+                ))}
             </div>
 
             <div className="info-strip-panel right-panel">
