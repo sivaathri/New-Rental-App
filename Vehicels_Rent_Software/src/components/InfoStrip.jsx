@@ -25,17 +25,17 @@ const InfoStrip = () => {
                     onClick={() => setActiveCategory('All')}
                 >
                     <div className={`icon-wrapper ${activeCategory === 'All' ? 'active' : ''}`}>
-                        {/* 3x3 Dot Grid Icon */}
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="6" cy="6" r="2.2" />
-                            <circle cx="12" cy="6" r="2.2" />
-                            <circle cx="18" cy="6" r="2.2" />
-                            <circle cx="6" cy="12" r="2.2" />
-                            <circle cx="12" cy="12" r="2.2" />
-                            <circle cx="18" cy="12" r="2.2" />
-                            <circle cx="6" cy="18" r="2.2" />
-                            <circle cx="12" cy="18" r="2.2" />
-                            <circle cx="18" cy="18" r="2.2" />
+                        {/* 3x3 Dot Grid Icon - Enlarged */}
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="5" cy="5" r="2.5" />
+                            <circle cx="12" cy="5" r="2.5" />
+                            <circle cx="19" cy="5" r="2.5" />
+                            <circle cx="5" cy="12" r="2.5" />
+                            <circle cx="12" cy="12" r="2.5" />
+                            <circle cx="19" cy="12" r="2.5" />
+                            <circle cx="5" cy="19" r="2.5" />
+                            <circle cx="12" cy="19" r="2.5" />
+                            <circle cx="19" cy="19" r="2.5" />
                         </svg>
                         
                         {activeCategory === 'All' && (
