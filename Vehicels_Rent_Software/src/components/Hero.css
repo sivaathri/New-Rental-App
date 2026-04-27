@@ -1,0 +1,98 @@
+.hero-section {
+    display: flex;
+    align-items: center;
+    /* Center items vertically */
+    justify-content: flex-start;
+    /* Align search bar to the left */
+    padding: 0 5%;
+    /* Reduced horizontal padding to left align with background text */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    min-height: 600px;
+    height: 65vh;
+    /* To make it look tall enough like the image */
+    background-color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.search-bar-wrapper {
+    width: 100%;
+    max-width: 500px;
+    margin-top: 320px;
+    /* Push it down so it sits below the text embedded in the bg image */
+    z-index: 10;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 50px;
+    padding: 16px 24px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    /* Slight shadow to pop off background */
+    border: 1px solid #eaeaea;
+    width: 100%;
+}
+
+.search-icon {
+    width: 22px;
+    height: 22px;
+    color: #999;
+    margin-right: 14px;
+    flex-shrink: 0;
+}
+
+.search-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    color: #333;
+    background: transparent;
+    font-family: inherit;
+}
+
+.search-bar input::placeholder {
+    color: #bbb;
+    font-weight: 400;
+}
+
+.filter-button {
+    background: #141414;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.filter-button:hover {
+    transform: scale(1.05);
+    background: #000;
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        background-position: left center;
+        /* adjust for mobile so text isn't cut off completely */
+        justify-content: center;
+        padding: 0 5%;
+    }
+
+    .search-bar-wrapper {
+        margin-top: 100px;
+        /* Adjusted up for smaller screens */
+    }
+}
