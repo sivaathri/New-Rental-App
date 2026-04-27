@@ -3,8 +3,25 @@ import API_BASE_URL from '../api';
 
 const Allvehicles = ({ searchQuery, activeCategory, filters }) => {
     const [vehicles, setVehicles] = useState([]);
+    const [userFavorites, setUserFavorites] = useState([]);
     const [loading, setLoading] = useState(true);
     const API_URL = API_BASE_URL;
+
+    const fetchFavorites = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        try {
+            const response = await fetch(`${API_URL}/api/favorites`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            if (result.success) {
+                setUserFavorites(result.data.map(f => f.id));
+            }
+        } catch (error) {
+            console.error("Failed to fetch favorites:", error);
+        }
+    };
 
     useEffect(() => {
         const fetchVehicles = async () => {
@@ -21,7 +38,38 @@ const Allvehicles = ({ searchQuery, activeCategory, filters }) => {
             }
         };
         fetchVehicles();
+        fetchFavorites();
     }, []);
+
+    const handleToggleFavorite = async (e, vehicleId) => {
+        e.stopPropagation();
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert("Please login to add to favorites");
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/api/favorites/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ vehicleId })
+            });
+            const result = await response.json();
+            if (result.success) {
+                if (result.isFavorite) {
+                    setUserFavorites(prev => [...prev, vehicleId]);
+                } else {
+                    setUserFavorites(prev => prev.filter(id => id !== vehicleId));
+                }
+            }
+        } catch (error) {
+            console.error("Failed to toggle favorite:", error);
+        }
+    };
 
     const filteredVehicles = vehicles
         .filter(v => {
@@ -114,8 +162,19 @@ const Allvehicles = ({ searchQuery, activeCategory, filters }) => {
                                         <h3 className="text-[16px] xl:text-[18px] font-extrabold text-[#111] uppercase tracking-tight truncate pr-2">
                                             {v.name}
                                         </h3>
-                                        <button className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 mt-0.5">
-                                            <svg className="w-5 h-5 xl:w-[22px] xl:h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <button 
+                                            className={`${userFavorites.includes(v.id) ? 'text-red-500' : 'text-gray-400'} hover:text-red-500 transition-colors flex-shrink-0 mt-0.5`}
+                                            onClick={(e) => handleToggleFavorite(e, v.id)}
+                                        >
+                                            <svg 
+                                                className="w-5 h-5 xl:w-[22px] xl:h-[22px]" 
+                                                viewBox="0 0 24 24" 
+                                                fill={userFavorites.includes(v.id) ? "currentColor" : "none"} 
+                                                stroke="currentColor" 
+                                                strokeWidth="1.5" 
+                                                strokeLinecap="round" 
+                                                strokeLinejoin="round"
+                                            >
                                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                                             </svg>
                                         </button>

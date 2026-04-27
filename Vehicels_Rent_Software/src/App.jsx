@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import History from './pages/History';
+import Favorites from './pages/Favorites';
 import './index.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/history" element={<History />} />
+          <Route path="/favorites" element={<Favorites />} />
         </Routes>
       </div>
     </Router>

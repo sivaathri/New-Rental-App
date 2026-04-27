@@ -179,6 +179,16 @@ async function initializeDB() {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`);
 
+        await db.query(`CREATE TABLE IF NOT EXISTS user_favorites (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            vehicle_id INT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user_vehicle (user_id, vehicle_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+        )`);
+
         console.log("Database tables checked/created.");
     } catch (error) {
         console.error("Failed to initialize database (is MySQL running and DB created?): ", error.message);
