@@ -1,11 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 .hero-section {
     display: flex;
     align-items: center;
     /* Center items vertically */
     justify-content: flex-start;
     /* Align search bar to the left */
-    padding: 0 5%;
+    padding: 0 8%;
     /* Reduced horizontal padding to left align with background text */
+    font-family: 'Plus Jakarta Sans', sans-serif;
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
@@ -17,11 +20,35 @@
     overflow: hidden;
 }
 
+.hero-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 1200px;
+    width: 100%;
+    z-index: 10;
+}
+
+.hero-title {
+    font-size: clamp(48px, 8vw, 82px);
+    font-weight: 800;
+    color: #141414;
+    line-height: 1.05;
+    margin: 0 0 24px 0;
+    letter-spacing: -3px;
+}
+
+.hero-subtitle {
+    font-size: clamp(16px, 2vw, 20px);
+    color: #666;
+    line-height: 1.5;
+    margin: 0 0 42px 0;
+    font-weight: 400;
+}
+
 .search-bar-wrapper {
     width: 100%;
-    max-width: 500px;
-    margin-top: 320px;
-    /* Push it down so it sits below the text embedded in the bg image */
+    max-width: 480px;
     z-index: 10;
     display: flex;
     gap: 12px;
@@ -85,14 +112,27 @@
 
 @media (max-width: 768px) {
     .hero-section {
-        background-position: left center;
-        /* adjust for mobile so text isn't cut off completely */
+        background-position: 35% center;
+        text-align: center;
         justify-content: center;
-        padding: 0 5%;
+        padding: 0 20px;
+    }
+
+    .hero-content {
+        align-items: center;
+    }
+
+    .hero-title {
+        font-size: 42px;
+        letter-spacing: -1px;
+    }
+
+    .hero-subtitle {
+        font-size: 14px;
+        margin-bottom: 30px;
     }
 
     .search-bar-wrapper {
-        margin-top: 100px;
-        /* Adjusted up for smaller screens */
+        margin-top: 0;
     }
 }
