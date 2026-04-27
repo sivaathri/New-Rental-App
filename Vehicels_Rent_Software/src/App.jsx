@@ -1,69 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
-import Hero from './components/Hero';
-import InfoStrip from './components/InfoStrip';
-import Allvehicles from './components/Allvehicles';
-import FilterDrawer from './components/FilterDrawer';
+import Home from './pages/Home';
+import About from './pages/About';
+import Contact from './pages/Contact';
 import './index.css';
 
 function App() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    type: 'All',
-    location: '',
-    minPrice: 250,
-    maxPrice: 5000,
-    fuelType: 'All',
-    transmission: 'All',
-    seats: 'All',
-    sortBy: 'Recommended'
-  });
-
   return (
-    <div style={{ backgroundColor: '#f9f9f9', minHeight: '100vh', overflowX: 'hidden' }}>
-      <Header />
-      <Hero 
-        searchQuery={searchQuery} 
-        setSearchQuery={setSearchQuery} 
-        setIsFilterOpen={setIsFilterOpen}
-        isFilterOpen={isFilterOpen}
-        filters={filters}
-        setFilters={setFilters}
-      />
-      <InfoStrip activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
-      <Allvehicles 
-        searchQuery={searchQuery} 
-        activeCategory={activeCategory} 
-        filters={filters} 
-      />
-
-      <FilterDrawer 
-        isOpen={isFilterOpen} 
-        onClose={() => setIsFilterOpen(false)} 
-        filters={filters}
-        setFilters={setFilters}
-      />
-
-      {/* Added content section to make the page scrollable */}
-      {/* <section style={{ padding: '80px 40px', maxWidth: '1200px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: '32px', marginBottom: '20px', color: '#333' }}>Why Choose AutoVoyage?</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '30px', marginTop: '40px' }}>
-          {[
-            { title: 'Wide Selection', desc: 'From bikes to minibuses, we have whatever your journey needs.' },
-            { title: 'Affordable Rates', desc: 'Get the best deal for short term and long term rentals.' },
-            { title: 'Best Support', desc: 'We are here for you 24/7 on the road.' }
-          ].map((item, index) => (
-            <div key={index} style={{ padding: '30px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-              <div style={{ width: '50px', height: '50px', background: '#7ED321', borderRadius: '50%', marginBottom: '20px', opacity: '0.8' }}></div>
-              <h3 style={{ fontSize: '20px', marginBottom: '10px', color: '#1a1a1a' }}>{item.title}</h3>
-              <p style={{ color: '#666', lineHeight: '1.6' }}>{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section> */}
-    </div>
+    <Router>
+      <div className="min-h-screen bg-[#f9f9f9] overflow-x-hidden">
+        <Header />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

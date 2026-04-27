@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import './Header.css';
 import AuthModal from './AuthModal';
 
@@ -53,13 +54,16 @@ const Header = () => {
 
     const userInitial = user?.full_name ? user.full_name.charAt(0).toUpperCase() : '';
 
+    const location = useLocation();
+    const currentPath = location.pathname;
+
     return (
         <>
             <header className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
                 <div className="navbar-container">
                     {/* Logo Section */}
                     <div className="navbar-left">
-                        <div className="logo-container">
+                        <Link to="/" className="logo-container">
                             <div className="logo-icon-container">
                                 <svg className="car-icon" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
@@ -69,27 +73,27 @@ const Header = () => {
                                 <span className="brand-name">Quick</span>
                                 <span className="brand-subname">SERVICES</span>
                             </div>
-                        </div>
+                        </Link>
                     </div>
 
                     {/* Navigation Links */}
                     <nav className="navbar-center">
                         <ul className="nav-links">
-                            <li className="nav-item active">
-                                <a href="#">Home</a>
-                                <div className="active-indicator"></div>
+                            <li className={`nav-item ${currentPath === '/' ? 'active' : ''}`}>
+                                <Link to="/">Home</Link>
+                                {currentPath === '/' && <div className="active-indicator"></div>}
                             </li>
-                            <li className="nav-item">
-                                <a href="#">Vehicles</a>
+                            <li className={`nav-item ${currentPath === '/vehicles' ? 'active' : ''}`}>
+                                <Link to="#vehicles">Vehicles</Link>
+                                {currentPath === '/vehicles' && <div className="active-indicator"></div>}
                             </li>
-                            <li className="nav-item">
-                                <a href="#">Bookings</a>
+                            <li className={`nav-item ${currentPath === '/about' ? 'active' : ''}`}>
+                                <Link to="/about">About Us</Link>
+                                {currentPath === '/about' && <div className="active-indicator"></div>}
                             </li>
-                            <li className="nav-item">
-                                <a href="#">About Us</a>
-                            </li>
-                            <li className="nav-item">
-                                <a href="#">Contact</a>
+                            <li className={`nav-item ${currentPath === '/contact' ? 'active' : ''}`}>
+                                <Link to="/contact">Contact</Link>
+                                {currentPath === '/contact' && <div className="active-indicator"></div>}
                             </li>
                         </ul>
                     </nav>
