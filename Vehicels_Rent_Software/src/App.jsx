@@ -10,6 +10,16 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    type: 'All',
+    location: '',
+    minPrice: 250,
+    maxPrice: 5000,
+    fuelType: 'All',
+    transmission: 'All',
+    seats: 'All',
+    sortBy: 'Recommended'
+  });
 
   return (
     <div style={{ backgroundColor: '#f9f9f9', minHeight: '100vh', overflowX: 'hidden' }}>
@@ -21,11 +31,17 @@ function App() {
         isFilterOpen={isFilterOpen}
       />
       <InfoStrip activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
-      <Allvehicles searchQuery={searchQuery} activeCategory={activeCategory} />
+      <Allvehicles 
+        searchQuery={searchQuery} 
+        activeCategory={activeCategory} 
+        filters={filters} 
+      />
 
       <FilterDrawer 
         isOpen={isFilterOpen} 
         onClose={() => setIsFilterOpen(false)} 
+        filters={filters}
+        setFilters={setFilters}
       />
 
       {/* Added content section to make the page scrollable */}
