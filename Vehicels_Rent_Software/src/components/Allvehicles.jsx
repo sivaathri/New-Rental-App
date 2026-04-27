@@ -12,6 +12,7 @@ const Allvehicles = ({ searchQuery, activeCategory }) => {
                 const result = await response.json();
                 if (result.success) {
                     setVehicles(result.data);
+                    console.log("Fetched Vehicles:", result.data);
                 }
             } catch (error) {
                 console.error("Failed to fetch vehicles:", error);
@@ -27,11 +28,19 @@ const Allvehicles = ({ searchQuery, activeCategory }) => {
         const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (v.pickup_location && v.pickup_location.toLowerCase().includes(searchQuery.toLowerCase()));
         
-        const matchesCategory = activeCategory === 'All' || 
-                               (v.type && v.type.trim().toLowerCase() === activeCategory.trim().toLowerCase());
+        // Normalize comparison: lower, trim, handle null
+        const vehicleType = (v.type || "").trim().toLowerCase();
+        const categoryType = (activeCategory || "").trim().toLowerCase();
+        
+        const matchesCategory = categoryType === 'all' || vehicleType === categoryType;
         
         return matchesSearch && matchesCategory;
     });
+
+    useEffect(() => {
+        console.log("Active Category:", activeCategory);
+        console.log("Filtered List Size:", filteredVehicles.length);
+    }, [activeCategory, filteredVehicles]);
 
     if (loading) return (
         <div className="max-w-[1240px] mx-auto px-6 py-20 text-center text-gray-500 font-medium">
