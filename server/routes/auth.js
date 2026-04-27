@@ -14,7 +14,7 @@ async function generateUniqueId() {
     return id;
 }
 
-// Send OTP
+// Send OTP - Only for existing 'user' role users
 router.post('/send-otp', async (req, res) => {
     const { mobile } = req.body;
     if (!mobile) return res.status(400).json({ error: 'Mobile number required' });
@@ -24,15 +24,37 @@ router.post('/send-otp', async (req, res) => {
         let [rows] = await db.query('SELECT * FROM users WHERE mobile_number = ?', [mobile]);
         
         if (rows.length === 0) {
-            const unique_id = await generateUniqueId();
-            // Default to 'user' for all mobile logins from this app
-            const role = 'user';
-            await db.query('INSERT INTO users (mobile_number, otp, unique_id, role) VALUES (?, ?, ?, ?)', [mobile, otp, unique_id, role]);
-        } else {
-            // Ensure the role is set to 'user' even for existing users logging into this app
-            await db.query('UPDATE users SET otp = ?, role = ? WHERE mobile_number = ?', [otp, 'user', mobile]);
+            return res.status(404).json({ error: 'Mobile number not registered as a user. Please sign up first.' });
         }
+
+        const user = rows[0];
+        if (user.role !== 'user') {
+            return res.status(403).json({ error: 'This login is only for authorized users.' });
+        }
+
+        // Update OTP for existing user
+        await db.query('UPDATE users SET otp = ? WHERE mobile_number = ?', [otp, mobile]);
         res.json({ message: 'OTP sent (use 123456)' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Register User
+router.post('/register', async (req, res) => {
+    const { mobile, full_name } = req.body;
+    if (!mobile || !full_name) return res.status(400).json({ error: 'Mobile and Full Name required' });
+
+    try {
+        const [existing] = await db.query('SELECT id FROM users WHERE mobile_number = ?', [mobile]);
+        if (existing.length > 0) return res.status(400).json({ error: 'Mobile already registered' });
+
+        const unique_id = await generateUniqueId();
+        const otp = '123456';
+        await db.query('INSERT INTO users (mobile_number, full_name, unique_id, role, otp) VALUES (?, ?, ?, ?, ?)', [mobile, full_name, unique_id, 'user', otp]);
+
+        res.json({ message: 'Registration successful. OTP sent.', mobile });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
@@ -86,6 +108,50 @@ router.post('/update-name', async (req, res) => {
             res.status(404).json({ error: 'User not found' });
         }
     } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Standard Login (Mobile + Password) - Only for 'user' role
+router.post('/login', async (req, res) => {
+    const { mobile, password } = req.body;
+    if (!mobile || !password) return res.status(400).json({ error: 'Mobile and Password required' });
+
+    try {
+        const [rows] = await db.query('SELECT * FROM users WHERE mobile_number = ?', [mobile]);
+        if (rows.length === 0) return res.status(401).json({ error: 'User not found' });
+
+        const user = rows[0];
+
+        // Check role restriction
+        if (user.role !== 'user') {
+            return res.status(403).json({ error: 'Access denied. Only registered users can login here.' });
+        }
+
+        // Simple password check (for MVP/User request)
+        if (user.password !== password) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+
+        const token = jwt.sign(
+            { id: user.id, mobile: user.mobile_number, role: user.role }, 
+            process.env.JWT_SECRET || 'secret', 
+            { expiresIn: '7d' }
+        );
+
+        res.json({ 
+            message: 'Login successful', 
+            token, 
+            user: {
+                id: user.id,
+                mobile: user.mobile_number,
+                full_name: user.full_name,
+                role: user.role,
+                unique_id: user.unique_id
+            }
+        });
+    } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
 });

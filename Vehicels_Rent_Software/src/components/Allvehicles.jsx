@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import API_BASE_URL from '../api';
 
 const Allvehicles = ({ searchQuery, activeCategory }) => {
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
-    const API_URL = 'http://localhost:5000'; // Define API base URL
+    const API_URL = API_BASE_URL; // Define API base URL
 
     useEffect(() => {
         const fetchVehicles = async () => {

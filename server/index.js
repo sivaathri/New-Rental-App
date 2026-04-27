@@ -21,6 +21,7 @@ async function initializeDB() {
             mobile_number VARCHAR(15) UNIQUE NOT NULL,
             unique_id VARCHAR(5) UNIQUE,
             otp VARCHAR(6),
+            password VARCHAR(255),
             full_name VARCHAR(100),
             address TEXT,
             city VARCHAR(50) DEFAULT 'Pondicherry',
@@ -32,6 +33,10 @@ async function initializeDB() {
         // Migration: Add role if doesn't exist
         try {
             await db.query('ALTER TABLE users ADD COLUMN role ENUM(\'master\', \'vehicle-owners\', \'user\') DEFAULT \'user\'');
+        } catch(e) {}
+
+        try {
+            await db.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR(255)');
         } catch(e) {}
 
         try {

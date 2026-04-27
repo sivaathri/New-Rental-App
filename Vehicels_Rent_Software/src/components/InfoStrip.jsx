@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './InfoStrip.css';
+import API_BASE_URL from '../api';
 
 const InfoStrip = ({ activeCategory, setActiveCategory }) => {
     const [categories, setCategories] = useState([]);
-    const API_URL = 'http://localhost:5000'; // Adjust as needed
+    const API_URL = API_BASE_URL; // Adjust as needed
 
     useEffect(() => {
         fetch(`${API_URL}/api/admin/vehicles/master`)

@@ -210,6 +210,12 @@
   color: #000000;
 }
 
+.user-initial-icon {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 14px;
+}
+
 /* Responsive constraints */
 @media (max-width: 900px) {
   .nav-links {
