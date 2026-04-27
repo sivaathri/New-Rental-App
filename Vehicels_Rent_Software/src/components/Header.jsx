@@ -5,6 +5,7 @@ import AuthModal from './AuthModal';
 const Header = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [user, setUser] = useState(null);
 
     useEffect(() => {
@@ -17,8 +18,36 @@ const Header = () => {
             setIsScrolled(window.scrollY > 20);
         };
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+        
+        // Close dropdown when clicking outside
+        const handleClickOutside = (e) => {
+            if (isDropdownOpen && !e.target.closest('.user-profile-btn-container')) {
+                setIsDropdownOpen(false);
+            }
+        };
+        window.addEventListener('click', handleClickOutside);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('click', handleClickOutside);
+        };
+    }, [isDropdownOpen]);
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        setIsDropdownOpen(false);
+        window.location.reload();
+    };
+
+    const handleProfileClick = () => {
+        if (user) {
+            setIsDropdownOpen(!isDropdownOpen);
+        } else {
+            setIsAuthModalOpen(true);
+        }
+    };
 
     const userInitial = user?.full_name ? user.full_name.charAt(0).toUpperCase() : '';
 
@@ -73,24 +102,61 @@ const Header = () => {
                             <span className="notification-dot"></span>
                         </button>
 
-                        <button 
-                            className="user-profile-btn"
-                            onClick={() => setIsAuthModalOpen(true)}
-                        >
-                            <div className="user-icon-container">
-                                {user ? (
-                                    <span className="user-initial-icon">{userInitial}</span>
-                                ) : (
-                                    <svg className="user-icon" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                        <circle cx="12" cy="7" r="4" />
-                                    </svg>
-                                )}
-                            </div>
-                            <span className="user-btn-text">
-                                {user ? user.full_name : 'Login / Signup'}
-                            </span>
-                        </button>
+                        <div className="user-profile-btn-container relative">
+                            <button 
+                                className={`user-profile-btn ${isDropdownOpen ? 'active' : ''}`}
+                                onClick={handleProfileClick}
+                            >
+                                <div className="user-icon-container">
+                                    {user ? (
+                                        <span className="user-initial-icon">{userInitial}</span>
+                                    ) : (
+                                        <svg className="user-icon" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                            <circle cx="12" cy="7" r="4" />
+                                        </svg>
+                                    )}
+                                </div>
+                                <span className="user-btn-text">
+                                    {user ? user.full_name : 'Login / Signup'}
+                                </span>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {user && isDropdownOpen && (
+                                <div className="user-dropdown-menu">
+                                    <div className="dropdown-header">
+                                        <p className="dropdown-user-name">{user.full_name}</p>
+                                        <p className="dropdown-user-id">ID: {user.unique_id}</p>
+                                    </div>
+                                    <div className="dropdown-divider"></div>
+                                    <ul className="dropdown-list">
+                                        <li className="dropdown-item">
+                                            <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                <circle cx="12" cy="7" r="4" />
+                                            </svg>
+                                            <span>Profile</span>
+                                        </li>
+                                        <li className="dropdown-item">
+                                            <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <circle cx="12" cy="12" r="3" />
+                                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                            </svg>
+                                            <span>Settings</span>
+                                        </li>
+                                        <li className="dropdown-item logout" onClick={handleLogout}>
+                                            <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                                <polyline points="16 17 21 12 16 7" />
+                                                <line x1="21" y1="12" x2="9" y2="12" />
+                                            </svg>
+                                            <span>Logout</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </header>
