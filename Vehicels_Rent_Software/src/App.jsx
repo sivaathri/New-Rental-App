@@ -3,18 +3,30 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import InfoStrip from './components/InfoStrip';
 import Allvehicles from './components/Allvehicles';
+import FilterDrawer from './components/FilterDrawer';
 import './index.css';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   return (
-    <div style={{ backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
+    <div style={{ backgroundColor: '#f9f9f9', minHeight: '100vh', overflowX: 'hidden' }}>
       <Header />
-      <Hero searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      <Hero 
+        searchQuery={searchQuery} 
+        setSearchQuery={setSearchQuery} 
+        setIsFilterOpen={setIsFilterOpen}
+        isFilterOpen={isFilterOpen}
+      />
       <InfoStrip activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
       <Allvehicles searchQuery={searchQuery} activeCategory={activeCategory} />
+
+      <FilterDrawer 
+        isOpen={isFilterOpen} 
+        onClose={() => setIsFilterOpen(false)} 
+      />
 
       {/* Added content section to make the page scrollable */}
       {/* <section style={{ padding: '80px 40px', maxWidth: '1200px', margin: '0 auto' }}>

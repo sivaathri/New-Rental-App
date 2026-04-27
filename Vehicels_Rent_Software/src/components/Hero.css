@@ -95,19 +95,41 @@
     color: #fff;
     border: none;
     border-radius: 50%;
-    width: 60px;
-    height: 60px;
+    width: 66px;
+    height: 66px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
+    position: relative;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .filter-button:hover {
-    transform: scale(1.05);
+    transform: translateY(-2px);
     background: #000;
+}
+
+.filter-button.active {
+    background: #141414;
+}
+
+.filter-close-wrapper {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: white;
+    color: #141414;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid #f0f0f0;
 }
 
 @media (max-width: 768px) {
