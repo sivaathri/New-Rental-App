@@ -34,11 +34,13 @@ const Header = () => {
     }, [isDropdownOpen]);
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
-        setIsDropdownOpen(false);
-        window.location.reload();
+        if (window.confirm("Are you sure you want to Logout?")) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setUser(null);
+            setIsDropdownOpen(false);
+            window.location.reload();
+        }
     };
 
     const handleProfileClick = () => {
