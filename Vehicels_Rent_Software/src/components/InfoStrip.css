@@ -61,7 +61,7 @@
     width: 68px;
     height: 68px;
     border-radius: 50%;
-    background: #f8f8f8;
+    background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -82,20 +82,27 @@
     border-color: #141414;
 }
 
-.active-tick {
+.active-tick-bundle {
     position: absolute;
-    top: -2px;
-    right: -2px;
-    background: #fff;
-    color: #000;
-    width: 20px;
-    height: 20px;
+    top: -4px;
+    right: -4px;
+    background: #141414;
+    color: #fff;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid #141414;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    padding: 4px;
     z-index: 5;
+}
+
+.active-tick-bundle svg {
+    width: 100%;
+    height: 100%;
 }
 
 .category-icon {

@@ -25,15 +25,22 @@ const InfoStrip = () => {
                     onClick={() => setActiveCategory('All')}
                 >
                     <div className={`icon-wrapper ${activeCategory === 'All' ? 'active' : ''}`}>
-                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="3" width="10" height="7"></rect>
-                            <rect x="14" y="3" width="10" height="7"></rect>
-                            <rect x="14" y="14" width="10" height="7"></rect>
-                            <rect x="3" y="14" width="10" height="7"></rect>
+                        {/* 3x3 Dot Grid Icon */}
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="6" cy="6" r="2.2" />
+                            <circle cx="12" cy="6" r="2.2" />
+                            <circle cx="18" cy="6" r="2.2" />
+                            <circle cx="6" cy="12" r="2.2" />
+                            <circle cx="12" cy="12" r="2.2" />
+                            <circle cx="18" cy="12" r="2.2" />
+                            <circle cx="6" cy="18" r="2.2" />
+                            <circle cx="12" cy="18" r="2.2" />
+                            <circle cx="18" cy="18" r="2.2" />
                         </svg>
+                        
                         {activeCategory === 'All' && (
-                            <div className="active-tick">
-                                <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <div className="active-tick-bundle">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
                             </div>
@@ -61,8 +68,8 @@ const InfoStrip = () => {
                                 </svg>
                             )}
                             {activeCategory === cat.name && (
-                                <div className="active-tick">
-                                    <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                <div className="active-tick-bundle">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                     </svg>
                                 </div>
