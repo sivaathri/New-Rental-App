@@ -47,14 +47,13 @@
 }
 
 .vehicle-type span {
-    font-size: 13px;
-    color: #666;
-    font-weight: 500;
+    font-size: 14px;
+    color: #000;
+    font-weight: 700;
 }
 
 .vehicle-type.active span {
-    color: #000;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .icon-wrapper {
@@ -77,16 +76,16 @@
 }
 
 .icon-wrapper.active {
-    background: #141414;
-    color: #fff;
-    border-color: #141414;
+    background: #ffffff;
+    color: #000;
+    border: 2px solid #000;
 }
 
 .active-tick-bundle {
     position: absolute;
     top: -4px;
     right: -4px;
-    background: #141414;
+    background: #000000;
     color: #fff;
     width: 24px;
     height: 24px;
@@ -113,8 +112,7 @@
 }
 
 .category-icon.active {
-    filter: brightness(0) invert(1);
-    /* Turns dark icons white when background is black */
+    filter: none;
 }
 
 /* Feature Items */

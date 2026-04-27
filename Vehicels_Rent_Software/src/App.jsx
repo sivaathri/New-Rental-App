@@ -1,18 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import InfoStrip from './components/InfoStrip';
+import Allvehicles from './components/Allvehicles';
 import './index.css';
 
 function App() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
+
   return (
     <div style={{ backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
       <Header />
-      <Hero />
-      <InfoStrip />
+      <Hero searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      <InfoStrip activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
+      <Allvehicles searchQuery={searchQuery} activeCategory={activeCategory} />
 
       {/* Added content section to make the page scrollable */}
-      <section style={{ padding: '80px 40px', maxWidth: '1200px', margin: '0 auto' }}>
+      {/* <section style={{ padding: '80px 40px', maxWidth: '1200px', margin: '0 auto' }}>
         <h2 style={{ fontSize: '32px', marginBottom: '20px', color: '#333' }}>Why Choose AutoVoyage?</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '30px', marginTop: '40px' }}>
           {[
@@ -27,7 +32,7 @@ function App() {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }

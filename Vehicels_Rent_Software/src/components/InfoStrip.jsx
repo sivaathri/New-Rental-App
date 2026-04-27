@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './InfoStrip.css';
 
-const InfoStrip = () => {
+const InfoStrip = ({ activeCategory, setActiveCategory }) => {
     const [categories, setCategories] = useState([]);
-    const [activeCategory, setActiveCategory] = useState('All');
     const API_URL = 'http://localhost:5000'; // Adjust as needed
 
     useEffect(() => {

@@ -2,7 +2,7 @@ import React from 'react';
 import './Hero.css';
 import heroBg from '../assets/3.png';
 
-const Hero = () => {
+const Hero = ({ searchQuery, setSearchQuery }) => {
     return (
         <section className="hero-section" style={{ backgroundImage: `url("${heroBg}")` }}>
             <div className="hero-content">
@@ -20,7 +20,12 @@ const Hero = () => {
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
-                        <input type="text" placeholder="Search your dream car..." />
+                        <input 
+                            type="text" 
+                            placeholder="Search your dream car..." 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
                     </div>
                     <button className="filter-button" aria-label="Filter">
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
