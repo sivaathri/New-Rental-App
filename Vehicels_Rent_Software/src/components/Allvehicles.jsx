@@ -565,7 +565,7 @@ const Allvehicles = ({ searchQuery, activeCategory, filters }) => {
               </div>
 
               {/* Service Badges */}
-              <div className="bg-[#f0f5ff] rounded-[20px] p-4 mb-6 flex justify-between">
+              {/* <div className="bg-[#f0f5ff] rounded-[20px] p-4 mb-6 flex justify-between">
                 <div className="flex flex-col items-center gap-1 text-center flex-1 border-r border-blue-100 px-1">
                   <div className="w-8 h-8 flex items-center justify-center text-[#4f7fff]">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -590,7 +590,7 @@ const Allvehicles = ({ searchQuery, activeCategory, filters }) => {
                   </div>
                   <p className="text-[9px] font-[800] text-black uppercase leading-tight">24/7<br/>Support</p>
                 </div>
-              </div>
+              </div> */}
 
               {/* Action Buttons */}
               <div className="flex gap-3">
